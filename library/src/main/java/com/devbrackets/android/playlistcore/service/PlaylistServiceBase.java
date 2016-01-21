@@ -1146,6 +1146,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         String title = currentPlaylistItem.getTitle();
         String album = currentPlaylistItem.getAlbum();
         String artist = currentPlaylistItem.getArtist();
+        notificationHelper.setClickPendingIntent(getNotificationClickPendingIntent());
         notificationHelper.updateNotificationInformation(title, album, artist, bitmap, secondaryImage, mediaState);
     }
 
