@@ -16,11 +16,10 @@
 
 package com.devbrackets.android.playlistcore.listener;
 
+import android.support.annotation.NonNull;
+
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 
-/**
- *
- */
 public interface ProgressListener {
 
     /**
@@ -28,5 +27,5 @@ public interface ProgressListener {
      *
      * @return True if the progress update has been handled
      */
-    boolean onProgressUpdated(MediaProgress progressEvent);
+    boolean onProgressUpdated(@NonNull MediaProgress progressEvent);
 }

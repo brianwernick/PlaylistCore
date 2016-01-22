@@ -48,14 +48,14 @@ import com.devbrackets.android.playlistcore.helper.NotificationHelper;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
-import com.devbrackets.android.playlistcore.manager.PlaylistManagerBase;
+import com.devbrackets.android.playlistcore.manager.PlaylistManager;
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
 
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A base service for adding media playback support using the {@link PlaylistManagerBase}.
+ * A base service for adding media playback support using the {@link PlaylistManager}.
  * <p>
  * <b>NOTE:</b> This service will request a wifi wakelock if the item
  * being played isn't downloaded (see {@link #isDownloaded(IPlaylistItem)}).
@@ -66,7 +66,7 @@ import java.util.List;
  * TODO: auto-scale bitmaps for notifications
  */
 @SuppressWarnings("unused")
-public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends PlaylistManagerBase<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
+public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends PlaylistManager<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
     private static final String TAG = "PlaylistServiceBase";
 
     public enum PlaybackState {
@@ -145,17 +145,17 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
     protected abstract float getAudioDuckVolume();
 
     /**
-     * Links the {@link PlaylistManagerBase} that contains the information for playback
+     * Links the {@link PlaylistManager} that contains the information for playback
      * to this service.
      *
      * NOTE: this is only used for retrieving information, it isn't used to register notifications
      * for playlist changes, however as long as the change isn't breaking (e.g. cleared playlist)
      * then nothing additional needs to be performed.
      *
-     * @return The {@link PlaylistManagerBase} containing the playback information
+     * @return The {@link PlaylistManager} containing the playback information
      */
     @NonNull
-    protected abstract M getMediaPlaylistManager();
+    protected abstract M getPlaylistManager();
 
     /**
      * Returns the PendingIntent to use when the playback notification is clicked.
@@ -209,7 +209,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
     /**
      * Used to determine if the device is connected to a network that has
      * internet access.  This is used in conjunction with {@link #isDownloaded(IPlaylistItem)}
-     * to determine what items in the playlist manager, specified with {@link #getMediaPlaylistManager()}, can be
+     * to determine what items in the playlist manager, specified with {@link #getPlaylistManager()}, can be
      * played.
      *
      * @return True if the device currently has internet connectivity
@@ -358,7 +358,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         if (currentItemIsAudio()) {
             return audioPlayer != null && audioPlayer.isPlaying();
         } else if (currentItemIsVideo()) {
-            return getMediaPlaylistManager().getVideoPlayer() != null && getMediaPlaylistManager().getVideoPlayer().isPlaying();
+            return getPlaylistManager().getVideoPlayer() != null && getPlaylistManager().getVideoPlayer().isPlaying();
         }
 
         return false;
@@ -391,7 +391,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         setPlaybackState(PlaybackState.STOPPED);
 
         relaxResources(true);
-        getMediaPlaylistManager().unRegisterService();
+        getPlaylistManager().unRegisterService();
         audioFocusHelper.setAudioFocusCallback(null);
         audioFocusHelper.abandonFocus();
 
@@ -479,7 +479,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Called when the media progress has been updated
      */
     @Override
-    public boolean onProgressUpdated(MediaProgress progressEvent) {
+    public boolean onProgressUpdated(@NonNull MediaProgress progressEvent) {
         currentMediaProgress = progressEvent;
 
         for (ProgressListener listener : progressListeners) {
@@ -556,8 +556,8 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return The current PlaylistItem Changed event
      */
     public PlaylistItemChange<I> getCurrentItemChangedEvent() {
-        boolean hasNext = getMediaPlaylistManager().isNextAvailable();
-        boolean hasPrevious = getMediaPlaylistManager().isPreviousAvailable();
+        boolean hasNext = getPlaylistManager().isNextAvailable();
+        boolean hasPrevious = getPlaylistManager().isPreviousAvailable();
 
         return new PlaylistItemChange<>(currentPlaylistItem, hasPrevious, hasNext);
     }
@@ -580,7 +580,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
 
         notificationHelper = new NotificationHelper(getApplicationContext());
         mediaControlsHelper = new MediaControlsHelper(getApplicationContext(), getClass());
-        getMediaPlaylistManager().registerService(this);
+        getPlaylistManager().registerService(this);
 
         //Another part of the workaround for some Samsung devices
         if (workaroundIntent != null) {
@@ -593,7 +593,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to pause and/or resume
      * the media playback.  This is called through an intent
      * with the {@link RemoteActions#ACTION_PLAY_PAUSE}, through
-     * {@link PlaylistManagerBase#invokePausePlay()}
+     * {@link PlaylistManager#invokePausePlay()}
      */
     protected void performPlayPause() {
         if (isPlaying() || pausedForFocusLoss) {
@@ -611,13 +611,13 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to seek to the previous media
      * item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_PREVIOUS}, through
-     * {@link PlaylistManagerBase#invokePrevious()}
+     * {@link PlaylistManager#invokePrevious()}
      */
     protected void performPrevious() {
         seekToPosition = 0;
         immediatelyPause = !isPlaying();
 
-        getMediaPlaylistManager().previous();
+        getPlaylistManager().previous();
         startItemPlayback();
     }
 
@@ -625,13 +625,13 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to seek to the next media
      * item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_NEXT}, through
-     * {@link PlaylistManagerBase#invokeNext()}
+     * {@link PlaylistManager#invokeNext()}
      */
     protected void performNext() {
         seekToPosition = 0;
         immediatelyPause = !isPlaying();
 
-        getMediaPlaylistManager().next();
+        getPlaylistManager().next();
         startItemPlayback();
     }
 
@@ -639,7 +639,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to repeat the current
      * media item in playback.  This is called through an
      * intent with the {@link RemoteActions#ACTION_REPEAT},
-     * through {@link PlaylistManagerBase#invokeRepeat()}
+     * through {@link PlaylistManager#invokeRepeat()}
      */
     protected void performRepeat() {
         //Left for the extending class to implement
@@ -649,7 +649,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to repeat the current
      * media item in playback.  This is called through an
      * intent with the {@link RemoteActions#ACTION_SHUFFLE},
-     * through {@link PlaylistManagerBase#invokeShuffle()}
+     * through {@link PlaylistManager#invokeShuffle()}
      */
     protected void performShuffle() {
         //Left for the extending class to implement
@@ -669,10 +669,10 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to start a seek for the current
      * media item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_SEEK_STARTED}, through
-     * {@link PlaylistManagerBase#invokeSeekStarted()}
+     * {@link PlaylistManager#invokeSeekStarted()}
      */
     protected void performSeekStarted() {
-        VideoPlayerApi videoPlayer = getMediaPlaylistManager().getVideoPlayer();
+        VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
         boolean isPlaying = (currentItemIsAudio() && audioPlayer.isPlaying()) || (currentItemIsVideo() && videoPlayer != null && videoPlayer.isPlaying());
 
         if (isPlaying) {
@@ -685,7 +685,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to end a seek for the current
      * media item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_SEEK_ENDED}, through
-     * {@link PlaylistManagerBase#invokeSeekEnded(int)}
+     * {@link PlaylistManager#invokeSeekEnded(int)}
      */
     protected void performSeekEnded(int newPosition) {
         performSeek(newPosition);
@@ -704,7 +704,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      *
      * @param newType The new allowed media type
      */
-    protected void updateAllowedMediaType(PlaylistManagerBase.MediaType newType) {
+    protected void updateAllowedMediaType(PlaylistManager.MediaType newType) {
         //We seek through the items until an allowed one is reached, or none is reached and the service is stopped.
         if (newType != M.MediaType.AUDIO_AND_VIDEO && currentPlaylistItem != null && newType != currentPlaylistItem.getMediaType()) {
             performNext();
@@ -716,8 +716,8 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * that the current playlist item has changed.
      */
     protected void postPlaylistItemChanged() {
-        boolean hasNext = getMediaPlaylistManager().isNextAvailable();
-        boolean hasPrevious = getMediaPlaylistManager().isPreviousAvailable();
+        boolean hasNext = getPlaylistManager().isNextAvailable();
+        boolean hasPrevious = getPlaylistManager().isPreviousAvailable();
 
         for (PlaylistListener callback : playlistListeners) {
             if (callback.onPlaylistItemChanged(currentPlaylistItem, hasNext, hasPrevious)) {
@@ -752,10 +752,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         relaxResources(true);
         audioFocusHelper.abandonFocus();
 
-        //Cleans out the avPlayListManager
-        getMediaPlaylistManager().setParameters(null, 0);
-        getMediaPlaylistManager().setPlaylistId(-1);
-
+        getPlaylistManager().reset();
         stopSelf();
     }
 
@@ -771,7 +768,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 audioPlayer.seekTo(position);
             }
         } else if (currentItemIsVideo()) {
-            VideoPlayerApi videoplayer = getMediaPlaylistManager().getVideoPlayer();
+            VideoPlayerApi videoplayer = getPlaylistManager().getVideoPlayer();
             if (videoplayer != null) {
                 videoplayer.seekTo(position);
             }
@@ -788,7 +785,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 audioPlayer.pause();
             }
         } else if (currentItemIsVideo()) {
-            VideoPlayerApi videoPlayer = getMediaPlaylistManager().getVideoPlayer();
+            VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
                 videoPlayer.pause();
             }
@@ -808,7 +805,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 audioPlayer.play();
             }
         } else if (currentItemIsVideo()) {
-            VideoPlayerApi videoPlayer = getMediaPlaylistManager().getVideoPlayer();
+            VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
                 videoPlayer.play();
             }
@@ -825,7 +822,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return True if the current media item is an Audio item
      */
     protected boolean currentItemIsAudio() {
-        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManagerBase.MediaType.AUDIO;
+        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManager.MediaType.AUDIO;
     }
 
     /**
@@ -835,7 +832,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return True if the current media item is a video item
      */
     protected boolean currentItemIsVideo() {
-        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManagerBase.MediaType.VIDEO;
+        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManager.MediaType.VIDEO;
     }
 
     /**
@@ -845,7 +842,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return True if the current media item is of the OTHER type
      */
     protected boolean currentItemIsOther() {
-        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManagerBase.MediaType.OTHER;
+        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManager.MediaType.OTHER;
     }
 
     /**
@@ -890,7 +887,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * item is a video or an audio item.
      * <p>
      * <em><b>NOTE:</b></em> In order to play videos you will need to specify the
-     * VideoView with {@link PlaylistManagerBase#setVideoPlayer(VideoPlayerApi)}
+     * VideoView with {@link PlaylistManager#setVideoPlayer(VideoPlayerApi)}
      */
     protected void startItemPlayback() {
         if (currentItemIsAudio()) {
@@ -907,7 +904,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
             playVideoItem();
         } else if (currentItemIsOther()) {
             playOtherItem();
-        } else if (getMediaPlaylistManager().isNextAvailable()) {
+        } else if (getPlaylistManager().isNextAvailable()) {
             //We get here if there was an error retrieving the currentPlaylistItem
             performNext();
         } else {
@@ -958,7 +955,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         stopAudioPlayback();
         setupAsForeground();
 
-        VideoPlayerApi videoPlayer = getMediaPlaylistManager().getVideoPlayer();
+        VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
         if (videoPlayer != null) {
             videoPlayer.stop();
             boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
@@ -989,7 +986,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Stops the VideoView from playing if we have access to it.
      */
     protected void stopVideoPlayback() {
-        VideoPlayerApi videoPlayer = getMediaPlaylistManager().getVideoPlayer();
+        VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
         if (videoPlayer != null) {
             videoPlayer.stop();
             videoPlayer.reset();
@@ -1050,7 +1047,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 audioPlayer = null;
             }
 
-            getMediaPlaylistManager().setCurrentIndex(Integer.MAX_VALUE);
+            getPlaylistManager().setCurrentIndex(Integer.MAX_VALUE);
         }
 
         updateWiFiLock(false);
@@ -1072,7 +1069,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * it will be the next downloaded item.
      */
     protected void seekToNextPlayableItem() {
-        I currentItem = getMediaPlaylistManager().getCurrentItem();
+        I currentItem = getPlaylistManager().getCurrentItem();
         if (currentItem == null) {
             currentPlaylistItem = null;
             return;
@@ -1081,7 +1078,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         //Only iterate through the list if we aren't connected to the internet
         if (!isNetworkAvailable()) {
             while (currentItem != null && !isDownloaded(currentItem)) {
-                currentItem = getMediaPlaylistManager().next();
+                currentItem = getPlaylistManager().next();
             }
         }
 
@@ -1090,7 +1087,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
             onNoNonNetworkItemsAvailable();
         }
 
-        currentPlaylistItem = getMediaPlaylistManager().getCurrentItem();
+        currentPlaylistItem = getPlaylistManager().getCurrentItem();
     }
 
     /**
@@ -1125,8 +1122,8 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
 
         //Generate the notification state
         NotificationHelper.NotificationMediaState mediaState = new NotificationHelper.NotificationMediaState();
-        mediaState.setNextEnabled(getMediaPlaylistManager().isNextAvailable());
-        mediaState.setPreviousEnabled(getMediaPlaylistManager().isPreviousAvailable());
+        mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
+        mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
         mediaState.setPlaying(isPlaying());
 
 
@@ -1160,8 +1157,8 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
 
         //Generate the notification state
         NotificationHelper.NotificationMediaState mediaState = new NotificationHelper.NotificationMediaState();
-        mediaState.setNextEnabled(getMediaPlaylistManager().isNextAvailable());
-        mediaState.setPreviousEnabled(getMediaPlaylistManager().isPreviousAvailable());
+        mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
+        mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
         mediaState.setPlaying(isPlaying());
 
 
@@ -1178,9 +1175,9 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      */
     protected void mediaItemChanged() {
         //Validates that the currentPlaylistItem is for the currentItem
-        if (!getMediaPlaylistManager().isPlayingItem(currentPlaylistItem)) {
+        if (!getPlaylistManager().isPlayingItem(currentPlaylistItem)) {
             Log.d(TAG, "forcing currentPlaylistItem update");
-            currentPlaylistItem = getMediaPlaylistManager().getCurrentItem();
+            currentPlaylistItem = getPlaylistManager().getCurrentItem();
         }
 
         //Starts the notification loading
@@ -1245,7 +1242,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 break;
 
             case RemoteActions.ACTION_ALLOWED_TYPE_CHANGED:
-                updateAllowedMediaType((PlaylistManagerBase.MediaType) extras.getSerializable(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE));
+                updateAllowedMediaType((PlaylistManager.MediaType) extras.getSerializable(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE));
                 break;
 
             default:
