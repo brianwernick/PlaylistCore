@@ -29,7 +29,7 @@ dependencies {
 
 Example
 -------
-TODO
+Due to the length an example would be, please see the Demo app
 
 
 License

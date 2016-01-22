@@ -22,7 +22,7 @@ public interface IPlaylistItem {
     //TODO: is this still needed?
     long getPlaylistId();
 
-    PlaylistManagerBase.MediaType getMediaType();
+    PlaylistManager.MediaType getMediaType();
 
     String getMediaUrl();
 

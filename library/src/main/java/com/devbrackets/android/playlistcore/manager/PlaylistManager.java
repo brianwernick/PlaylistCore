@@ -20,19 +20,21 @@ import android.app.Application;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
-import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.service.PlaylistServiceBase;
-import com.devbrackets.android.playlistcore.service.RemoteActions;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
+import com.devbrackets.android.playlistcore.listener.ProgressListener;
+import com.devbrackets.android.playlistcore.service.PlaylistServiceBase;
+import com.devbrackets.android.playlistcore.service.RemoteActions;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,12 +46,13 @@ import java.util.List;
  * {@link PlaylistServiceBase}
  */
 @SuppressWarnings("unused")
-public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements PlaylistListener, ProgressListener {
-    private static final String TAG = "PlaylistManagerBase";
+public abstract class PlaylistManager<I extends IPlaylistItem> implements PlaylistListener, ProgressListener {
+    private static final String TAG = "PlaylistManager";
 
-    public static final int INVALID_PLAYLIST_ID = -1;
-    public static final int INVALID_PLAYLIST_INDEX = -1;
+    public static final int INVALID_ID = -1;
+    public static final int INVALID_POSITION = -1;
 
+    //TODO: rename? (ExoMedia also has a MediaType enum) (MediaFormat?) (SupportedFormats) (Ints as flags?)
     public enum MediaType {
         AUDIO,
         VIDEO,
@@ -58,22 +61,28 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
         NONE
     }
 
-    protected List<I> playList;
-    protected int currentPosition = 0;
-    protected long playListId = INVALID_PLAYLIST_ID;
+    @IntRange(from = INVALID_POSITION)
+    protected int currentPosition = INVALID_POSITION;
+    @IntRange(from = INVALID_ID)
+    protected long playlistId = INVALID_ID;
 
+    @NonNull
     protected MediaType allowedType = MediaType.AUDIO;
+    @NonNull
     protected WeakReference<VideoPlayerApi> videoPlayer = new WeakReference<>(null);
 
     @Nullable
     protected PlaylistServiceBase<I, ?> service;
-    protected List<PlaylistListener> playlistListeners = new ArrayList<>();
-    protected List<ProgressListener> progressListeners = new LinkedList<>();
+
+    @NonNull
+    protected List<WeakReference<PlaylistListener>> playlistListeners = new LinkedList<>();
+    @NonNull
+    protected List<WeakReference<ProgressListener>> progressListeners = new LinkedList<>();
 
     @Nullable
-    protected PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent, stopPendingIntent, repeatPendingIntent, shufflePendingIntent, seekStartedPendingIntent;
-    @Nullable
     protected Intent seekEndedIntent, allowedTypeChangedIntent;
+    @Nullable
+    protected PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent, stopPendingIntent, repeatPendingIntent, shufflePendingIntent, seekStartedPendingIntent;
 
     /**
      * Retrieves the application to use when starting and communicating with the
@@ -81,6 +90,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @return The Application to use when starting and controlling the PlaylistService
      */
+    @NonNull
     protected abstract Application getApplication();
 
     /**
@@ -89,41 +99,55 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @return The class for the Service to control.  This should extend {@link PlaylistServiceBase}
      */
+    @NonNull
     protected abstract Class<? extends Service> getMediaServiceClass();
 
     /**
      * A basic constructor that will retrieve the application
      * via {@link #getApplication()}.
      */
-    public PlaylistManagerBase() {
+    public PlaylistManager() {
         constructControlIntents(getMediaServiceClass(), getApplication());
     }
 
     /**
      * A constructor that will use the specified application to initialize
-     * the PlaylistManagerBase.  This should only be used in instances that
+     * the PlaylistManager.  This should only be used in instances that
      * {@link #getApplication()} will not be prepared at this point.  This
      * can happen when using Dependence Injection frameworks such as Dagger.
      *
-     * @param application The application to use to initialize the PlaylistManagerBase
+     * @param application The application to use to initialize the PlaylistManager
      */
-    public PlaylistManagerBase(Application application) {
+    public PlaylistManager(@NonNull Application application) {
         constructControlIntents(getMediaServiceClass(), application);
+    }
+
+    public void reset() {
+        setCurrentPosition(INVALID_POSITION);
+        setId(INVALID_ID);
     }
 
     /**
      * This is a pass through method that is called from the {@link PlaylistServiceBase} to inform
      * any listeners that are registered through {@link #registerPlaylistListener(PlaylistListener)}
      *
-     * @param currentItem The new playback item
+     * @param currentItem The new playback item todo: is this nullable?
      * @param hasNext True if there exists an item after the <code>currentItem</code> in the playlist
      * @param hasPrevious True if there exists an item before the <code>currentItem</code> in the playlist
      * @return True if the event should be consumed
      */
     @Override
     public boolean onPlaylistItemChanged(IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
-        for (PlaylistListener callback : playlistListeners) {
-            if (callback.onPlaylistItemChanged(currentItem, hasNext, hasPrevious)) {
+        Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
+
+        while (iterator.hasNext()) {
+            PlaylistListener listener = iterator.next().get();
+            if (listener == null) {
+                iterator.remove();
+                continue;
+            }
+
+            if (listener.onPlaylistItemChanged(currentItem, hasNext, hasPrevious)) {
                 return true;
             }
         }
@@ -139,9 +163,17 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @return True if the event should be consumed
      */
     @Override
-    public boolean onPlaybackStateChanged(PlaylistServiceBase.PlaybackState playbackState) {
-        for (PlaylistListener callback : playlistListeners) {
-            if (callback.onPlaybackStateChanged(playbackState)) {
+    public boolean onPlaybackStateChanged(@NonNull PlaylistServiceBase.PlaybackState playbackState) {
+        Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
+
+        while (iterator.hasNext()) {
+            PlaylistListener listener = iterator.next().get();
+            if (listener == null) {
+                iterator.remove();
+                continue;
+            }
+
+            if (listener.onPlaybackStateChanged(playbackState)) {
                 return true;
             }
         }
@@ -157,8 +189,16 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @return True if the event should be consumed
      */
     @Override
-    public boolean onProgressUpdated(MediaProgress event) {
-        for (ProgressListener listener : progressListeners) {
+    public boolean onProgressUpdated(@NonNull MediaProgress event) {
+        Iterator<WeakReference<ProgressListener>> iterator = progressListeners.iterator();
+
+        while (iterator.hasNext()) {
+            ProgressListener listener = iterator.next().get();
+            if (listener == null) {
+                iterator.remove();
+                continue;
+            }
+
             if (listener.onProgressUpdated(event)) {
                 return true;
             }
@@ -172,6 +212,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @return The most recent PlaybackState
      */
+    @NonNull
     public PlaylistServiceBase.PlaybackState getCurrentMediaState() {
         if (service != null) {
             return service.getCurrentPlaybackState();
@@ -206,7 +247,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @param service The AudioService to link to this manager
      */
-    public void registerService(PlaylistServiceBase<I, ?> service) {
+    public void registerService(@NonNull PlaylistServiceBase<I, ?> service) {
         this.service = service;
         service.registerPlaylistListener(this);
     }
@@ -227,10 +268,8 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @param listener The listener to register
      */
-    public void registerPlaylistListener(PlaylistListener listener) {
-        if (listener != null) {
-            playlistListeners.add(listener);
-        }
+    public void registerPlaylistListener(@NonNull PlaylistListener listener) {
+        playlistListeners.add(new WeakReference<>(listener));
     }
 
     /**
@@ -239,45 +278,32 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @param listener The listener to remove
      */
-    public void unRegisterPlaylistListener(PlaylistListener listener) {
-        if (listener != null) {
-            playlistListeners.remove(listener);
+    public void unRegisterPlaylistListener(@NonNull PlaylistListener listener) {
+        Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
+        while (iterator.hasNext()) {
+            PlaylistListener playlistListener = iterator.next().get();
+            if (playlistListener == null || playlistListener.equals(listener)) {
+                iterator.remove();
+            }
         }
     }
 
-    public void registerProgressListener(ProgressListener listener) {
-        if (listener != null) {
-            progressListeners.add(listener);
+    public void registerProgressListener(@NonNull ProgressListener listener) {
+        progressListeners.add(new WeakReference<>(listener));
+    }
+
+    public void unRegisterProgressListener(@NonNull ProgressListener listener) {
+        Iterator<WeakReference<ProgressListener>> iterator = progressListeners.iterator();
+        while (iterator.hasNext()) {
+            ProgressListener progressListener = iterator.next().get();
+            if (progressListener == null || progressListener.equals(listener)) {
+                iterator.remove();
+            }
         }
     }
 
-    public void unRegisterProgressListener(ProgressListener listener) {
-        if (listener != null) {
-            progressListeners.remove(listener);
-        }
-    }
-
-    /**
-     * A utility method to allow for single line implementations to start playing the media
-     * item as specified by the passed parameters.
-     *
-     * @param playListItems The list of items to play
-     * @param startIndex The index in the playlistItems to start playback
-     * @param seekPosition The position in the startIndex item to start at (in milliseconds)
-     * @param startPaused True if the media item should start paused instead of playing
-     */
-    public void play(List<I> playListItems, int startIndex, int seekPosition, boolean startPaused) {
-        setParameters(playListItems, startIndex);
-        play(seekPosition, startPaused);
-    }
-
-    /**
-     * In order to use this method you must call {@link #setParameters(java.util.List, int)} first.
-     * Alternatively you can call {@link #play(java.util.List, int, int, boolean)}
-     */
-    public void play(int seekPosition, boolean startPaused) {
+    public void play(@IntRange(from = 0) int seekPosition, boolean startPaused) {
         I currentItem = getCurrentItem();
-
         if (currentItem == null) {
             return;
         }
@@ -291,26 +317,12 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
     }
 
     /**
-     * Sets the List of items to be used for the play list.  This can include both audio
-     * and video items.
+     * Sets the ID associated with the current playlist
      *
-     * @param playListItems The List of items to play
-     * @param startIndex The index in the list to start playback with
+     * @param id The id for the playlist, or {@link #INVALID_ID}
      */
-    public void setParameters(List<I> playListItems, int startIndex) {
-        playList = playListItems;
-
-        setCurrentIndex(startIndex);
-        setPlaylistId(INVALID_PLAYLIST_ID);
-    }
-
-    /**
-     * Sets the ID associated with the current playlist.
-     *
-     * @param playListId The id for the playlist
-     */
-    public void setPlaylistId(long playListId) {
-        this.playListId = playListId;
+    public void setId(@IntRange(from = INVALID_ID) long id) {
+        this.playlistId = id;
     }
 
     /**
@@ -320,7 +332,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @param allowedType The media types to allow playback with [default: {@link MediaType#AUDIO_AND_VIDEO}]
      */
-    public void setAllowedMediaType(MediaType allowedType) {
+    public void setAllowedMediaType(@NonNull MediaType allowedType) {
         this.allowedType = allowedType;
 
         //Tries to start the intent
@@ -331,70 +343,53 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
     }
 
     /**
-     * Sets the current playback index.  This should only be used when jumping
+     * Sets the current playback position.  This should only be used when jumping
      * down the current playback list, if you are only changing one see {@link #next()} or
      * {@link #previous()}.
      *
-     * @param index The index to become the current playback position.
+     * @param position The position to become the current playback position.
      */
-    public void setCurrentIndex(int index) {
-        if (index >= getPlayListSize()) {
-            index = getPlayListSize() - 1;
+    public void setCurrentPosition(@IntRange(from = INVALID_POSITION) int position) {
+        if (position >= getItemCount()) {
+            position = getItemCount() - 1;
         }
 
-        currentPosition = findNextAllowedIndex(index);
+        currentPosition = findNextAllowedPosition(position);
     }
 
     /**
-     * Retrieves the current item index
+     * Retrieves the current item position
      *
-     * @return The current items index
+     * @return The current items position or {@link #INVALID_POSITION}
      */
-    public int getCurrentIndex() {
+    @IntRange(from = INVALID_POSITION)
+    public int getCurrentPosition() {
         return currentPosition;
     }
 
     /**
-     * Attempts to find the index for the item with the specified itemId.  If no
-     * such item exists then the current index will NOT be modified.  However if the item
-     * is found then that index will be used to update the current index.  You can also
-     * manually set the current index with {@link #setCurrentIndex(int)}.
+     * Attempts to find the position for the item with the specified itemId.  If no
+     * such item exists then the current position will NOT be modified.  However if the item
+     * is found then that position will be used to update the current position.  You can also
+     * manually set the current position with {@link #setCurrentPosition(int)}.
      *
-     * @param itemId The items id to use for finding the new index
+     * @param itemId The items id to use for finding the new position
      */
-    public void setCurrentItem(long itemId) {
-        if (playList == null) {
-            return;
-        }
-
-        int index = getIndexForItem(itemId);
-        if (index != INVALID_PLAYLIST_INDEX) {
-            setCurrentIndex(index);
+    public void setCurrentItem(@IntRange(from = 0) long itemId) {
+        int position = getPositionForItem(itemId);
+        if (position != INVALID_POSITION) {
+            setCurrentPosition(position);
         }
     }
 
     /**
-     * Determines the index for the item with the passed id.
+     * Determines the position for the item with the passed id.
      *
-     * @param itemId The items id to use for finding the index
-     * @return The items index or {@link #INVALID_PLAYLIST_INDEX}
+     * @param itemId The items id to use for finding the position
+     * @return The items position or {@link #INVALID_POSITION}
      */
-    public int getIndexForItem(long itemId) {
-        if (playList == null) {
-            return INVALID_PLAYLIST_INDEX;
-        }
-
-        int index = 0;
-        for (I item : playList) {
-            if (item.getId() == itemId) {
-                return index;
-            }
-
-            index++;
-        }
-
-        return INVALID_PLAYLIST_INDEX;
-    }
+    @IntRange(from = INVALID_POSITION)
+    public abstract int getPositionForItem(@IntRange(from = 0) long itemId);
 
     /**
      * Determines if the given ItemQuery is the same as the current item
@@ -402,7 +397,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @param item The ItemQuery to compare to the current item
      * @return True if the current item matches the passed item
      */
-    public boolean isPlayingItem(I item) {
+    public boolean isPlayingItem(@Nullable I item) {
         I currentItem = getCurrentItem();
 
         //noinspection SimplifiableIfStatement
@@ -410,7 +405,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
             return false;
         }
 
-        return item.getId() == currentItem.getId() && item.getPlaylistId() == playListId;
+        return item.getId() == currentItem.getId() && item.getPlaylistId() == playlistId;
     }
 
     /**
@@ -419,7 +414,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @return True if there is an item after the current one
      */
     public boolean isNextAvailable() {
-        return getPlayListSize() > findNextAllowedIndex(currentPosition + 1);
+        return getItemCount() > findNextAllowedPosition(currentPosition + 1);
     }
 
     /**
@@ -428,16 +423,17 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @return True if there is an item before the current one
      */
     public boolean isPreviousAvailable() {
-        return findPreviousAllowedIndex(currentPosition - 1) != getPlayListSize();
+        return findPreviousAllowedPosition(currentPosition - 1) != getItemCount();
     }
 
     /**
-     * Returns the current playListId for this playlist.
+     * Returns the current playlistId for this playlist.
      *
-     * @return The playlist id [default: {@link #INVALID_PLAYLIST_ID}]
+     * @return The playlist id [default: {@link #INVALID_ID}]
      */
-    public long getPlayListId() {
-        return playListId;
+    @IntRange(from = INVALID_ID)
+    public long getId() {
+        return playlistId;
     }
 
     /**
@@ -446,6 +442,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @return A {@link MediaType} representing the current items type
      */
+    @NonNull
     public MediaType getCurrentItemType() {
         I item = getCurrentItem();
         return item != null ? item.getMediaType() : MediaType.NONE;
@@ -456,25 +453,18 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @return The size of the playlist
      */
-    public int getPlayListSize() {
-        return playList == null ? 0 : playList.size();
-    }
+    @IntRange(from = 0)
+    public abstract int getItemCount();
 
     /**
-     * Retrieves the item at the given index in the playlist.  If the playlist
-     * is null or the index is out of bounds then null will be returned.
+     * Retrieves the item at the given position in the playlist.  If the playlist
+     * is null or the position is out of bounds then null will be returned.
      *
-     * @param index The index in the playlist to grab the item for
+     * @param position The position in the playlist to grab the item for
      * @return The retrieved item or null
      */
     @Nullable
-    public I getItem(int index) {
-        if (playList == null || index < 0 || index >= playList.size()) {
-            return null;
-        }
-
-        return playList.get(index);
-    }
+    public abstract I getItem(@IntRange(from = 0) int position);
 
     /**
      * Retrieves the Item representing the currently selected
@@ -485,7 +475,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      */
     @Nullable
     public I getCurrentItem() {
-        if (currentPosition < getPlayListSize()) {
+        if (currentPosition < getItemCount()) {
             return getItem(currentPosition);
         }
 
@@ -501,7 +491,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      */
     @Nullable
     public I next() {
-        currentPosition = findNextAllowedIndex(currentPosition + 1);
+        currentPosition = findNextAllowedPosition(currentPosition + 1);
         return getCurrentItem();
     }
 
@@ -514,7 +504,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      */
     @Nullable
     public I previous() {
-        currentPosition = findPreviousAllowedIndex(currentPosition - 1);
+        currentPosition = findPreviousAllowedPosition(currentPosition - 1);
         return getCurrentItem();
     }
 
@@ -609,7 +599,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * {@link RemoteActions#ACTION_SEEK_ENDED} and have an intent extra with the
      * key {@link RemoteActions#ACTION_EXTRA_SEEK_POSITION} (integer)
      */
-    public void invokeSeekEnded(int seekPosition) {
+    public void invokeSeekEnded(@IntRange(from = 0) int seekPosition) {
         //Tries to start the intent
         if (seekEndedIntent != null) {
             seekEndedIntent.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition);
@@ -623,7 +613,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @param mediaServiceClass The class to inform of any media playback controls
      * @param application The application to use when constructing the intents used to inform the playlist service of invocations
      */
-    protected void constructControlIntents(Class<? extends Service> mediaServiceClass, Application application) {
+    protected void constructControlIntents(@NonNull Class<? extends Service> mediaServiceClass, @NonNull Application application) {
         previousPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PREVIOUS);
         nextPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_NEXT);
         playPausePendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PLAY_PAUSE);
@@ -641,43 +631,41 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
     }
 
     /**
-     * Finds the next item index that has an allowed type
-     *
-     * @param index The index to start with
-     * @return The new index, or the list size if none exist
+     * Finds the next item position that has an allowed type
+     * TODO: should this and *previous* return INVALID_POSITION when none is possible?
+     * @param position The position to start with
+     * @return The new position, or the list size if none exist
      */
-    protected int findNextAllowedIndex(int index) {
-        if (index >= getPlayListSize()) {
-            return getPlayListSize();
+    @IntRange(from = 0)
+    protected int findNextAllowedPosition(@IntRange(from = 0) int position) {
+        if (position >= getItemCount()) {
+            return getItemCount();
         }
 
-        if (index < 0) {
-            index = 0;
+        while (position < getItemCount() && !isAllowedType(getItem(position))) {
+            position++;
         }
 
-        while (index < getPlayListSize() && !isAllowedType(playList.get(index))) {
-            index++;
-        }
-
-        return index < getPlayListSize() ? index : getPlayListSize();
+        return position < getItemCount() ? position : getItemCount();
     }
 
     /**
-     * Finds the previous item index that has an allowed type
+     * Finds the previous item position that has an allowed type
      *
-     * @param index The index to start with
-     * @return The new index, or the list size if none exist
+     * @param position The position to start with
+     * @return The new position, or the list size if none exist
      */
-    protected int findPreviousAllowedIndex(int index) {
-        if (index >= getPlayListSize() || index < 0) {
-            return getPlayListSize();
+    @IntRange(from = 0)
+    protected int findPreviousAllowedPosition(@IntRange(from = 0) int position) {
+        if (position >= getItemCount()) {
+            return getItemCount();
         }
 
-        while (index >= 0 && !isAllowedType(playList.get(index))) {
-            index--;
+        while (position >= 0 && !isAllowedType(getItem(position))) {
+            position--;
         }
 
-        return index >= 0 ? index : getPlayListSize();
+        return position >= 0 ? position : getItemCount();
     }
 
     /**
@@ -706,7 +694,8 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      * @param action The action to use
      * @return The resulting PendingIntent
      */
-    protected PendingIntent createPendingIntent(Application application, Class<? extends Service> serviceClass, String action) {
+    @NonNull
+    protected PendingIntent createPendingIntent(@NonNull Application application, @NonNull Class<? extends Service> serviceClass, @NonNull String action) {
         Intent intent = new Intent(application, serviceClass);
         intent.setAction(action);
 
@@ -718,7 +707,7 @@ public abstract class PlaylistManagerBase<I extends IPlaylistItem> implements Pl
      *
      * @param pi The pending intent to send
      */
-    protected void sendPendingIntent(PendingIntent pi) {
+    protected void sendPendingIntent(@Nullable PendingIntent pi) {
         if (pi == null) {
             return;
         }
