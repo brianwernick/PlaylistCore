@@ -578,7 +578,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
             Log.w(TAG, "Unable to acquire WAKE_LOCK due to missing manifest permission");
         }
 
-
         notificationHelper = new NotificationHelper(getApplicationContext());
         mediaControlsHelper = new MediaControlsHelper(getApplicationContext(), getClass());
         getMediaPlaylistManager().registerService(this);
@@ -1021,7 +1020,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         } else if (audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_CAN_DUCK) {
             audioPlayer.setVolume(getAudioDuckVolume(), getAudioDuckVolume());
         } else {
-            audioPlayer.setVolume(1.0f, 1.0f); // can be loud
+            audioPlayer.setVolume(1.0f, 1.0f);
         }
 
         mediaProgressPoll.start(); //TODO: make sure this is started at the correct points, and stopped appropriately (it isn't)
