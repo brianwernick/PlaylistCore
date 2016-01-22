@@ -49,8 +49,8 @@ import java.util.List;
 public abstract class PlaylistManager<I extends IPlaylistItem> implements PlaylistListener, ProgressListener {
     private static final String TAG = "PlaylistManager";
 
-    public static final int INVALID_PLAYLIST_ID = -1;
-    public static final int INVALID_PLAYLIST_INDEX = -1;
+    public static final int INVALID_ID = -1;
+    public static final int INVALID_POSITION = -1;
 
     //TODO: rename? (ExoMedia also has a MediaType enum) (MediaFormat?) (SupportedFormats) (Ints as flags?)
     public enum MediaType {
@@ -61,10 +61,10 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
         NONE
     }
 
-    @IntRange(from = INVALID_PLAYLIST_INDEX)
-    protected int currentPosition = INVALID_PLAYLIST_INDEX;
-    @IntRange(from = INVALID_PLAYLIST_ID)
-    protected long playlistId = INVALID_PLAYLIST_ID;
+    @IntRange(from = INVALID_POSITION)
+    protected int currentPosition = INVALID_POSITION;
+    @IntRange(from = INVALID_ID)
+    protected long playlistId = INVALID_ID;
 
     @NonNull
     protected MediaType allowedType = MediaType.AUDIO;
@@ -123,8 +123,8 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     public void reset() {
-        setCurrentIndex(INVALID_PLAYLIST_INDEX);
-        setId(INVALID_PLAYLIST_ID);
+        setCurrentPosition(INVALID_POSITION);
+        setId(INVALID_ID);
     }
 
     /**
@@ -319,9 +319,9 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     /**
      * Sets the ID associated with the current playlist
      *
-     * @param id The id for the playlist, or {@link #INVALID_PLAYLIST_ID}
+     * @param id The id for the playlist, or {@link #INVALID_ID}
      */
-    public void setId(@IntRange(from = INVALID_PLAYLIST_ID) long id) {
+    public void setId(@IntRange(from = INVALID_ID) long id) {
         this.playlistId = id;
     }
 
@@ -343,53 +343,53 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     /**
-     * Sets the current playback index.  This should only be used when jumping
+     * Sets the current playback position.  This should only be used when jumping
      * down the current playback list, if you are only changing one see {@link #next()} or
      * {@link #previous()}.
      *
-     * @param index The index to become the current playback position.
+     * @param position The position to become the current playback position.
      */
-    public void setCurrentIndex(@IntRange(from = INVALID_PLAYLIST_INDEX) int index) {
-        if (index >= getSize()) {
-            index = getSize() - 1;
+    public void setCurrentPosition(@IntRange(from = INVALID_POSITION) int position) {
+        if (position >= getItemCount()) {
+            position = getItemCount() - 1;
         }
 
-        currentPosition = findNextAllowedIndex(index);
+        currentPosition = findNextAllowedPosition(position);
     }
 
     /**
-     * Retrieves the current item index
+     * Retrieves the current item position
      *
-     * @return The current items index or {@link #INVALID_PLAYLIST_INDEX}
+     * @return The current items position or {@link #INVALID_POSITION}
      */
-    @IntRange(from = INVALID_PLAYLIST_INDEX)
-    public int getCurrentIndex() {
+    @IntRange(from = INVALID_POSITION)
+    public int getCurrentPosition() {
         return currentPosition;
     }
 
     /**
-     * Attempts to find the index for the item with the specified itemId.  If no
-     * such item exists then the current index will NOT be modified.  However if the item
-     * is found then that index will be used to update the current index.  You can also
-     * manually set the current index with {@link #setCurrentIndex(int)}.
+     * Attempts to find the position for the item with the specified itemId.  If no
+     * such item exists then the current position will NOT be modified.  However if the item
+     * is found then that position will be used to update the current position.  You can also
+     * manually set the current position with {@link #setCurrentPosition(int)}.
      *
-     * @param itemId The items id to use for finding the new index
+     * @param itemId The items id to use for finding the new position
      */
     public void setCurrentItem(@IntRange(from = 0) long itemId) {
-        int index = getIndexForItem(itemId);
-        if (index != INVALID_PLAYLIST_INDEX) {
-            setCurrentIndex(index);
+        int position = getPositionForItem(itemId);
+        if (position != INVALID_POSITION) {
+            setCurrentPosition(position);
         }
     }
 
     /**
-     * Determines the index for the item with the passed id.
+     * Determines the position for the item with the passed id.
      *
-     * @param itemId The items id to use for finding the index
-     * @return The items index or {@link #INVALID_PLAYLIST_INDEX}
+     * @param itemId The items id to use for finding the position
+     * @return The items position or {@link #INVALID_POSITION}
      */
-    @IntRange(from = INVALID_PLAYLIST_INDEX)
-    public abstract int getIndexForItem(@IntRange(from = 0) long itemId);
+    @IntRange(from = INVALID_POSITION)
+    public abstract int getPositionForItem(@IntRange(from = 0) long itemId);
 
     /**
      * Determines if the given ItemQuery is the same as the current item
@@ -414,7 +414,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      * @return True if there is an item after the current one
      */
     public boolean isNextAvailable() {
-        return getSize() > findNextAllowedIndex(currentPosition + 1);
+        return getItemCount() > findNextAllowedPosition(currentPosition + 1);
     }
 
     /**
@@ -423,15 +423,15 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      * @return True if there is an item before the current one
      */
     public boolean isPreviousAvailable() {
-        return findPreviousAllowedIndex(currentPosition - 1) != getSize();
+        return findPreviousAllowedPosition(currentPosition - 1) != getItemCount();
     }
 
     /**
      * Returns the current playlistId for this playlist.
      *
-     * @return The playlist id [default: {@link #INVALID_PLAYLIST_ID}]
+     * @return The playlist id [default: {@link #INVALID_ID}]
      */
-    @IntRange(from = INVALID_PLAYLIST_ID)
+    @IntRange(from = INVALID_ID)
     public long getId() {
         return playlistId;
     }
@@ -454,17 +454,17 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      * @return The size of the playlist
      */
     @IntRange(from = 0)
-    public abstract int getSize();
+    public abstract int getItemCount();
 
     /**
-     * Retrieves the item at the given index in the playlist.  If the playlist
-     * is null or the index is out of bounds then null will be returned.
+     * Retrieves the item at the given position in the playlist.  If the playlist
+     * is null or the position is out of bounds then null will be returned.
      *
-     * @param index The index in the playlist to grab the item for
+     * @param position The position in the playlist to grab the item for
      * @return The retrieved item or null
      */
     @Nullable
-    public abstract I getItem(@IntRange(from = 0) int index);
+    public abstract I getItem(@IntRange(from = 0) int position);
 
     /**
      * Retrieves the Item representing the currently selected
@@ -475,7 +475,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      */
     @Nullable
     public I getCurrentItem() {
-        if (currentPosition < getSize()) {
+        if (currentPosition < getItemCount()) {
             return getItem(currentPosition);
         }
 
@@ -491,7 +491,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      */
     @Nullable
     public I next() {
-        currentPosition = findNextAllowedIndex(currentPosition + 1);
+        currentPosition = findNextAllowedPosition(currentPosition + 1);
         return getCurrentItem();
     }
 
@@ -504,7 +504,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      */
     @Nullable
     public I previous() {
-        currentPosition = findPreviousAllowedIndex(currentPosition - 1);
+        currentPosition = findPreviousAllowedPosition(currentPosition - 1);
         return getCurrentItem();
     }
 
@@ -631,41 +631,41 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     /**
-     * Finds the next item index that has an allowed type
-     * TODO: should this and *previous* return INVALID_INDEX when none is possible?
-     * @param index The index to start with
-     * @return The new index, or the list size if none exist
+     * Finds the next item position that has an allowed type
+     * TODO: should this and *previous* return INVALID_POSITION when none is possible?
+     * @param position The position to start with
+     * @return The new position, or the list size if none exist
      */
     @IntRange(from = 0)
-    protected int findNextAllowedIndex(@IntRange(from = 0) int index) {
-        if (index >= getSize()) {
-            return getSize();
+    protected int findNextAllowedPosition(@IntRange(from = 0) int position) {
+        if (position >= getItemCount()) {
+            return getItemCount();
         }
 
-        while (index < getSize() && !isAllowedType(getItem(index))) {
-            index++;
+        while (position < getItemCount() && !isAllowedType(getItem(position))) {
+            position++;
         }
 
-        return index < getSize() ? index : getSize();
+        return position < getItemCount() ? position : getItemCount();
     }
 
     /**
-     * Finds the previous item index that has an allowed type
+     * Finds the previous item position that has an allowed type
      *
-     * @param index The index to start with
-     * @return The new index, or the list size if none exist
+     * @param position The position to start with
+     * @return The new position, or the list size if none exist
      */
     @IntRange(from = 0)
-    protected int findPreviousAllowedIndex(@IntRange(from = 0) int index) {
-        if (index >= getSize()) {
-            return getSize();
+    protected int findPreviousAllowedPosition(@IntRange(from = 0) int position) {
+        if (position >= getItemCount()) {
+            return getItemCount();
         }
 
-        while (index >= 0 && !isAllowedType(getItem(index))) {
-            index--;
+        while (position >= 0 && !isAllowedType(getItem(position))) {
+            position--;
         }
 
-        return index >= 0 ? index : getSize();
+        return position >= 0 ? position : getItemCount();
     }
 
     /**

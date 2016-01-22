@@ -1047,7 +1047,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 audioPlayer = null;
             }
 
-            getPlaylistManager().setCurrentIndex(Integer.MAX_VALUE);
+            getPlaylistManager().setCurrentPosition(Integer.MAX_VALUE);
         }
 
         updateWiFiLock(false);
