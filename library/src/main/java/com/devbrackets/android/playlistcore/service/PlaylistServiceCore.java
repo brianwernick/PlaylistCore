@@ -17,12 +17,10 @@
 package com.devbrackets.android.playlistcore.service;
 
 import android.Manifest;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -30,32 +28,28 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.FloatRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.devbrackets.android.playlistcore.R;
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod;
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
-import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
-import com.devbrackets.android.playlistcore.helper.NotificationHelper;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
-import com.devbrackets.android.playlistcore.manager.PlaylistManager;
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
 
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A base service for adding media playback support using the {@link PlaylistManager}.
+ * A base service for adding media playback support using the {@link BasePlaylistManager}.
  * <p>
  * <b>NOTE:</b> This service will request a wifi wakelock if the item
  * being played isn't downloaded (see {@link #isDownloaded(IPlaylistItem)}).
@@ -63,11 +57,11 @@ import java.util.List;
  * Additionally, the manifest permission &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
  * should be requested to avoid interrupted playback.
  *
- * TODO: auto-scale bitmaps for notifications
+ * TODO: finish documentation
  */
 @SuppressWarnings("unused")
-public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends PlaylistManager<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
-    private static final String TAG = "PlaylistServiceBase";
+public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
+    private static final String TAG = "PlaylistServiceCore";
 
     public enum PlaybackState {
         RETRIEVING,    // the MediaRetriever is retrieving music
@@ -87,9 +81,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
 
     protected MediaProgress currentMediaProgress;
 
-    protected NotificationHelper notificationHelper;
-    protected MediaControlsHelper mediaControlsHelper;
-
     protected boolean pausedForFocusLoss = false;
     protected PlaybackState currentState = PlaybackState.PREPARING;
 
@@ -98,16 +89,9 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
     protected boolean immediatelyPause = false;
 
     protected boolean pausedForSeek = false;
-    protected boolean foregroundSetup;
-    protected boolean notificationSetup;
 
     protected boolean onCreateCalled = false;
     protected Intent workaroundIntent = null;
-
-    @Nullable
-    protected String currentLargeNotificationUrl;
-    @Nullable
-    protected String currentLockScreenArtworkUrl;
 
     //TODO: these should probably be weak references (these are also in both the service and playlistmanager... should we simplify?)
     protected List<PlaylistListener> playlistListeners = new LinkedList<>();
@@ -123,14 +107,9 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
     @NonNull
     protected abstract AudioPlayerApi getNewAudioPlayer();
 
-    /**
-     * Retrieves the ID to use for the notification and registering this
-     * service as Foreground when media is playing. (Foreground is removed
-     * when paused)
-     *
-     * @return The ID to use for the notification
-     */
-    protected abstract int getNotificationId();
+    protected abstract void setupAsForeground();
+    protected abstract void setupForeground();
+    protected abstract void stopForeground();
 
     /**
      * Retrieves the volume level to use when audio focus has been temporarily
@@ -145,54 +124,17 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
     protected abstract float getAudioDuckVolume();
 
     /**
-     * Links the {@link PlaylistManager} that contains the information for playback
+     * Links the {@link BasePlaylistManager} that contains the information for playback
      * to this service.
      *
      * NOTE: this is only used for retrieving information, it isn't used to register notifications
      * for playlist changes, however as long as the change isn't breaking (e.g. cleared playlist)
      * then nothing additional needs to be performed.
      *
-     * @return The {@link PlaylistManager} containing the playback information
+     * @return The {@link BasePlaylistManager} containing the playback information
      */
     @NonNull
     protected abstract M getPlaylistManager();
-
-    /**
-     * Returns the PendingIntent to use when the playback notification is clicked.
-     * This is called when the playback is started initially to setup the notification
-     * and the service as Foreground.
-     *
-     * @return The PendingIntent to use when the notification is clicked
-     */
-    @NonNull
-    protected abstract PendingIntent getNotificationClickPendingIntent();
-
-    /**
-     * Retrieves the Image to use for the large notification (the double tall notification)
-     * when {@link #getLargeNotificationImage()} returns null.
-     *
-     * @return The image to use on the large notification when no other one is provided
-     */
-    @Nullable
-    protected abstract Bitmap getDefaultLargeNotificationImage();
-
-    /**
-     * Retrieves the Drawable resource that specifies the icon to place in the
-     * status bar for the media playback notification.
-     *
-     * @return The Drawable resource id
-     */
-    @DrawableRes
-    protected abstract int getNotificationIconRes();
-
-    /**
-     * Retrieves the Drawable resource that specifies the icon to place on the
-     * lock screen to indicate the app the owns the content being displayed.
-     *
-     * @return The Drawable resource id
-     */
-    @DrawableRes
-    protected abstract int getLockScreenIconRes();
 
     /**
      * Retrieves the continuity bits associated with the service.  These
@@ -283,68 +225,11 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         //Purposefully left blank
     }
 
-    /**
-     * Retrieves the image that will be displayed in the notification to represent
-     * the currently playing item.
-     *
-     * @return The image to display in the notification or null
-     */
-    @Nullable
-    protected Bitmap getLargeNotificationImage() {
-        return null;
-    }
-
-    /**
-     * Retrieves the image that will be displayed in the notification as a secondary
-     * image.  This can be used to specify playback type (e.g. Chromecast).
-     * <p>
-     * This will be called any time the notification is updated
-     *
-     * @return The image to display in the secondary position
-     */
-    @Nullable
-    protected Bitmap getLargeNotificationSecondaryImage() {
-        return null;
-    }
-
-    /**
-     * Retrieves the image that will be displayed in the notification as a secondary
-     * image if {@link #getLargeNotificationSecondaryImage()} returns null.
-     *
-     * @return The fallback image to display in the secondary position
-     */
-    @Nullable
-    protected Bitmap getDefaultLargeNotificationSecondaryImage() {
-        return null;
-    }
-
-    /**
-     * Called when the image in the notification needs to be updated.
-     *
-     * @param size The square size for the image to display
-     * @param playlistItem The media item to get the image for
-     */
-    protected void updateLargeNotificationImage(int size, I playlistItem) {
+    protected void updateNotification() {
         //Purposefully left blank
     }
 
-    /**
-     * Retrieves the image that will be displayed as the lock screen artwork
-     * for the currently playing item.
-     *
-     * @return The image to display on the lock screen
-     */
-    @Nullable
-    protected Bitmap getLockScreenArtwork() {
-        return null;
-    }
-
-    /**
-     * Called when the image for the Lock Screen needs to be updated.
-     *
-     * @param playlistItem The playlist item to get the lock screen image for
-     */
-    protected void updateLockScreenArtwork(I playlistItem) {
+    protected void updateRemoteViews() {
         //Purposefully left blank
     }
 
@@ -396,8 +281,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         audioFocusHelper.abandonFocus();
 
         audioFocusHelper = null;
-        notificationHelper = null;
-        mediaControlsHelper = null;
 
         onCreateCalled = false;
     }
@@ -562,6 +445,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         return new PlaylistItemChange<>(currentPlaylistItem, hasPrevious, hasNext);
     }
 
+
     /**
      * Used to perform the onCreate functionality when the service is actually created.  This
      * should be overridden instead of {@link #onCreate()} due to a bug in some Samsung devices
@@ -578,8 +462,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
             Log.w(TAG, "Unable to acquire WAKE_LOCK due to missing manifest permission");
         }
 
-        notificationHelper = new NotificationHelper(getApplicationContext());
-        mediaControlsHelper = new MediaControlsHelper(getApplicationContext(), getClass());
         getPlaylistManager().registerService(this);
 
         //Another part of the workaround for some Samsung devices
@@ -593,7 +475,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to pause and/or resume
      * the media playback.  This is called through an intent
      * with the {@link RemoteActions#ACTION_PLAY_PAUSE}, through
-     * {@link PlaylistManager#invokePausePlay()}
+     * {@link BasePlaylistManager#invokePausePlay()}
      */
     protected void performPlayPause() {
         if (isPlaying() || pausedForFocusLoss) {
@@ -603,7 +485,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
             performPlay();
         }
 
-        updateLockScreen();
+        updateRemoteViews();
         updateNotification();
     }
 
@@ -611,7 +493,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to seek to the previous media
      * item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_PREVIOUS}, through
-     * {@link PlaylistManager#invokePrevious()}
+     * {@link BasePlaylistManager#invokePrevious()}
      */
     protected void performPrevious() {
         seekToPosition = 0;
@@ -625,7 +507,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to seek to the next media
      * item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_NEXT}, through
-     * {@link PlaylistManager#invokeNext()}
+     * {@link BasePlaylistManager#invokeNext()}
      */
     protected void performNext() {
         seekToPosition = 0;
@@ -639,7 +521,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to repeat the current
      * media item in playback.  This is called through an
      * intent with the {@link RemoteActions#ACTION_REPEAT},
-     * through {@link PlaylistManager#invokeRepeat()}
+     * through {@link BasePlaylistManager#invokeRepeat()}
      */
     protected void performRepeat() {
         //Left for the extending class to implement
@@ -649,7 +531,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to repeat the current
      * media item in playback.  This is called through an
      * intent with the {@link RemoteActions#ACTION_SHUFFLE},
-     * through {@link PlaylistManager#invokeShuffle()}
+     * through {@link BasePlaylistManager#invokeShuffle()}
      */
     protected void performShuffle() {
         //Left for the extending class to implement
@@ -669,7 +551,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to start a seek for the current
      * media item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_SEEK_STARTED}, through
-     * {@link PlaylistManager#invokeSeekStarted()}
+     * {@link BasePlaylistManager#invokeSeekStarted()}
      */
     protected void performSeekStarted() {
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
@@ -685,7 +567,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * Performs the functionality to end a seek for the current
      * media item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_SEEK_ENDED}, through
-     * {@link PlaylistManager#invokeSeekEnded(int)}
+     * {@link BasePlaylistManager#invokeSeekEnded(int)}
      */
     protected void performSeekEnded(int newPosition) {
         performSeek(newPosition);
@@ -704,7 +586,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      *
      * @param newType The new allowed media type
      */
-    protected void updateAllowedMediaType(PlaylistManager.MediaType newType) {
+    protected void updateAllowedMediaType(BasePlaylistManager.MediaType newType) {
         //We seek through the items until an allowed one is reached, or none is reached and the service is stopped.
         if (newType != M.MediaType.AUDIO_AND_VIDEO && currentPlaylistItem != null && newType != currentPlaylistItem.getMediaType()) {
             performNext();
@@ -822,7 +704,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return True if the current media item is an Audio item
      */
     protected boolean currentItemIsAudio() {
-        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManager.MediaType.AUDIO;
+        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == BasePlaylistManager.MediaType.AUDIO;
     }
 
     /**
@@ -832,7 +714,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return True if the current media item is a video item
      */
     protected boolean currentItemIsVideo() {
-        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManager.MediaType.VIDEO;
+        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == BasePlaylistManager.MediaType.VIDEO;
     }
 
     /**
@@ -842,52 +724,16 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @return True if the current media item is of the OTHER type
      */
     protected boolean currentItemIsOther() {
-        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == PlaylistManager.MediaType.OTHER;
+        return currentPlaylistItem != null && currentPlaylistItem.getMediaType() == BasePlaylistManager.MediaType.OTHER;
     }
 
-    /**
-     * This should be called when the extending class has loaded an updated
-     * image for the Large Notification.
-     */
-    protected void onLargeNotificationImageUpdated() {
-        updateNotification();
-    }
-
-    /**
-     * This should be called when the extending class has loaded an updated
-     * image for the LockScreen Artwork.
-     */
-    protected void onLockScreenArtworkUpdated() {
-        updateLockScreen();
-    }
-
-    /**
-     * Sets up the service as a Foreground service only if we aren't already registered as such
-     */
-    protected void setupForeground() {
-        if (!foregroundSetup && notificationSetup) {
-            foregroundSetup = true;
-            startForeground(getNotificationId(), notificationHelper.getNotification(getNotificationClickPendingIntent()));
-        }
-    }
-
-    /**
-     * If the service is registered as a foreground service then it will be unregistered
-     * as such without removing the notification
-     */
-    protected void stopForeground() {
-        if (foregroundSetup) {
-            foregroundSetup = false;
-            stopForeground(false);
-        }
-    }
 
     /**
      * Starts the actual item playback, correctly determining if the
      * item is a video or an audio item.
      * <p>
      * <em><b>NOTE:</b></em> In order to play videos you will need to specify the
-     * VideoView with {@link PlaylistManager#setVideoPlayer(VideoPlayerApi)}
+     * VideoView with {@link BasePlaylistManager#setVideoPlayer(VideoPlayerApi)}
      */
     protected void startItemPlayback() {
         if (currentItemIsAudio()) {
@@ -1034,10 +880,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * @param releaseAudioPlayer True if the audioPlayer should be released
      */
     protected void relaxResources(boolean releaseAudioPlayer) {
-        stopForeground(true);
-        foregroundSetup = false;
-        notificationHelper.release();
-        mediaControlsHelper.release();
         mediaProgressPoll.release();
 
         if (releaseAudioPlayer) {
@@ -1091,85 +933,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
     }
 
     /**
-     * Requests the service be transferred to the foreground, initializing the
-     * LockScreen and Notification helpers for playback control.
-     */
-    protected void setupAsForeground() {
-        //Sets up the Lock Screen playback controls
-        mediaControlsHelper.setLockScreenEnabled(true);
-        mediaControlsHelper.setLockScreenBaseInformation(getLockScreenIconRes());
-
-        //Sets up the Notifications
-        notificationHelper.setNotificationsEnabled(true);
-        notificationHelper.setNotificationBaseInformation(getNotificationId(), getNotificationIconRes(), getClass());
-
-        //Starts the service as the foreground audio player
-        notificationSetup = true;
-        setupForeground();
-
-        updateLockScreen();
-        updateNotification();
-    }
-
-    /**
-     * Performs the process to update the playback controls and images in the notification
-     * associated with the current playlist item.
-     */
-    protected void updateNotification() {
-        if (currentPlaylistItem == null || !notificationSetup || notificationHelper == null) {
-            return;
-        }
-
-        //Generate the notification state
-        NotificationHelper.NotificationMediaState mediaState = new NotificationHelper.NotificationMediaState();
-        mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
-        mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
-        mediaState.setPlaying(isPlaying());
-
-
-        //Update the big notification images
-        Bitmap bitmap = getLargeNotificationImage();
-        if (bitmap == null) {
-            bitmap = getDefaultLargeNotificationImage();
-        }
-
-        Bitmap secondaryImage = getLargeNotificationSecondaryImage();
-        if (secondaryImage == null) {
-            secondaryImage = getDefaultLargeNotificationSecondaryImage();
-        }
-
-        //Finish up the update
-        String title = currentPlaylistItem.getTitle();
-        String album = currentPlaylistItem.getAlbum();
-        String artist = currentPlaylistItem.getArtist();
-        notificationHelper.setClickPendingIntent(getNotificationClickPendingIntent());
-        notificationHelper.updateNotificationInformation(title, album, artist, bitmap, secondaryImage, mediaState);
-    }
-
-    /**
-     * Performs the process to update the playback controls and the background
-     * (artwork) image displayed on the lock screen.
-     */
-    protected void updateLockScreen() {
-        if (currentPlaylistItem == null || !notificationSetup || mediaControlsHelper == null) {
-            return;
-        }
-
-        //Generate the notification state
-        NotificationHelper.NotificationMediaState mediaState = new NotificationHelper.NotificationMediaState();
-        mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
-        mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
-        mediaState.setPlaying(isPlaying());
-
-
-        //Finish up the update
-        String title = currentPlaylistItem.getTitle();
-        String album = currentPlaylistItem.getAlbum();
-        String artist = currentPlaylistItem.getArtist();
-        mediaControlsHelper.updateLockScreenInformation(title, album, artist, getLockScreenArtwork(), mediaState);
-    }
-
-    /**
      * Called when the current media item has changed, this will update the notification and
      * lock screen values.
      */
@@ -1178,19 +941,6 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
         if (!getPlaylistManager().isPlayingItem(currentPlaylistItem)) {
             Log.d(TAG, "forcing currentPlaylistItem update");
             currentPlaylistItem = getPlaylistManager().getCurrentItem();
-        }
-
-        //Starts the notification loading
-        if (currentPlaylistItem != null && (currentLargeNotificationUrl == null || !currentLargeNotificationUrl.equals(currentPlaylistItem.getThumbnailUrl()))) {
-            int size = getResources().getDimensionPixelSize(R.dimen.playlistcore_big_notification_height);
-            updateLargeNotificationImage(size, currentPlaylistItem);
-            currentLargeNotificationUrl = currentPlaylistItem.getThumbnailUrl();
-        }
-
-        //Starts the lock screen loading
-        if (currentPlaylistItem != null && (currentLockScreenArtworkUrl == null || !currentLockScreenArtworkUrl.equalsIgnoreCase(currentPlaylistItem.getArtworkUrl()))) {
-            updateLockScreenArtwork(currentPlaylistItem);
-            currentLockScreenArtworkUrl = currentPlaylistItem.getArtworkUrl();
         }
 
         postPlaylistItemChanged();
@@ -1242,7 +992,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 break;
 
             case RemoteActions.ACTION_ALLOWED_TYPE_CHANGED:
-                updateAllowedMediaType((PlaylistManager.MediaType) extras.getSerializable(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE));
+                updateAllowedMediaType((BasePlaylistManager.MediaType) extras.getSerializable(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE));
                 break;
 
             default:
@@ -1279,7 +1029,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
      * devices where playback will fail due to a race condition
      * in the {@link MediaPlayer}
      */
-    private class AudioListener implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
+    protected class AudioListener implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
         private static final int MAX_RETRY_COUNT = 1;
         private int retryCount = 0;
 
@@ -1339,7 +1089,7 @@ public abstract class PlaylistServiceBase<I extends IPlaylistItem, M extends Pla
                 seekToPosition = -1;
             }
 
-            updateLockScreen();
+            updateRemoteViews();
             updateNotification();
         }
 

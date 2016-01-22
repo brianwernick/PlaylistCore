@@ -19,10 +19,10 @@ package com.devbrackets.android.playlistcore.listener;
 import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
-import com.devbrackets.android.playlistcore.service.PlaylistServiceBase;
+import com.devbrackets.android.playlistcore.service.BasePlaylistService;
 
 /**
- * A simple callback interface for listening to {@link PlaylistServiceBase}
+ * A simple callback interface for listening to {@link BasePlaylistService}
  * changes.
  */
 public interface PlaylistListener {
@@ -39,5 +39,5 @@ public interface PlaylistListener {
      *
      * @return True if the event has been handled
      */
-    boolean onPlaybackStateChanged(@NonNull PlaylistServiceBase.PlaybackState playbackState);
+    boolean onPlaybackStateChanged(@NonNull BasePlaylistService.PlaybackState playbackState);
 }

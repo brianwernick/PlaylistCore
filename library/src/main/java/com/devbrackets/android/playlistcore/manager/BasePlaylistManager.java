@@ -30,7 +30,8 @@ import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.service.PlaylistServiceBase;
+import com.devbrackets.android.playlistcore.service.BasePlaylistService;
+import com.devbrackets.android.playlistcore.service.PlaylistServiceCore;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
 
 import java.lang.ref.WeakReference;
@@ -43,10 +44,10 @@ import java.util.List;
  * Additionally, this manager provides methods for interacting with the specified service
  * to simplify and standardize implementations in the service itself.  This manager can be
  * used as standalone with a custom service, or in conjunction with
- * {@link PlaylistServiceBase}
+ * {@link BasePlaylistService}
  */
 @SuppressWarnings("unused")
-public abstract class PlaylistManager<I extends IPlaylistItem> implements PlaylistListener, ProgressListener {
+public abstract class BasePlaylistManager<I extends IPlaylistItem> implements PlaylistListener, ProgressListener {
     private static final String TAG = "PlaylistManager";
 
     public static final int INVALID_ID = -1;
@@ -72,7 +73,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     protected WeakReference<VideoPlayerApi> videoPlayer = new WeakReference<>(null);
 
     @Nullable
-    protected PlaylistServiceBase<I, ?> service;
+    protected PlaylistServiceCore<I, ?> service;
 
     @NonNull
     protected List<WeakReference<PlaylistListener>> playlistListeners = new LinkedList<>();
@@ -97,7 +98,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      * Retrieves the class that represents the PlaylistService.  This is used when communicating
      * with the service to perform the playback controls.
      *
-     * @return The class for the Service to control.  This should extend {@link PlaylistServiceBase}
+     * @return The class for the Service to control.  This should extend {@link BasePlaylistService}
      */
     @NonNull
     protected abstract Class<? extends Service> getMediaServiceClass();
@@ -106,7 +107,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      * A basic constructor that will retrieve the application
      * via {@link #getApplication()}.
      */
-    public PlaylistManager() {
+    public BasePlaylistManager() {
         constructControlIntents(getMediaServiceClass(), getApplication());
     }
 
@@ -118,7 +119,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      *
      * @param application The application to use to initialize the PlaylistManager
      */
-    public PlaylistManager(@NonNull Application application) {
+    public BasePlaylistManager(@NonNull Application application) {
         constructControlIntents(getMediaServiceClass(), application);
     }
 
@@ -128,7 +129,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     /**
-     * This is a pass through method that is called from the {@link PlaylistServiceBase} to inform
+     * This is a pass through method that is called from the {@link BasePlaylistService} to inform
      * any listeners that are registered through {@link #registerPlaylistListener(PlaylistListener)}
      *
      * @param currentItem The new playback item todo: is this nullable?
@@ -156,14 +157,14 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     /**
-     * This is a pass through method that is called from the {@link PlaylistServiceBase} to inform
+     * This is a pass through method that is called from the {@link BasePlaylistService} to inform
      * any listeners that are registered through {@link #registerPlaylistListener(PlaylistListener)}
      *
      * @param playbackState The new media playback state
      * @return True if the event should be consumed
      */
     @Override
-    public boolean onPlaybackStateChanged(@NonNull PlaylistServiceBase.PlaybackState playbackState) {
+    public boolean onPlaybackStateChanged(@NonNull BasePlaylistService.PlaybackState playbackState) {
         Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
@@ -182,7 +183,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     /**
-     * This is a pass through method that is called from the {@link PlaylistServiceBase} to inform
+     * This is a pass through method that is called from the {@link BasePlaylistService} to inform
      * any listeners that are registered through {@link #registerPlaylistListener(PlaylistListener)}
      *
      * @param event The current media progress event
@@ -213,12 +214,12 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
      * @return The most recent PlaybackState
      */
     @NonNull
-    public PlaylistServiceBase.PlaybackState getCurrentMediaState() {
+    public BasePlaylistService.PlaybackState getCurrentMediaState() {
         if (service != null) {
             return service.getCurrentPlaybackState();
         }
 
-        return PlaylistServiceBase.PlaybackState.STOPPED;
+        return BasePlaylistService.PlaybackState.STOPPED;
     }
 
     /**
@@ -242,18 +243,18 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
     }
 
     /**
-     * Links the {@link PlaylistServiceBase} so that we can correctly manage the
+     * Links the {@link BasePlaylistService} so that we can correctly manage the
      * {@link PlaylistListener}
      *
      * @param service The AudioService to link to this manager
      */
-    public void registerService(@NonNull PlaylistServiceBase<I, ?> service) {
+    public void registerService(@NonNull PlaylistServiceCore<I, ?> service) {
         this.service = service;
         service.registerPlaylistListener(this);
     }
 
     /**
-     * UnLinks the {@link PlaylistServiceBase} from this manager. (see {@link #registerService(PlaylistServiceBase)}
+     * UnLinks the {@link BasePlaylistService} from this manager. (see {@link #registerService(PlaylistServiceCore)}
      */
     public void unRegisterService() {
         if (service != null) {
@@ -264,7 +265,7 @@ public abstract class PlaylistManager<I extends IPlaylistItem> implements Playli
 
     /**
      * Registers the listener to this service.  These callbacks will only be
-     * called if {@link #registerService(PlaylistServiceBase)} has been called.
+     * called if {@link #registerService(PlaylistServiceCore)} has been called.
      *
      * @param listener The listener to register
      */
