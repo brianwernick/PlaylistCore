@@ -16,7 +16,7 @@
 
 package com.devbrackets.android.playlistcore.manager;
 
-import com.devbrackets.android.playlistcore.annotation.SupportedPlaybackType;
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 
 public interface IPlaylistItem {
     long getId();
@@ -24,7 +24,7 @@ public interface IPlaylistItem {
     //TODO: is this still needed?
     long getPlaylistId();
 
-    @SupportedPlaybackType //TODO: should I have this, or just leave it to documentation?
+    @SupportedMediaType
     int getMediaType();
 
     String getMediaUrl();

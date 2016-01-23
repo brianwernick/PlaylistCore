@@ -34,7 +34,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod;
-import com.devbrackets.android.playlistcore.annotation.SupportedPlaybackType;
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
@@ -241,9 +241,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @return True if media is currently playing
      */
     protected boolean isPlaying() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             return audioPlayer != null && audioPlayer.isPlaying();
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG)) {
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             return getPlaylistManager().getVideoPlayer() != null && getPlaylistManager().getVideoPlayer().isPlaying();
         }
 
@@ -323,7 +323,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     @Override
     public boolean onAudioFocusGained() {
-        if (!currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
             return false;
         }
 
@@ -342,7 +342,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     @Override
     public boolean onAudioFocusLost(boolean canDuckAudio) {
-        if (!currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
             return false;
         }
 
@@ -556,8 +556,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     protected void performSeekStarted() {
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
-        boolean isPlaying = (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG) && audioPlayer.isPlaying()) ||
-                (currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG) && videoPlayer != null && videoPlayer.isPlaying());
+        boolean isPlaying = (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer.isPlaying()) ||
+                (currentItemIsType(BasePlaylistManager.VIDEO) && videoPlayer != null && videoPlayer.isPlaying());
 
         if (isPlaying) {
             pausedForSeek = true;
@@ -588,7 +588,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      *
      * @param newType The new allowed media type
      */
-    protected void updateAllowedMediaType(@SupportedPlaybackType int newType) {
+    protected void updateAllowedMediaType(@SupportedMediaType int newType) {
         //We seek through the items until an allowed one is reached, or none is reached and the service is stopped.
         if (currentPlaylistItem != null && (newType & currentPlaylistItem.getMediaType()) == 0) {
             performNext();
@@ -647,11 +647,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @param position The position to seek to in milliseconds
      */
     protected void performSeek(int position) {
-        if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             if (audioPlayer != null) {
                 audioPlayer.seekTo(position);
             }
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG)) {
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
                 videoPlayer.seekTo(position);
@@ -666,11 +666,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * playback.
      */
     protected void performPause() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             if (audioPlayer != null) {
                 audioPlayer.pause();
             }
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG)) {
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
                 videoPlayer.pause();
@@ -686,11 +686,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * item.
      */
     protected void performPlay() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             if (audioPlayer != null) {
                 audioPlayer.play();
             }
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG)) {
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
                 videoPlayer.play();
@@ -707,7 +707,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      *
      * @return True if the current media item is of the same passed type
      */
-    protected boolean currentItemIsType(@SupportedPlaybackType int type) {
+    protected boolean currentItemIsType(@SupportedMediaType int type) {
         return currentPlaylistItem != null && (currentPlaylistItem.getMediaType() & type) != 0;
     }
 
@@ -719,7 +719,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * VideoView with {@link BasePlaylistManager#setVideoPlayer(VideoPlayerApi)}
      */
     protected void startItemPlayback() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             onAudioPlaybackEnded();
         }
 
@@ -727,10 +727,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         mediaItemChanged();
 
         //TODO: is there a different way we can provide injecting other formats (e.g. images?)
-        if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             audioListener.resetRetryCount();
             playAudioItem();
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG)) {
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             playVideoItem();
         } else if (currentPlaylistItem != null && currentPlaylistItem.getMediaType() != 0) {
             playOtherItem();
@@ -1023,7 +1023,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         @Override
         public void onCompletion(MediaPlayer mp) {
             //Make sure to only perform this functionality when playing audio
-            if (currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+            if (currentItemIsType(BasePlaylistManager.AUDIO)) {
                 performMediaCompletion();
             }
         }
@@ -1031,7 +1031,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
             //Make sure to only perform this functionality when playing audio
-            if (!currentItemIsType(BasePlaylistManager.VIDEO_SUPPORT_FLAG)) {
+            if (!currentItemIsType(BasePlaylistManager.VIDEO)) {
                 return false;
             }
 
@@ -1054,7 +1054,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         @Override
         public void onPrepared(MediaPlayer mp) {
             //Make sure to only perform this functionality when playing audio
-            if (!currentItemIsType(BasePlaylistManager.AUDIO_SUPPORT_FLAG)) {
+            if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
                 return;
             }
 

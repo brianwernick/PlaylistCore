@@ -24,10 +24,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @IntDef(flag = true, value = {
-        BasePlaylistManager.AUDIO_SUPPORT_FLAG,
-        BasePlaylistManager.VIDEO_SUPPORT_FLAG
+        BasePlaylistManager.AUDIO,
+        BasePlaylistManager.VIDEO
 })
 @Retention(RetentionPolicy.SOURCE)
-public @interface SupportedPlaybackType {
+public @interface SupportedMediaType {
     //Purposefully left blank
 }

@@ -25,7 +25,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.devbrackets.android.playlistcore.annotation.SupportedPlaybackType;
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
@@ -54,16 +54,29 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     public static final int INVALID_ID = -1;
     public static final int INVALID_POSITION = -1;
 
-    public static final int AUDIO_SUPPORT_FLAG = 1;
-    public static final int VIDEO_SUPPORT_FLAG = 1 << 1;
+    /**
+     * A flag used to represent either an Audio item or
+     * support for Audio items.  This is a flag that is
+     * referenced by {@link #allowedTypeFlag} and
+     * {@link IPlaylistItem#getMediaType()}
+     */
+    public static final int AUDIO = 1;
+
+    /**
+     * A flag used to represent either a Video item or
+     * support for Video items.  This is a flag that is
+     * referenced by {@link #allowedTypeFlag} and
+     * {@link IPlaylistItem#getMediaType()}
+     */
+    public static final int VIDEO = 1 << 1;
 
     @IntRange(from = INVALID_POSITION)
     protected int currentPosition = INVALID_POSITION;
     @IntRange(from = INVALID_ID)
     protected long playlistId = INVALID_ID;
 
-    @SupportedPlaybackType
-    protected int allowedTypeFlag = AUDIO_SUPPORT_FLAG;
+    @SupportedMediaType
+    protected int allowedTypeFlag = AUDIO;
     @NonNull
     protected WeakReference<VideoPlayerApi> videoPlayer = new WeakReference<>(null);
 
@@ -328,7 +341,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      *
      * @param flags
      */
-    public void setAllowedMediaType(@SupportedPlaybackType int flags) {
+    public void setAllowedMediaType(@SupportedMediaType int flags) {
         this.allowedTypeFlag = flags;
 
         //Tries to start the intent
@@ -438,7 +451,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      *
      * @return
      */
-    @SupportedPlaybackType
+    @SupportedMediaType
     public int getCurrentItemType() {
         I item = getCurrentItem();
         return item != null ? item.getMediaType() : 0;
