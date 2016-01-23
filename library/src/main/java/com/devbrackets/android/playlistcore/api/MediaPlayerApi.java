@@ -66,8 +66,6 @@ public interface MediaPlayerApi {
 
     void setOnSeekCompleteListener(MediaPlayer.OnSeekCompleteListener listener);
 
-    void setOnInfoListener(MediaPlayer.OnInfoListener listener);
-
     void setOnCompletionListener(MediaPlayer.OnCompletionListener listener);
 
     void setOnErrorListener(MediaPlayer.OnErrorListener listener);

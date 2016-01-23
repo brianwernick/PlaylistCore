@@ -132,8 +132,8 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     }
 
     public void reset() {
-        setCurrentPosition(INVALID_POSITION);
         setId(INVALID_ID);
+        setCurrentPosition(0);
     }
 
     /**
@@ -358,7 +358,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      *
      * @param position The position to become the current playback position.
      */
-    public void setCurrentPosition(@IntRange(from = INVALID_POSITION) int position) {
+    public void setCurrentPosition(@IntRange(from = 0) int position) {
         if (position >= getItemCount()) {
             position = getItemCount() - 1;
         }
@@ -484,7 +484,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     @Nullable
     public I getCurrentItem() {
-        if (currentPosition < getItemCount()) {
+        if (currentPosition != INVALID_POSITION && currentPosition < getItemCount()) {
             return getItem(currentPosition);
         }
 
