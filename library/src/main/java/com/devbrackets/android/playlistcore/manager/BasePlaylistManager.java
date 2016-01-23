@@ -25,6 +25,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.devbrackets.android.playlistcore.annotation.SupportedPlaybackType;
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
@@ -53,22 +54,16 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     public static final int INVALID_ID = -1;
     public static final int INVALID_POSITION = -1;
 
-    //TODO: rename? (ExoMedia also has a MediaType enum) (MediaFormat?) (SupportedFormats) (Ints as flags?)
-    public enum MediaType {
-        AUDIO,
-        VIDEO,
-        AUDIO_AND_VIDEO,
-        OTHER,
-        NONE
-    }
+    public static final int AUDIO_SUPPORT_FLAG = 1;
+    public static final int VIDEO_SUPPORT_FLAG = 1 << 1;
 
     @IntRange(from = INVALID_POSITION)
     protected int currentPosition = INVALID_POSITION;
     @IntRange(from = INVALID_ID)
     protected long playlistId = INVALID_ID;
 
-    @NonNull
-    protected MediaType allowedType = MediaType.AUDIO;
+    @SupportedPlaybackType
+    protected int allowedTypeFlag = AUDIO_SUPPORT_FLAG;
     @NonNull
     protected WeakReference<VideoPlayerApi> videoPlayer = new WeakReference<>(null);
 
@@ -331,14 +326,14 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * the {@link #next()} and {@link #previous()} will skip any items
      * that do not match the allowed type.
      *
-     * @param allowedType The media types to allow playback with [default: {@link MediaType#AUDIO_AND_VIDEO}]
+     * @param flags
      */
-    public void setAllowedMediaType(@NonNull MediaType allowedType) {
-        this.allowedType = allowedType;
+    public void setAllowedMediaType(@SupportedPlaybackType int flags) {
+        this.allowedTypeFlag = flags;
 
         //Tries to start the intent
         if (allowedTypeChangedIntent != null) {
-            allowedTypeChangedIntent.putExtra(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE, allowedType);
+            allowedTypeChangedIntent.putExtra(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE, flags);
             getApplication().startService(allowedTypeChangedIntent);
         }
     }
@@ -439,14 +434,14 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
 
     /**
      * Determines the current items type.  If the item doesn't exist or
-     * isn't and audio or video item then {@link MediaType#NONE} will be returned.
+     * isn't and audio or video item then
      *
-     * @return A {@link MediaType} representing the current items type
+     * @return
      */
-    @NonNull
-    public MediaType getCurrentItemType() {
+    @SupportedPlaybackType
+    public int getCurrentItemType() {
         I item = getCurrentItem();
-        return item != null ? item.getMediaType() : MediaType.NONE;
+        return item != null ? item.getMediaType() : 0;
     }
 
     /**
@@ -676,15 +671,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @return True if the item is null or is allowed
      */
     protected boolean isAllowedType(@Nullable I item) {
-        if (item == null || item.getMediaType() == MediaType.NONE) {
+        //noinspection SimplifiableIfStatement
+        if (item == null || item.getMediaType() == 0) {
             return false;
         }
 
-        if (allowedType == MediaType.AUDIO_AND_VIDEO) {
-            return item.getMediaType() == MediaType.AUDIO || item.getMediaType() == MediaType.VIDEO;
-        }
-
-        return allowedType == item.getMediaType();
+        return (allowedTypeFlag & item.getMediaType()) != 0;
     }
 
     /**

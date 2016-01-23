@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.manager;
+package com.devbrackets.android.playlistcore.annotation;
 
-import com.devbrackets.android.playlistcore.annotation.SupportedPlaybackType;
+import android.support.annotation.IntDef;
 
-public interface IPlaylistItem {
-    long getId();
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 
-    //TODO: is this still needed?
-    long getPlaylistId();
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-    @SupportedPlaybackType //TODO: should I have this, or just leave it to documentation?
-    int getMediaType();
-
-    String getMediaUrl();
-
-    String getDownloadedMediaUri();
-
-    String getThumbnailUrl();
-
-    String getArtworkUrl();
-
-    String getTitle();
-
-    String getAlbum();
-
-    String getArtist();
+@IntDef(flag = true, value = {
+        BasePlaylistManager.AUDIO_SUPPORT_FLAG,
+        BasePlaylistManager.VIDEO_SUPPORT_FLAG
+})
+@Retention(RetentionPolicy.SOURCE)
+public @interface SupportedPlaybackType {
+    //Purposefully left blank
 }
