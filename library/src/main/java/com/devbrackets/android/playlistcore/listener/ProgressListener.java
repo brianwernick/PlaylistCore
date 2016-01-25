@@ -27,5 +27,5 @@ public interface ProgressListener {
      *
      * @return True if the progress update has been handled
      */
-    boolean onProgressUpdated(@NonNull MediaProgress progressEvent);
+    boolean onProgressUpdated(@NonNull MediaProgress mediaProgress);
 }

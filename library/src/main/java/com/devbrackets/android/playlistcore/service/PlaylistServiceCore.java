@@ -363,11 +363,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Called when the media progress has been updated
      */
     @Override
-    public boolean onProgressUpdated(@NonNull MediaProgress progressEvent) {
-        currentMediaProgress = progressEvent;
+    public boolean onProgressUpdated(@NonNull MediaProgress mediaProgress) {
+        currentMediaProgress = mediaProgress;
 
         for (ProgressListener listener : progressListeners) {
-            if (listener.onProgressUpdated(progressEvent)) {
+            if (listener.onProgressUpdated(mediaProgress)) {
                 return true;
             }
         }
@@ -439,7 +439,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      *
      * @return The current PlaylistItem Changed event
      */
-    public PlaylistItemChange<I> getCurrentItemChangedEvent() {
+    public PlaylistItemChange<I> getCurrentItemChange() {
         boolean hasNext = getPlaylistManager().isNextAvailable();
         boolean hasPrevious = getPlaylistManager().isPreviousAvailable();
 

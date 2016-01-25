@@ -194,11 +194,11 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * This is a pass through method that is called from the {@link BasePlaylistService} to inform
      * any listeners that are registered through {@link #registerPlaylistListener(PlaylistListener)}
      *
-     * @param event The current media progress event
-     * @return True if the event should be consumed
+     * @param mediaProgress The current media progress
+     * @return True if the mediaProgress should be consumed
      */
     @Override
-    public boolean onProgressUpdated(@NonNull MediaProgress event) {
+    public boolean onProgressUpdated(@NonNull MediaProgress mediaProgress) {
         Iterator<WeakReference<ProgressListener>> iterator = progressListeners.iterator();
 
         while (iterator.hasNext()) {
@@ -208,7 +208,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
                 continue;
             }
 
-            if (listener.onProgressUpdated(event)) {
+            if (listener.onProgressUpdated(mediaProgress)) {
                 return true;
             }
         }
@@ -222,7 +222,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @return The most recent PlaybackState
      */
     @NonNull
-    public BasePlaylistService.PlaybackState getCurrentMediaState() {
+    public BasePlaylistService.PlaybackState getCurrentPlaybackState() {
         if (service != null) {
             return service.getCurrentPlaybackState();
         }
@@ -246,8 +246,8 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @return The most recent Item Changed information
      */
     @Nullable
-    public PlaylistItemChange getCurrentItemChangedEvent() {
-        return service != null ? service.getCurrentItemChangedEvent() : null;
+    public PlaylistItemChange<I> getCurrentItemChange() {
+        return service != null ? service.getCurrentItemChange() : null;
     }
 
     /**

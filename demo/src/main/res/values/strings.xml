@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">PlaylistCore Demo</string>
+
+    <string name="title_activity_video_player">Video Player</string>
+    <string name="title_activity_audio_player">Audio Player</string>
+
+    <string name="title_audio_selection_activity">Audio Selection</string>
+    <string name="title_video_selection_activity">Video Selection</string>
 </resources>
