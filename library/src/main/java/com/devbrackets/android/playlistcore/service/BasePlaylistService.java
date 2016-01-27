@@ -227,6 +227,8 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         foregroundSetup = false;
         notificationHelper.release();
         mediaControlsHelper.release();
+
+        notificationSetup = false;
     }
 
     /**

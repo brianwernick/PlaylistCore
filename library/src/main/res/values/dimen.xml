@@ -13,5 +13,6 @@
     <!-- NOTE: the big notification is limited to 256dp in height, we use 128dp -->
     <dimen name="playlistcore_big_notification_image_margin">0dp</dimen>
     <dimen name="playlistcore_big_notification_image_size">@dimen/playlistcore_big_notification_height</dimen>
+    <dimen name="playlistcore_big_notification_button_spacing">8dp</dimen>
     <dimen name="playlistcore_big_notification_secondary_image_size">42dp</dimen> <!-- fill a ninth of the image -->
 </resources>
