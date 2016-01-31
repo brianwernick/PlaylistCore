@@ -54,8 +54,6 @@ import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
  * <p>
  * Additionally, the manifest permission &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
  * should be requested to avoid interrupted playback.
- *
- * TODO: finish documentation
  */
 @SuppressWarnings("unused")
 public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
@@ -66,6 +64,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         PREPARING,     // Preparing / Buffering
         PLAYING,       // Active but could be paused due to loss of audio focus Needed for returning after we regain focus
         PAUSED,        // Paused but player ready
+        SEEKING,       // performSeek was called, awaiting seek completion callback todo use
         STOPPED,       // Stopped not preparing media
         ERROR          // An error occurred, we are stopped
     }
@@ -227,22 +226,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         //Purposefully left blank
     }
 
-    /**
-     * A generic method to determine if media is currently playing.  This is
-     * used to determine the playback state for the notification.
-     *
-     * @return True if media is currently playing
-     */
-    protected boolean isPlaying() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            return audioPlayer != null && audioPlayer.isPlaying();
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            return getPlaylistManager().getVideoPlayer() != null && getPlaylistManager().getVideoPlayer().isPlaying();
-        }
-
-        return false;
-    }
-
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -397,7 +380,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         return new PlaylistItemChange<>(currentPlaylistItem, hasPrevious, hasNext);
     }
 
-
     /**
      * Used to perform the onCreate functionality when the service is actually created.  This
      * should be overridden instead of {@link #onCreate()} due to a bug in some Samsung devices
@@ -410,6 +392,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         if (getPackageManager().checkPermission(Manifest.permission.WAKE_LOCK, getPackageName()) == PackageManager.PERMISSION_GRANTED) {
             wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE)).createWifiLock(WifiManager.WIFI_MODE_FULL, "mcLock");
+            wifiLock.setReferenceCounted(false);
         } else {
             Log.w(TAG, "Unable to acquire WAKE_LOCK due to missing manifest permission");
         }
@@ -421,6 +404,22 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             startService(workaroundIntent);
             workaroundIntent = null;
         }
+    }
+
+    /**
+     * A generic method to determine if media is currently playing.  This is
+     * used to determine the playback state for the notification.
+     *
+     * @return True if media is currently playing
+     */
+    protected boolean isPlaying() {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
+            return audioPlayer != null && audioPlayer.isPlaying();
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
+            return getPlaylistManager().getVideoPlayer() != null && getPlaylistManager().getVideoPlayer().isPlaying();
+        }
+
+        return false;
     }
 
     /**
@@ -600,7 +599,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         }
 
-        //TODO: seeking state?
+        setPlaybackState(PlaybackState.SEEKING);
     }
 
     /**
@@ -668,27 +667,35 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         seekToNextPlayableItem();
         mediaItemChanged();
 
-        //TODO: is there a different way we can provide injecting other formats (e.g. images?)
+        //Performs the playback for the correct media type
+        boolean playbackHandled = false;
         if (currentItemIsType(BasePlaylistManager.AUDIO)) {
             audioListener.resetRetryCount();
-            playAudioItem();
+            playbackHandled = playAudioItem();
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            playVideoItem();
+            playbackHandled = playVideoItem();
         } else if (currentPlaylistItem != null && currentPlaylistItem.getMediaType() != 0) {
-            playOtherItem();
-        } else if (getPlaylistManager().isNextAvailable()) {
-            //We get here if there was an error retrieving the currentPlaylistItem
+            playbackHandled = playOtherItem();
+        }
+
+        if (playbackHandled) {
+            return;
+        }
+
+        //If the playback wasn't handled, attempt to seek to the next playable item, otherwise stop the service
+        if (getPlaylistManager().isNextAvailable()) {
             performNext();
         } else {
-            //At this point there is nothing for us to play, so we stop the service
             performStop();
         }
     }
 
     /**
-     * Starts the actual playback of the specified audio item
+     * Starts the actual playback of the specified audio item.
+     *
+     * @return True if the item playback was correctly handled
      */
-    protected void playAudioItem() {
+    protected boolean playAudioItem() {
         stopVideoPlayback();
         initializeAudioPlayer();
         audioFocusHelper.requestFocus();
@@ -706,40 +713,42 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
         // we are NOT streaming, we want to release the lock.
         updateWiFiLock(!isItemDownloaded);
-    }
-
-    protected void updateWiFiLock(boolean acquire) {
-        if (wifiLock == null) {
-            return;
-        }
-
-        if (acquire && !wifiLock.isHeld()) {
-            wifiLock.acquire();
-        } else if (!acquire && wifiLock.isHeld()) {
-            wifiLock.release();
-        }
+        return true;
     }
 
     /**
      * Starts the actual playback of the specified video item.
+     *
+     * @return True if the item playback was correctly handled
+     * TODO: we should be treating Video playback with the same level of control as audio (playback states, foreground, etc.)
      */
-    protected void playVideoItem() {
+    protected boolean playVideoItem() {
         stopAudioPlayback();
         setupAsForeground();
 
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
-        if (videoPlayer != null) {
-            videoPlayer.stop();
-            boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
-            videoPlayer.setDataSource(Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
+        if (videoPlayer == null) {
+            return false;
         }
+
+        videoPlayer.stop();
+        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
+        videoPlayer.setDataSource(Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
+
+        // If we are streaming from the internet, we want to hold a Wifi lock, which prevents
+        // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
+        // we are NOT streaming, we want to release the lock.
+        updateWiFiLock(!isItemDownloaded);
+        return true;
     }
 
     /**
      * Starts the playback of the specified other item type.
+     *
+     * @return True if the item playback was correctly handled
      */
-    protected void playOtherItem() {
-        //Purposefully left blank
+    protected boolean playOtherItem() {
+        return false;
     }
 
     /**
@@ -819,6 +828,23 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         updateWiFiLock(false);
+    }
+
+    /**
+     * Acquires or releases the WiFi lock
+     *
+     * @param acquire True if the WiFi lock should be acquired, false to release
+     */
+    protected void updateWiFiLock(boolean acquire) {
+        if (wifiLock == null) {
+            return;
+        }
+
+        if (acquire && !wifiLock.isHeld()) {
+            wifiLock.acquire();
+        } else if (!acquire && wifiLock.isHeld()) {
+            wifiLock.release();
+        }
     }
 
     /**
