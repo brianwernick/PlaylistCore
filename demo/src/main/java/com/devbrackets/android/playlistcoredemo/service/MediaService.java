@@ -38,7 +38,7 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     private LockScreenTarget lockScreenImageTarget = new LockScreenTarget();
 
     //Picasso is an image loading library (NOTE: google now recommends using glide for image loading)
-    private Picasso picasso; //TODO: replace with Glide
+    private Picasso picasso;
 
     @Override
     public void onCreate() {

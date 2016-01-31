@@ -21,7 +21,6 @@ import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 public interface IPlaylistItem {
     long getId();
 
-    //TODO: is this still needed?
     long getPlaylistId();
 
     @SupportedMediaType

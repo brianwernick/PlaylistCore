@@ -36,8 +36,6 @@ import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
  * <p>
  * Additionally, the manifest permission &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
  * should be requested to avoid interrupted playback.
- *
- * TODO: auto-scale bitmaps for notifications, update documentation
  */
 @SuppressWarnings("unused")
 public abstract class BasePlaylistService<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends PlaylistServiceCore<I, M> {
@@ -238,8 +236,8 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     @Override
     protected void setupAsForeground() {
         //Sets up the Lock Screen playback controls
-        mediaControlsHelper.setLockScreenEnabled(true);
-        mediaControlsHelper.setLockScreenBaseInformation(getRemoteViewIconRes());
+        mediaControlsHelper.setMediaControlsEnabled(true);
+        mediaControlsHelper.setBaseInformation(getRemoteViewIconRes());
 
         //Sets up the Notifications
         notificationHelper.setNotificationsEnabled(true);
@@ -310,7 +308,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         String title = currentPlaylistItem.getTitle();
         String album = currentPlaylistItem.getAlbum();
         String artist = currentPlaylistItem.getArtist();
-        mediaControlsHelper.updateLockScreenInformation(title, album, artist, getRemoteViewArtwork(), mediaState);
+        mediaControlsHelper.update(title, album, artist, getRemoteViewArtwork(), mediaState);
     }
 
     @Override

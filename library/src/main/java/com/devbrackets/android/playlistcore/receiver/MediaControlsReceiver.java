@@ -28,8 +28,8 @@ import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
 
 /**
- * A Receiver to handle lock screen and other remote controls
- * such as Bluetooth devices
+ * A Receiver to handle remote controls
+ * such as Bluetooth and Android Wear devices
  */
 public class MediaControlsReceiver extends BroadcastReceiver {
     private static final String TAG = "MediaControlsReceiver";

@@ -641,7 +641,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
 
     /**
      * Finds the next item position that has an allowed type
-     * TODO: should this and *previous* return INVALID_POSITION when none is possible?
+     *
      * @param position The position to start with
      * @return The new position, or the list size if none exist
      */

@@ -33,10 +33,9 @@ import com.devbrackets.android.playlistcore.service.RemoteActions;
 import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver;
 
 /**
- * A class to help simplify lock screen artwork and playback
- * controls similar to how the {@link NotificationHelper} simplifies notifications
- *
- * TODO: update docs since this handles all remote views (lock screen, bluetooth, wear, etc.)
+ * A class to help simplify playback control and artwork display for
+ * remote views such as Android Wear, Bluetooth devices, Lock Screens, etc.
+ * similar to how the {@link NotificationHelper} simplifies notifications
  */
 public class MediaControlsHelper {
     private static final String TAG = "MediaControlsHelper";
@@ -46,7 +45,7 @@ public class MediaControlsHelper {
     private Context context;
     private Class<? extends Service> mediaServiceClass;
 
-    private boolean showLockScreen = true;
+    private boolean enabled = true;
 
     private Bitmap appIconBitmap;
     private MediaSessionCompat mediaSession;
@@ -80,28 +79,28 @@ public class MediaControlsHelper {
     }
 
     /**
-     * Sets weather the lock screen is shown when audio is playing or
+     * Sets weather the RemoteViews and controls are shown when media is playing or
      * ready for playback (e.g. paused).  The information
-     * will need to be updated by calling {@link #setLockScreenBaseInformation(int)}
-     * and {@link #updateLockScreenInformation(String, String, String, Bitmap, NotificationHelper.NotificationMediaState)}
+     * will need to be updated by calling {@link #setBaseInformation(int)}
+     * and {@link #update(String, String, String, Bitmap, NotificationHelper.NotificationMediaState)}
      *
-     * @param enabled True if the lock screen should be shown
+     * @param enabled True if the RemoteViews and controls should be shown
      */
-    public void setLockScreenEnabled(boolean enabled) {
-        if (showLockScreen == enabled) {
+    public void setMediaControlsEnabled(boolean enabled) {
+        if (this.enabled == enabled) {
             return;
         }
 
-        showLockScreen = enabled;
+        this.enabled = enabled;
 
-        //Remove the lock screen when disabling
+        //Remove the remote views and controls when disabling
         if (!enabled) {
             mediaSession.setActive(false);
         }
     }
 
     /**
-     * Sets the basic information for the lock screen that doesn't need to be updated.  Additionally, when
+     * Sets the basic information for the remote views and controls that don't need to be updated.  Additionally, when
      * the mediaServiceClass is set the big notification will send intents to that service to notify of
      * button clicks.  These intents will have an action from
      * <ul>
@@ -112,12 +111,12 @@ public class MediaControlsHelper {
      *
      * @param appIcon The applications icon resource
      */
-    public void setLockScreenBaseInformation(@DrawableRes int appIcon) {
+    public void setBaseInformation(@DrawableRes int appIcon) {
         appIconBitmap = BitmapFactory.decodeResource(context.getResources(), appIcon);
     }
 
     /**
-     * Sets the volatile information for the lock screen controls.  This information is expected to
+     * Sets the volatile information for the remote views and controls.  This information is expected to
      * change frequently.
      *
      * @param title The title to display for the notification (e.g. A song name)
@@ -126,7 +125,7 @@ public class MediaControlsHelper {
      * @param notificationMediaState The current media state for the expanded (big) notification
      */
     @SuppressWarnings("ResourceType") //getPlaybackOptions() and getPlaybackState() return the correctly annotated items
-    public void updateLockScreenInformation(String title, String album, String artist, Bitmap mediaArtwork, NotificationHelper.NotificationMediaState notificationMediaState) {
+    public void update(String title, String album, String artist, Bitmap mediaArtwork, NotificationHelper.NotificationMediaState notificationMediaState) {
         //Updates the current media MetaData
         MediaMetadataCompat.Builder metaDataBuilder = new MediaMetadataCompat.Builder();
         metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, appIconBitmap);
@@ -149,12 +148,12 @@ public class MediaControlsHelper {
         mediaSession.setPlaybackState(playbackStateBuilder.build());
         Log.d(TAG, "update, controller is null ? " + (mediaSession.getController() == null ? "true" : "false"));
 
-        if (showLockScreen && !mediaSession.isActive()) {
+        if (enabled && !mediaSession.isActive()) {
             mediaSession.setActive(true);
         }
     }
 
-    private PendingIntent getMediaButtonReceiverPendingIntent(ComponentName componentName) {
+    protected PendingIntent getMediaButtonReceiverPendingIntent(ComponentName componentName) {
         Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
         mediaButtonIntent.setComponent(componentName);
 
@@ -163,7 +162,7 @@ public class MediaControlsHelper {
     }
 
     @PlaybackStateCompat.State
-    private int getPlaybackState(boolean isPlaying) {
+    protected int getPlaybackState(boolean isPlaying) {
         return isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
     }
 
@@ -174,7 +173,7 @@ public class MediaControlsHelper {
      * @return The available playback options
      */
     @PlaybackStateCompat.Actions
-    private long getPlaybackOptions(NotificationHelper.NotificationMediaState mediaState) {
+    protected long getPlaybackOptions(NotificationHelper.NotificationMediaState mediaState) {
         long availableActions = PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY_PAUSE;
 
         if (mediaState.isNextEnabled()) {
@@ -195,7 +194,7 @@ public class MediaControlsHelper {
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
-    private PendingIntent createPendingIntent(String action, Class<? extends Service> serviceClass) {
+    protected PendingIntent createPendingIntent(String action, Class<? extends Service> serviceClass) {
         Intent intent = new Intent(context, serviceClass);
         intent.setAction(action);
 
@@ -203,10 +202,10 @@ public class MediaControlsHelper {
     }
 
     /**
-     * A simple callback class to listen to the notifications received from the lock screen
+     * A simple callback class to listen to the notifications received from the remote view
      * and forward them to the {@link #mediaServiceClass}
      */
-    private class SessionCallback extends MediaSessionCompat.Callback {
+    protected class SessionCallback extends MediaSessionCompat.Callback {
         private PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent;
 
         public SessionCallback() {
