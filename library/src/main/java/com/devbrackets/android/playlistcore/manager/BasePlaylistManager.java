@@ -258,17 +258,13 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     public void registerService(@NonNull PlaylistServiceCore<I, ?> service) {
         this.service = service;
-        service.registerPlaylistListener(this);
     }
 
     /**
      * UnLinks the {@link BasePlaylistService} from this manager. (see {@link #registerService(PlaylistServiceCore)}
      */
     public void unRegisterService() {
-        if (service != null) {
-            service.unRegisterPlaylistListener(this);
-            service = null;
-        }
+        service = null;
     }
 
     /**

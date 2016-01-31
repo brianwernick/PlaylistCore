@@ -46,9 +46,6 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * A base service for adding media playback support using the {@link BasePlaylistManager}.
  * <p>
@@ -93,10 +90,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     protected boolean onCreateCalled = false;
     protected Intent workaroundIntent = null;
-
-    //TODO: these should probably be weak references (these are also in both the service and playlistmanager... should we simplify?)
-    protected List<PlaylistListener> playlistListeners = new LinkedList<>();
-    protected List<ProgressListener> progressListeners = new LinkedList<>();
 
     /**
      * Retrieves a new instance of the {@link AudioPlayerApi}. This will only
@@ -365,49 +358,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     @Override
     public boolean onProgressUpdated(@NonNull MediaProgress mediaProgress) {
         currentMediaProgress = mediaProgress;
-
-        for (ProgressListener listener : progressListeners) {
-            if (listener.onProgressUpdated(mediaProgress)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Adds a listener that will be informed of basic playback interactions
-     * for use in UIs.
-     *
-     * @param listener The callback to be informed of playback updates
-     */
-    public void registerPlaylistListener(PlaylistListener listener) {
-        if (listener != null) {
-            playlistListeners.add(listener);
-        }
-    }
-
-    /**
-     * Removes a listener that was previously registered with {@link #registerPlaylistListener(PlaylistListener)}
-     *
-     * @param listener The callback to unRegister
-     */
-    public void unRegisterPlaylistListener(PlaylistListener listener) {
-        if (listener != null) {
-            playlistListeners.remove(listener);
-        }
-    }
-
-    public void registerProgressListener(ProgressListener listener) {
-        if (listener != null) {
-            progressListeners.add(listener);
-        }
-    }
-
-    public void unRegisterProgressListener(ProgressListener listener) {
-        if (listener != null) {
-            progressListeners.remove(listener);
-        }
+        return getPlaylistManager().onProgressUpdated(mediaProgress);
     }
 
     /**
@@ -435,7 +386,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Retrieves the current item change event which represents any media item changes.
      * This is intended as a utility method for initializing, or returning to, a media
      * playback UI.  In order to get the changed events you will need to register for
-     * callbacks through {@link #registerPlaylistListener(PlaylistListener)}
+     * callbacks through {@link BasePlaylistManager#registerPlaylistListener(PlaylistListener)}
      *
      * @return The current PlaylistItem Changed event
      */
@@ -596,30 +547,21 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Informs the callbacks specified with {@link #registerPlaylistListener(PlaylistListener)}
+     * Informs the callbacks specified with {@link BasePlaylistManager#registerPlaylistListener(PlaylistListener)}
      * that the current playlist item has changed.
      */
     protected void postPlaylistItemChanged() {
         boolean hasNext = getPlaylistManager().isNextAvailable();
         boolean hasPrevious = getPlaylistManager().isPreviousAvailable();
-
-        for (PlaylistListener callback : playlistListeners) {
-            if (callback.onPlaylistItemChanged(currentPlaylistItem, hasNext, hasPrevious)) {
-                return;
-            }
-        }
+        getPlaylistManager().onPlaylistItemChanged(currentPlaylistItem, hasNext, hasPrevious);
     }
 
     /**
-     * Informs the callbacks specified with {@link #registerPlaylistListener(PlaylistListener)}
+     * Informs the callbacks specified with {@link BasePlaylistManager#registerPlaylistListener(PlaylistListener)}
      * that the current media state has changed.
      */
     protected void postPlaybackStateChanged() {
-        for (PlaylistListener callback : playlistListeners) {
-            if (callback.onPlaybackStateChanged(currentState)) {
-                return;
-            }
-        }
+        getPlaylistManager().onPlaybackStateChanged(currentState);
     }
 
     /**
