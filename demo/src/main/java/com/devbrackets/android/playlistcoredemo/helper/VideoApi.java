@@ -1,6 +1,5 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
@@ -8,12 +7,19 @@ import android.support.annotation.NonNull;
 import android.widget.VideoView;
 
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
+import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 
 public class VideoApi implements VideoPlayerApi {
     private VideoView videoView;
+    private MediaPlayerListenerShim listenerShim;
 
     public VideoApi(VideoView videoView) {
         this.videoView = videoView;
+        listenerShim = new MediaPlayerListenerShim();
     }
 
     @Override
@@ -78,27 +84,30 @@ public class VideoApi implements VideoPlayerApi {
     }
 
     @Override
-    public void setOnPreparedListener(MediaPlayer.OnPreparedListener onPreparedListener) {
-        videoView.setOnPreparedListener(onPreparedListener);
+    public void setOnMediaPreparedListener(OnMediaPreparedListener listener) {
+        listenerShim.setOnMediaPreparedListener(this, listener);
+        videoView.setOnPreparedListener(listenerShim);
     }
 
     @Override
-    public void setOnBufferingUpdateListener(MediaPlayer.OnBufferingUpdateListener onBufferingUpdateListener) {
+    public void setOnMediaBufferUpdateListener(OnMediaBufferUpdateListener listener) {
         //Purposefully left blank
     }
 
     @Override
-    public void setOnSeekCompleteListener(MediaPlayer.OnSeekCompleteListener onSeekCompleteListener) {
+    public void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener) {
         //Purposefully left blank
     }
 
     @Override
-    public void setOnCompletionListener(MediaPlayer.OnCompletionListener onCompletionListener) {
-        videoView.setOnCompletionListener(onCompletionListener);
+    public void setOnMediaCompletionListener(OnMediaCompletionListener listener) {
+        listenerShim.setOnMediaCompletionListener(this, listener);
+        videoView.setOnCompletionListener(listenerShim);
     }
 
     @Override
-    public void setOnErrorListener(MediaPlayer.OnErrorListener onErrorListener) {
-        videoView.setOnErrorListener(onErrorListener);
+    public void setOnMediaErrorListener(OnMediaErrorListener listener) {
+        listenerShim.setOnMediaErrorListener(this, listener);
+        videoView.setOnErrorListener(listenerShim);
     }
 }

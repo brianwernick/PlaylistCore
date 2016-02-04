@@ -22,7 +22,7 @@ package com.devbrackets.android.playlistcore.event;
  * if you need to store the current values use
  */
 public class MediaProgress {
-    private static final int MAX_BUFFER_PERCENT = 100;
+    public static final int MAX_BUFFER_PERCENT = 100;
 
     private long position;
     private long duration;

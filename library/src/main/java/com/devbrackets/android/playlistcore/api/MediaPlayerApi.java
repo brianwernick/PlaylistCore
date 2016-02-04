@@ -16,9 +16,15 @@
 
 package com.devbrackets.android.playlistcore.api;
 
-import android.media.MediaPlayer;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
+
+import com.devbrackets.android.playlistcore.event.MediaProgress;
+import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 
 public interface MediaPlayerApi {
     /**
@@ -52,21 +58,20 @@ public interface MediaPlayerApi {
     /**
      * Retrieves the current buffer percent of the audio item.  If an audio item is not currently
      * prepared or buffering the value will be 0.  This should only be called after the audio item is
-     * prepared (see {@link #setOnPreparedListener(android.media.MediaPlayer.OnPreparedListener)})
+     * prepared (see {@link #setOnMediaPreparedListener(OnMediaPreparedListener)})
      *
-     * @return The integer percent that is buffered [0, 100] inclusive
+     * @return The integer percent that is buffered [0, {@value MediaProgress#MAX_BUFFER_PERCENT}] inclusive
      */
-    @IntRange(from = 0, to = 100)
+    @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT)
     int getBufferedPercent();
 
-    //TODO: listeners should be wrapped?
-    void setOnPreparedListener(MediaPlayer.OnPreparedListener listener);
+    void setOnMediaPreparedListener(OnMediaPreparedListener listener);
 
-    void setOnBufferingUpdateListener(MediaPlayer.OnBufferingUpdateListener listener);
+    void setOnMediaBufferUpdateListener(OnMediaBufferUpdateListener listener);
 
-    void setOnSeekCompleteListener(MediaPlayer.OnSeekCompleteListener listener);
+    void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener);
 
-    void setOnCompletionListener(MediaPlayer.OnCompletionListener listener);
+    void setOnMediaCompletionListener(OnMediaCompletionListener listener);
 
-    void setOnErrorListener(MediaPlayer.OnErrorListener listener);
+    void setOnMediaErrorListener(OnMediaErrorListener listener);
 }

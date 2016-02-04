@@ -36,10 +36,14 @@ import android.util.Log;
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod;
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
+import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
+import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
@@ -970,9 +974,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         audioPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
 
         //Sets the listeners
-        audioPlayer.setOnPreparedListener(audioListener);
-        audioPlayer.setOnCompletionListener(audioListener);
-        audioPlayer.setOnErrorListener(audioListener);
+        audioPlayer.setOnMediaPreparedListener(audioListener);
+        audioPlayer.setOnMediaCompletionListener(audioListener);
+        audioPlayer.setOnMediaErrorListener(audioListener);
     }
 
     /**
@@ -984,12 +988,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      *
      * TODO: this only handles audio.... what about videos?
      */
-    protected class AudioListener implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
+    protected class AudioListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener {
         private static final int MAX_RETRY_COUNT = 1;
         private int retryCount = 0;
 
         @Override
-        public void onCompletion(MediaPlayer mp) {
+        public void onCompletion(@NonNull MediaPlayerApi mediaPlayerApi) {
             //Make sure to only perform this functionality when playing audio
             if (currentItemIsType(BasePlaylistManager.AUDIO)) {
                 performMediaCompletion();
@@ -997,7 +1001,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         @Override
-        public boolean onError(MediaPlayer mp, int what, int extra) {
+        public boolean onError(@NonNull MediaPlayerApi mediaPlayerApi) {
             //Make sure to only perform this functionality when playing audio
             if (!currentItemIsType(BasePlaylistManager.VIDEO)) {
                 return false;
@@ -1011,7 +1015,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
 
             onMediaPlayerResetting();
-            Log.e(TAG, "MediaPlayer Error: what=" + what + ", extra=" + extra);
 
             setPlaybackState(PlaybackState.ERROR);
             relaxResources(true);
@@ -1020,7 +1023,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         @Override
-        public void onPrepared(MediaPlayer mp) {
+        public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
             //Make sure to only perform this functionality when playing audio
             if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
                 return;

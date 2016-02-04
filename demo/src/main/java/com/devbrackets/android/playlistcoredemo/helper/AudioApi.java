@@ -8,13 +8,20 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
+import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 
 public class AudioApi implements AudioPlayerApi, MediaPlayer.OnBufferingUpdateListener {
     private MediaPlayer audioPlayer;
     private int bufferPercent = 0;
+    private MediaPlayerListenerShim listenerShim;
 
     public AudioApi(MediaPlayer audioPlayer) {
         this.audioPlayer = audioPlayer;
+        listenerShim = new MediaPlayerListenerShim();
         audioPlayer.setOnBufferingUpdateListener(this);
     }
 
@@ -98,28 +105,31 @@ public class AudioApi implements AudioPlayerApi, MediaPlayer.OnBufferingUpdateLi
     }
 
     @Override
-    public void setOnPreparedListener(MediaPlayer.OnPreparedListener onPreparedListener) {
-        audioPlayer.setOnPreparedListener(onPreparedListener);
+    public void setOnMediaPreparedListener(OnMediaPreparedListener listener) {
+        listenerShim.setOnMediaPreparedListener(this, listener);
+        audioPlayer.setOnPreparedListener(listenerShim);
     }
 
     @Override
-    public void setOnBufferingUpdateListener(MediaPlayer.OnBufferingUpdateListener onBufferingUpdateListener) {
+    public void setOnMediaBufferUpdateListener(OnMediaBufferUpdateListener listener) {
         //Purposefully left blank
     }
 
     @Override
-    public void setOnSeekCompleteListener(MediaPlayer.OnSeekCompleteListener onSeekCompleteListener) {
+    public void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener) {
         //Purposefully left blank
     }
 
     @Override
-    public void setOnCompletionListener(MediaPlayer.OnCompletionListener onCompletionListener) {
-        audioPlayer.setOnCompletionListener(onCompletionListener);
+    public void setOnMediaCompletionListener(OnMediaCompletionListener listener) {
+        listenerShim.setOnMediaCompletionListener(this, listener);
+        audioPlayer.setOnCompletionListener(listenerShim);
     }
 
     @Override
-    public void setOnErrorListener(MediaPlayer.OnErrorListener onErrorListener) {
-        audioPlayer.setOnErrorListener(onErrorListener);
+    public void setOnMediaErrorListener(OnMediaErrorListener listener) {
+        listenerShim.setOnMediaErrorListener(this, listener);
+        audioPlayer.setOnErrorListener(listenerShim);
     }
 
     @Override // From MediaPlayer.OnBufferingUpdateListener
