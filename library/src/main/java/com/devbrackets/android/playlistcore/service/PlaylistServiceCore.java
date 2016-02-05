@@ -44,6 +44,7 @@ import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
 import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
@@ -68,7 +69,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         PREPARING,     // Preparing / Buffering
         PLAYING,       // Active but could be paused due to loss of audio focus Needed for returning after we regain focus
         PAUSED,        // Paused but player ready
-        SEEKING,       // performSeek was called, awaiting seek completion callback todo use
+        SEEKING,       // performSeek was called, awaiting seek completion callback
         STOPPED,       // Stopped not preparing media
         ERROR          // An error occurred, we are stopped
     }
@@ -533,11 +534,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     protected void performSeekEnded(int newPosition) {
         performSeek(newPosition);
-
-        if (pausedForSeek) {
-            performPlay();
-            pausedForSeek = false;
-        }
     }
 
     /**
@@ -593,7 +589,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     /**
      * Performs the functionality to seek the current media item
-     * to the specified position.
+     * to the specified position.  This should only be called directly
+     * when performing the initial setup of playback position.  For
+     * normal seeking process use the {@link #performSeekStarted()} in
+     * conjunction with {@link #performSeekEnded(int)}
      *
      * @param position The position to seek to in milliseconds
      */
@@ -998,9 +997,38 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      *
      * TODO: this only handles audio.... what about videos?
      */
-    protected class AudioListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener {
+    protected class AudioListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener, OnMediaSeekCompletionListener {
         private static final int MAX_RETRY_COUNT = 1;
         private int retryCount = 0;
+
+        @Override
+        public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
+            //Make sure to only perform this functionality when playing audio
+            if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
+                return;
+            }
+
+            retryCount = 0;
+            setPlaybackState(PlaybackState.PLAYING);
+            startAudioPlayer();
+
+            //Immediately pauses
+            if (immediatelyPause) {
+                immediatelyPause = false;
+                if (audioPlayer.isPlaying()) {
+                    performPause();
+                }
+            }
+
+            //Seek to the correct position
+            if (seekToPosition > 0) {
+                performSeek(seekToPosition);
+                seekToPosition = -1;
+            }
+
+            updateRemoteViews();
+            updateNotification();
+        }
 
         @Override
         public void onCompletion(@NonNull MediaPlayerApi mediaPlayerApi) {
@@ -1033,32 +1061,13 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         @Override
-        public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
-            //Make sure to only perform this functionality when playing audio
-            if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
-                return;
+        public void onSeekComplete(@NonNull MediaPlayerApi mediaPlayerApi) {
+            if (pausedForSeek) {
+                performPlay();
+                pausedForSeek = false;
+            } else {
+                performPause();
             }
-
-            retryCount = 0;
-            setPlaybackState(PlaybackState.PLAYING);
-            startAudioPlayer();
-
-            //Immediately pauses
-            if (immediatelyPause) {
-                immediatelyPause = false;
-                if (audioPlayer.isPlaying()) {
-                    performPause();
-                }
-            }
-
-            //Seek to the correct position
-            if (seekToPosition > 0) {
-                performSeek(seekToPosition);
-                seekToPosition = -1;
-            }
-
-            updateRemoteViews();
-            updateNotification();
         }
 
         public void resetRetryCount() {
