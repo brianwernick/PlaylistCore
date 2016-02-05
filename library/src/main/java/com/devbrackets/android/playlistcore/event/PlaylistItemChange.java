@@ -16,19 +16,23 @@
 
 package com.devbrackets.android.playlistcore.event;
 
+import android.support.annotation.Nullable;
+
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 
 public class PlaylistItemChange<T extends IPlaylistItem> {
+    @Nullable
     private final T currentItem;
     private final boolean hasNext;
     private final boolean hasPrevious;
 
-    public PlaylistItemChange(T currentItem, boolean hasPrevious, boolean hasNext) {
+    public PlaylistItemChange(@Nullable T currentItem, boolean hasPrevious, boolean hasNext) {
         this.currentItem = currentItem;
         this.hasPrevious = hasPrevious;
         this.hasNext = hasNext;
     }
 
+    @Nullable
     public T getCurrentItem() {
         return currentItem;
     }

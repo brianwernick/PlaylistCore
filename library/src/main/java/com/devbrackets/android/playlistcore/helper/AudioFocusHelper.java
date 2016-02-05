@@ -18,6 +18,7 @@ package com.devbrackets.android.playlistcore.helper;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 /**
@@ -52,9 +53,13 @@ public class AudioFocusHelper {
         FOCUSED             // have full audio focus
     }
 
+    @NonNull
     protected Focus currentFocus = Focus.NONE;
+    @NonNull
     protected AudioManager audioManager;
+    @Nullable
     protected AudioFocusCallback callbacks;
+    @NonNull
     protected AudioFocusListener audioFocusListener = new AudioFocusListener();
 
     /**
@@ -63,7 +68,7 @@ public class AudioFocusHelper {
      *
      * @param context The context for the AudioFocus (Generally Application)
      */
-    public AudioFocusHelper(Context context) {
+    public AudioFocusHelper(@NonNull Context context) {
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
     }
 
@@ -81,6 +86,7 @@ public class AudioFocusHelper {
      *
      * @return The current Focus value currently held
      */
+    @NonNull
     public Focus getCurrentAudioFocus() {
         return currentFocus;
     }
@@ -122,7 +128,7 @@ public class AudioFocusHelper {
      * Android system, converting the values to {@link Focus} for easier
      * digestion.
      */
-    private class AudioFocusListener implements AudioManager.OnAudioFocusChangeListener {
+    protected class AudioFocusListener implements AudioManager.OnAudioFocusChangeListener {
         @Override
         public void onAudioFocusChange(int focusChange) {
             switch (focusChange) {
@@ -147,13 +153,13 @@ public class AudioFocusHelper {
             }
         }
 
-        private void postAudioFocusGained() {
+        public void postAudioFocusGained() {
             if (callbacks != null) {
                 callbacks.onAudioFocusGained();
             }
         }
 
-        private void postAudioFocusLost(boolean canDuck) {
+        public void postAudioFocusLost(boolean canDuck) {
             if (callbacks != null) {
                 callbacks.onAudioFocusLost(canDuck);
             }

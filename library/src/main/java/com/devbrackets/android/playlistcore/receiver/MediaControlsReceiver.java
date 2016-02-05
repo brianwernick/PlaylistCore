@@ -21,6 +21,7 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -28,8 +29,8 @@ import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
 
 /**
- * A Receiver to handle remote controls
- * such as Bluetooth and Android Wear devices
+ * A Receiver to handle remote controls from devices
+ * such as Bluetooth and Android Wear
  */
 public class MediaControlsReceiver extends BroadcastReceiver {
     private static final String TAG = "MediaControlsReceiver";
@@ -92,7 +93,8 @@ public class MediaControlsReceiver extends BroadcastReceiver {
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
-    private PendingIntent createPendingIntent(Context context, String action, Class<? extends Service> serviceClass) {
+    @NonNull
+    private PendingIntent createPendingIntent(@NonNull Context context, @NonNull String action, @NonNull Class<? extends Service> serviceClass) {
         Intent intent = new Intent(context, serviceClass);
         intent.setAction(action);
 

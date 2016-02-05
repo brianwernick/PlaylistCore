@@ -2,6 +2,7 @@ package com.devbrackets.android.playlistcoredemo.ui.activity;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateUtils;
 import android.view.View;
@@ -90,7 +91,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     }
 
     @Override
-    public boolean onPlaylistItemChanged(IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
+    public boolean onPlaylistItemChanged(@Nullable IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
         shouldSetDuration = true;
 
         //Updates the button states
@@ -98,7 +99,9 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         previousButton.setEnabled(hasPrevious);
 
         //Loads the new image
-        picasso.load(currentItem.getArtworkUrl()).into(artworkView);
+        if (currentItem != null) {
+            picasso.load(currentItem.getArtworkUrl()).into(artworkView);
+        }
 
         return true;
     }

@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.view.View;
@@ -48,7 +49,7 @@ public class NotificationHelper {
     private RemoteViews customNotification;
     private RemoteViews bigContent;
 
-    public NotificationHelper(Context context) {
+    public NotificationHelper(@NonNull Context context) {
         this.context = context;
         notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
@@ -227,6 +228,7 @@ public class NotificationHelper {
      *
      * @return The resulting RemoteViews
      */
+    @NonNull
     private RemoteViews getCustomNotification() {
         customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
 
@@ -253,6 +255,7 @@ public class NotificationHelper {
      *
      * @return The resulting RemoteViews
      */
+    @NonNull
     private RemoteViews getBigNotification() {
         bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
 
@@ -281,7 +284,7 @@ public class NotificationHelper {
      *
      * @param customNotification The RemoteViews to use to modify the state
      */
-    private void updateCustomNotificationMediaState(RemoteViews customNotification) {
+    private void updateCustomNotificationMediaState(@Nullable RemoteViews customNotification) {
         NotificationMediaState state = notificationInfo.getMediaState();
         if (customNotification == null || state == null) {
             return;
@@ -298,7 +301,7 @@ public class NotificationHelper {
      *
      * @param bigContent The RemoteViews to use to modify the state
      */
-    private void updateBigNotificationMediaState(RemoteViews bigContent) {
+    private void updateBigNotificationMediaState(@Nullable RemoteViews bigContent) {
         NotificationMediaState state = notificationInfo.getMediaState();
         if (bigContent == null || state == null) {
             return;
@@ -316,7 +319,8 @@ public class NotificationHelper {
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
-    private PendingIntent createPendingIntent(String action, Class<? extends Service> serviceClass) {
+    @NonNull
+    private PendingIntent createPendingIntent(@NonNull String action, @NonNull Class<? extends Service> serviceClass) {
         Intent intent = new Intent(context, serviceClass);
         intent.setAction(action);
 

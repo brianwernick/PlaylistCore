@@ -73,25 +73,31 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         ERROR          // An error occurred, we are stopped
     }
 
+    @Nullable //Null if the WAKE_LOCK permission wasn't requested
     protected WifiManager.WifiLock wifiLock;
     protected AudioFocusHelper audioFocusHelper;
 
     protected AudioPlayerApi audioPlayer;
+    @NonNull
     protected MediaProgressPoll mediaProgressPoll = new MediaProgressPoll();
+    @NonNull
     protected AudioListener audioListener = new AudioListener();
+    @NonNull
+    protected MediaProgress currentMediaProgress = new MediaProgress(0, 0, 0);
 
-    protected MediaProgress currentMediaProgress;
-
-    protected boolean pausedForFocusLoss = false;
+    @NonNull
     protected PlaybackState currentState = PlaybackState.PREPARING;
 
+    @Nullable
     protected I currentPlaylistItem;
     protected int seekToPosition = -1;
-    protected boolean immediatelyPause = false;
 
     protected boolean pausedForSeek = false;
-
+    protected boolean immediatelyPause = false;
+    protected boolean pausedForFocusLoss = false;
     protected boolean onCreateCalled = false;
+
+    @Nullable
     protected Intent workaroundIntent = null;
 
     /**
@@ -362,9 +368,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * {@link IPlaylistItem} has been played
      * then null will be returned.
      *
-     * @return The current playback progress or null
+     * @return The current playback progress
      */
-    @Nullable
+    @NonNull
     public MediaProgress getCurrentMediaProgress() {
         return currentMediaProgress;
     }
@@ -706,6 +712,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
         audioPlayer.setStreamType(AudioManager.STREAM_MUSIC);
+
+        //noinspection ConstantConditions -  currentPlaylistItem is not null at this point (see calling method for null check)
         audioPlayer.setDataSource(this, Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
 
         setPlaybackState(PlaybackState.PREPARING);
@@ -737,6 +745,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         videoPlayer.stop();
         boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
+
+        //noinspection ConstantConditions -  currentPlaylistItem is not null at this point (see calling method for null check)
         videoPlayer.setDataSource(Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
 
         // If we are streaming from the internet, we want to hold a Wifi lock, which prevents

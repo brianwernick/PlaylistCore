@@ -24,13 +24,15 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
-import com.devbrackets.android.playlistcore.service.RemoteActions;
 import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver;
+import com.devbrackets.android.playlistcore.service.RemoteActions;
 
 /**
  * A class to help simplify playback control and artwork display for
@@ -56,7 +58,7 @@ public class MediaControlsHelper {
      * @param context The context to use for holding a MediaSession and sending action intents
      * @param mediaServiceClass The class for the service that owns the backing MediaService and to notify of playback actions
      */
-    public MediaControlsHelper(Context context, Class<? extends Service> mediaServiceClass) {
+    public MediaControlsHelper(@NonNull Context context, @NonNull Class<? extends Service> mediaServiceClass) {
         this.context = context;
         this.mediaServiceClass = mediaServiceClass;
 
@@ -125,7 +127,8 @@ public class MediaControlsHelper {
      * @param notificationMediaState The current media state for the expanded (big) notification
      */
     @SuppressWarnings("ResourceType") //getPlaybackOptions() and getPlaybackState() return the correctly annotated items
-    public void update(String title, String album, String artist, Bitmap mediaArtwork, NotificationHelper.NotificationMediaState notificationMediaState) {
+    public void update(@Nullable String title, @Nullable String album, @Nullable String artist, @Nullable Bitmap mediaArtwork,
+                       @NonNull NotificationHelper.NotificationMediaState notificationMediaState) {
         //Updates the current media MetaData
         MediaMetadataCompat.Builder metaDataBuilder = new MediaMetadataCompat.Builder();
         metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, appIconBitmap);
@@ -153,6 +156,7 @@ public class MediaControlsHelper {
         }
     }
 
+    @NonNull
     protected PendingIntent getMediaButtonReceiverPendingIntent(ComponentName componentName) {
         Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
         mediaButtonIntent.setComponent(componentName);
@@ -173,7 +177,7 @@ public class MediaControlsHelper {
      * @return The available playback options
      */
     @PlaybackStateCompat.Actions
-    protected long getPlaybackOptions(NotificationHelper.NotificationMediaState mediaState) {
+    protected long getPlaybackOptions(@NonNull NotificationHelper.NotificationMediaState mediaState) {
         long availableActions = PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY_PAUSE;
 
         if (mediaState.isNextEnabled()) {
@@ -194,7 +198,8 @@ public class MediaControlsHelper {
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
-    protected PendingIntent createPendingIntent(String action, Class<? extends Service> serviceClass) {
+    @NonNull
+    protected PendingIntent createPendingIntent(@NonNull String action, @NonNull Class<? extends Service> serviceClass) {
         Intent intent = new Intent(context, serviceClass);
         intent.setAction(action);
 
@@ -206,7 +211,7 @@ public class MediaControlsHelper {
      * and forward them to the {@link #mediaServiceClass}
      */
     protected class SessionCallback extends MediaSessionCompat.Callback {
-        private PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent;
+        protected PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent;
 
         public SessionCallback() {
             super();
@@ -236,7 +241,7 @@ public class MediaControlsHelper {
             sendPendingIntent(previousPendingIntent);
         }
 
-        private void sendPendingIntent(PendingIntent pi) {
+        public void sendPendingIntent(PendingIntent pi) {
             try {
                 pi.send();
             } catch (Exception e) {

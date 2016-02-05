@@ -17,6 +17,7 @@
 package com.devbrackets.android.playlistcore.listener;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
@@ -32,7 +33,7 @@ public interface PlaylistListener {
      *
      * @return True if the event has been handled
      */
-    boolean onPlaylistItemChanged(IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious);
+    boolean onPlaylistItemChanged(@Nullable IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious);
 
     /**
      * Occurs when the current media state changes

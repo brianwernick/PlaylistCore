@@ -140,13 +140,13 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * This is a pass through method that is called from the {@link BasePlaylistService} to inform
      * any listeners that are registered through {@link #registerPlaylistListener(PlaylistListener)}
      *
-     * @param currentItem The new playback item todo: is this nullable?
+     * @param currentItem The new playback item
      * @param hasNext True if there exists an item after the <code>currentItem</code> in the playlist
      * @param hasPrevious True if there exists an item before the <code>currentItem</code> in the playlist
      * @return True if the event should be consumed
      */
     @Override
-    public boolean onPlaylistItemChanged(IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
+    public boolean onPlaylistItemChanged(@Nullable IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
         Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
