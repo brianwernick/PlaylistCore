@@ -117,7 +117,8 @@ public class AudioApi implements AudioPlayerApi, MediaPlayer.OnBufferingUpdateLi
 
     @Override
     public void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener) {
-        //Purposefully left blank
+        listenerShim.setOnMediaSeekCompletionListener(this, listener);
+        audioPlayer.setOnSeekCompleteListener(listenerShim);
     }
 
     @Override

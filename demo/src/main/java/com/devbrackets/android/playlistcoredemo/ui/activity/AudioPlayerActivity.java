@@ -115,6 +115,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
 
             case RETRIEVING:
             case PREPARING:
+            case SEEKING:
                 restartLoading();
                 break;
 

@@ -96,7 +96,8 @@ public class VideoApi implements VideoPlayerApi {
 
     @Override
     public void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener) {
-        //Purposefully left blank
+//        listenerShim.setOnMediaSeekCompletionListener(this, listener);
+//        videoView.setOnSeekCompleteListener(listenerShim);
     }
 
     @Override

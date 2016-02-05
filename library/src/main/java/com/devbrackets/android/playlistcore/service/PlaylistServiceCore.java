@@ -986,6 +986,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         audioPlayer.setOnMediaPreparedListener(audioListener);
         audioPlayer.setOnMediaCompletionListener(audioListener);
         audioPlayer.setOnMediaErrorListener(audioListener);
+        audioPlayer.setOnMediaSeekCompletionListener(audioListener);
     }
 
     /**

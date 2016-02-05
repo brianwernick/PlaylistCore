@@ -8,6 +8,7 @@ import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
+import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 
 /**
  * A simple class that handles joining of the MediaPlayer listeners
@@ -15,13 +16,16 @@ import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
  * {@link AudioApi} and {@link VideoApi} themselves, but to to keep those
  * clean for the demo, we have this shim class
  */
-public class MediaPlayerListenerShim implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener  {
+public class MediaPlayerListenerShim implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener,
+        MediaPlayer.OnSeekCompleteListener  {
     @Nullable
     private Pair<MediaPlayerApi, OnMediaPreparedListener> onMediaPreparedListener;
     @Nullable
     private Pair<MediaPlayerApi, OnMediaCompletionListener> onMediaCompletionListener;
     @Nullable
     private Pair<MediaPlayerApi, OnMediaErrorListener> onMediaErrorListener;
+    @Nullable
+    private Pair<MediaPlayerApi, OnMediaSeekCompletionListener> onMediaSeekCompletionListener;
 
     /*************************
      * MediaPlayer Listeners *
@@ -46,6 +50,12 @@ public class MediaPlayerListenerShim implements MediaPlayer.OnPreparedListener, 
         return onMediaErrorListener != null && onMediaErrorListener.second.onError(onMediaErrorListener.first);
     }
 
+    @Override
+    public void onSeekComplete(MediaPlayer mp) {
+        if (onMediaSeekCompletionListener != null) {
+            onMediaSeekCompletionListener.second.onSeekComplete(onMediaSeekCompletionListener.first);
+        }
+    }
 
     /**************************
      * PlaylistCore Listeners *
@@ -61,5 +71,9 @@ public class MediaPlayerListenerShim implements MediaPlayer.OnPreparedListener, 
 
     void setOnMediaErrorListener(MediaPlayerApi mediaPlayerApi, OnMediaErrorListener listener) {
         onMediaErrorListener = new Pair<>(mediaPlayerApi, listener);
+    }
+
+    void setOnMediaSeekCompletionListener(MediaPlayerApi mediaPlayerApi, OnMediaSeekCompletionListener listener) {
+        onMediaSeekCompletionListener = new Pair<>(mediaPlayerApi, listener);
     }
 }
