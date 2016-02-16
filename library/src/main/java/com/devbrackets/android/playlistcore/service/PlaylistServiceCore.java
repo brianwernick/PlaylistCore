@@ -814,7 +814,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             audioPlayer.setVolume(1.0f, 1.0f);
         }
 
-        mediaProgressPoll.start(); //TODO: make sure this is started at the correct points, and stopped appropriately (it isn't)
+        mediaProgressPoll.start();
         if (!audioPlayer.isPlaying()) {
             audioPlayer.play();
             onAudioPlaybackStarted(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());

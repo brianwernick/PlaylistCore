@@ -8,20 +8,17 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
-import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 
-public class AudioApi implements AudioPlayerApi, MediaPlayer.OnBufferingUpdateListener {
+public class AudioApi extends BaseMediaApi implements AudioPlayerApi{
     private MediaPlayer audioPlayer;
-    private int bufferPercent = 0;
-    private MediaPlayerListenerShim listenerShim;
 
     public AudioApi(MediaPlayer audioPlayer) {
         this.audioPlayer = audioPlayer;
-        listenerShim = new MediaPlayerListenerShim();
+
+        audioPlayer.setOnErrorListener(this);
+        audioPlayer.setOnPreparedListener(this);
+        audioPlayer.setOnCompletionListener(this);
+        audioPlayer.setOnSeekCompleteListener(this);
         audioPlayer.setOnBufferingUpdateListener(this);
     }
 
@@ -78,6 +75,8 @@ public class AudioApi implements AudioPlayerApi, MediaPlayer.OnBufferingUpdateLi
     @Override
     public void setDataSource(@NonNull Context context, @NonNull Uri uri) {
         try {
+            prepared = false;
+            bufferPercent = 0;
             audioPlayer.setDataSource(context, uri);
         } catch (Exception e) {
             //Purposefully left blank
@@ -91,50 +90,16 @@ public class AudioApi implements AudioPlayerApi, MediaPlayer.OnBufferingUpdateLi
 
     @Override
     public long getCurrentPosition() {
-        return audioPlayer.getCurrentPosition();
+        return prepared ? audioPlayer.getCurrentPosition() : 0;
     }
 
     @Override
     public long getDuration() {
-        return audioPlayer.getDuration();
+        return prepared ? audioPlayer.getDuration() : 0;
     }
 
     @Override
     public int getBufferedPercent() {
         return bufferPercent;
-    }
-
-    @Override
-    public void setOnMediaPreparedListener(OnMediaPreparedListener listener) {
-        listenerShim.setOnMediaPreparedListener(this, listener);
-        audioPlayer.setOnPreparedListener(listenerShim);
-    }
-
-    @Override
-    public void setOnMediaBufferUpdateListener(OnMediaBufferUpdateListener listener) {
-        //Purposefully left blank
-    }
-
-    @Override
-    public void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener) {
-        listenerShim.setOnMediaSeekCompletionListener(this, listener);
-        audioPlayer.setOnSeekCompleteListener(listenerShim);
-    }
-
-    @Override
-    public void setOnMediaCompletionListener(OnMediaCompletionListener listener) {
-        listenerShim.setOnMediaCompletionListener(this, listener);
-        audioPlayer.setOnCompletionListener(listenerShim);
-    }
-
-    @Override
-    public void setOnMediaErrorListener(OnMediaErrorListener listener) {
-        listenerShim.setOnMediaErrorListener(this, listener);
-        audioPlayer.setOnErrorListener(listenerShim);
-    }
-
-    @Override // From MediaPlayer.OnBufferingUpdateListener
-    public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        bufferPercent = percent;
     }
 }

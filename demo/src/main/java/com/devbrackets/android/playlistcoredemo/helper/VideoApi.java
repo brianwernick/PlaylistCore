@@ -1,5 +1,6 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
@@ -7,19 +8,16 @@ import android.support.annotation.NonNull;
 import android.widget.VideoView;
 
 import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
-import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
-import com.devbrackets.android.playlistcore.listener.OnMediaSeekCompletionListener;
 
-public class VideoApi implements VideoPlayerApi {
+public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
     private VideoView videoView;
-    private MediaPlayerListenerShim listenerShim;
 
     public VideoApi(VideoView videoView) {
         this.videoView = videoView;
-        listenerShim = new MediaPlayerListenerShim();
+
+        videoView.setOnErrorListener(this);
+        videoView.setOnPreparedListener(this);
+        videoView.setOnCompletionListener(this);
     }
 
     @Override
@@ -65,50 +63,32 @@ public class VideoApi implements VideoPlayerApi {
 
     @Override
     public void setDataSource(@NonNull Uri uri) {
+        prepared = false;
+        bufferPercent = 0;
         videoView.setVideoURI(uri);
     }
 
     @Override
     public long getCurrentPosition() {
-        return videoView.getCurrentPosition();
+        return prepared ? videoView.getCurrentPosition() : 0;
     }
 
     @Override
     public long getDuration() {
-        return videoView.getDuration();
+        return prepared ? videoView.getDuration() : 0;
     }
 
     @Override
     public int getBufferedPercent() {
-        return videoView.getBufferPercentage();
+        return bufferPercent;
     }
 
     @Override
-    public void setOnMediaPreparedListener(OnMediaPreparedListener listener) {
-        listenerShim.setOnMediaPreparedListener(this, listener);
-        videoView.setOnPreparedListener(listenerShim);
-    }
+    public void onPrepared(MediaPlayer mp) {
+        super.onPrepared(mp);
 
-    @Override
-    public void setOnMediaBufferUpdateListener(OnMediaBufferUpdateListener listener) {
-        //Purposefully left blank
-    }
-
-    @Override
-    public void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener) {
-//        listenerShim.setOnMediaSeekCompletionListener(this, listener);
-//        videoView.setOnSeekCompleteListener(listenerShim);
-    }
-
-    @Override
-    public void setOnMediaCompletionListener(OnMediaCompletionListener listener) {
-        listenerShim.setOnMediaCompletionListener(this, listener);
-        videoView.setOnCompletionListener(listenerShim);
-    }
-
-    @Override
-    public void setOnMediaErrorListener(OnMediaErrorListener listener) {
-        listenerShim.setOnMediaErrorListener(this, listener);
-        videoView.setOnErrorListener(listenerShim);
+        //Registers the rest of the listeners we need the MediaPlayer for
+        mp.setOnSeekCompleteListener(this);
+        mp.setOnBufferingUpdateListener(this);
     }
 }
