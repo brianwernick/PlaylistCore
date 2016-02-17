@@ -229,10 +229,23 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         //Purposefully left blank
     }
 
+    /**
+     * Called when the notification needs to be updated.
+     * This occurs when playback state updates or the current
+     * item in playback is changed.
+     */
     protected void updateNotification() {
         //Purposefully left blank
     }
 
+    /**
+     * Similar to {@link #updateNotification()}, this is called when
+     * the remote views need to be updated due to playback state
+     * updates and item changes.
+     *
+     * The remote views handle the lock screen, bluetooth controls,
+     * Android Wear interactions, etc.
+     */
     protected void updateRemoteViews() {
         //Purposefully left blank
     }
@@ -256,6 +269,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         onServiceCreate();
     }
 
+    /**
+     * Stops the current media in playback and releases all
+     * held resources.
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -273,6 +290,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         onCreateCalled = false;
     }
 
+    /**
+     * Handles the intents posted by the {@link BasePlaylistManager} through
+     * the <code>invoke*</code> methods.
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null || intent.getAction() == null) {
@@ -306,7 +327,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when the Audio focus has been gained
+     * Updates the playback state and volume based on the
+     * previous state held before {@link #onAudioFocusLost(boolean)}
+     * was called.
      */
     @Override
     public boolean onAudioFocusGained() {
@@ -314,6 +337,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             return false;
         }
 
+        //Returns the audio to the previous playback state and volume
         if (!audioPlayer.isPlaying() && pausedForFocusLoss) {
             audioPlayer.play();
             updateNotification();
@@ -325,7 +349,14 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when the Audio focus has been lost
+     * Audio focus is lost either temporarily or permanently due
+     * to external changes such as notification sounds and
+     * phone calls.  When focus is lost temporarily, the
+     * audio volume will decrease for the duration of the focus
+     * loss (returned to normal in {@link #onAudioFocusGained()}.
+     * If the focus is lost permanently then the audio will pause
+     * playback and attempt to resume when {@link #onAudioFocusGained()}
+     * is called.
      */
     @Override
     public boolean onAudioFocusLost(boolean canDuckAudio) {
@@ -333,6 +364,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             return false;
         }
 
+        //Either pauses or reduces the volume of the audio in playback
         if (audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
             if (audioPlayer.isPlaying()) {
                 pausedForFocusLoss = true;
@@ -347,7 +379,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when the media progress has been updated
+     * When the current media progress is updated we call through the
+     * {@link BasePlaylistManager} to inform any listeners of the change
      */
     @Override
     public boolean onProgressUpdated(@NonNull MediaProgress mediaProgress) {
@@ -365,9 +398,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Retrieves the current playback progress.  If no
-     * {@link IPlaylistItem} has been played
-     * then null will be returned.
+     * Retrieves the current playback progress.
      *
      * @return The current playback progress
      */
@@ -401,6 +432,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         audioFocusHelper = new AudioFocusHelper(getApplicationContext());
         audioFocusHelper.setAudioFocusCallback(this);
 
+        //Attempts to obtain the wifi lock only if the manifest has requested the permission
         if (getPackageManager().checkPermission(Manifest.permission.WAKE_LOCK, getPackageName()) == PackageManager.PERMISSION_GRANTED) {
             wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE)).createWifiLock(WifiManager.WIFI_MODE_FULL, "mcLock");
             wifiLock.setReferenceCounted(false);
