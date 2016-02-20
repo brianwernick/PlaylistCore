@@ -50,10 +50,6 @@ public class NotificationHelper {
     @NonNull
     private NotificationInfo notificationInfo = new NotificationInfo();
 
-    //todo
-    private RemoteViews customNotification;
-    private RemoteViews bigContent;
-
     public NotificationHelper(@NonNull Context context) {
         this.context = context;
         notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -67,8 +63,6 @@ public class NotificationHelper {
         dismiss();
 
         mediaServiceClass = null;
-        customNotification = null;
-        bigContent = null;
 
         notificationInfo.clean();
     }
@@ -236,7 +230,7 @@ public class NotificationHelper {
      */
     @NonNull
     private RemoteViews getCustomNotification(@NonNull Class<? extends Service> serviceClass) {
-        customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
+        RemoteViews customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
 
         customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
         customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
@@ -263,7 +257,7 @@ public class NotificationHelper {
      */
     @NonNull
     private RemoteViews getBigNotification(Class<? extends Service> serviceClass) {
-        bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
+        RemoteViews bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
 
         bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_close, createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
         bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
