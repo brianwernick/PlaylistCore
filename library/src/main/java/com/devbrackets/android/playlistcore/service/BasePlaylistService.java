@@ -41,7 +41,9 @@ import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 public abstract class BasePlaylistService<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends PlaylistServiceCore<I, M> {
     private static final String TAG = "BasePlaylistService";
 
+    @Nullable
     protected NotificationHelper notificationHelper;
+    @Nullable
     protected MediaControlsHelper mediaControlsHelper;
 
     protected boolean foregroundSetup;
@@ -200,9 +202,9 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
      */
     @Override
     protected void setupForeground() {
-        if (!foregroundSetup && notificationSetup) {
+        if (!foregroundSetup && notificationSetup && notificationHelper != null) {
             foregroundSetup = true;
-            startForeground(getNotificationId(), notificationHelper.getNotification(getNotificationClickPendingIntent()));
+            startForeground(getNotificationId(), notificationHelper.getNotification(getNotificationClickPendingIntent(), getClass()));
         }
     }
 
@@ -223,8 +225,14 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         super.relaxResources(releaseAudioPlayer);
         stopForeground(true);
         foregroundSetup = false;
-        notificationHelper.release();
-        mediaControlsHelper.release();
+
+        if (notificationHelper != null) {
+            notificationHelper.release();
+        }
+
+        if (mediaControlsHelper != null) {
+            mediaControlsHelper.release();
+        }
 
         notificationSetup = false;
     }
@@ -236,12 +244,16 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     @Override
     protected void setupAsForeground() {
         //Sets up the Lock Screen playback controls
-        mediaControlsHelper.setMediaControlsEnabled(true);
-        mediaControlsHelper.setBaseInformation(getRemoteViewIconRes());
+        if (mediaControlsHelper != null) {
+            mediaControlsHelper.setMediaControlsEnabled(true);
+            mediaControlsHelper.setBaseInformation(getRemoteViewIconRes());
+        }
 
         //Sets up the Notifications
-        notificationHelper.setNotificationsEnabled(true);
-        notificationHelper.setNotificationBaseInformation(getNotificationId(), getNotificationIconRes(), getClass());
+        if (notificationHelper != null) {
+            notificationHelper.setNotificationsEnabled(true);
+            notificationHelper.setNotificationBaseInformation(getNotificationId(), getNotificationIconRes(), getClass());
+        }
 
         //Starts the service as the foreground audio player
         notificationSetup = true;

@@ -40,12 +40,17 @@ import com.devbrackets.android.playlistcore.service.RemoteActions;
  * media playback applications.
  */
 public class NotificationHelper {
+    @NonNull
     private Context context;
-    private NotificationManager notificationManager;
-    private NotificationInfo notificationInfo = new NotificationInfo();
-
+    @Nullable
     private Class<? extends Service> mediaServiceClass;
 
+    @Nullable
+    private NotificationManager notificationManager;
+    @NonNull
+    private NotificationInfo notificationInfo = new NotificationInfo();
+
+    //todo
     private RemoteViews customNotification;
     private RemoteViews bigContent;
 
@@ -72,7 +77,7 @@ public class NotificationHelper {
      * Dismisses the current active notification
      */
     public void dismiss() {
-        if (notificationManager != null && notificationInfo != null) {
+        if (notificationManager != null) {
             notificationManager.cancel(notificationInfo.getNotificationId());
         }
     }
@@ -82,7 +87,7 @@ public class NotificationHelper {
      * ready for playback (e.g. paused).  The notification information
      * will need to be updated by calling {@link #setNotificationBaseInformation(int, int)}
      * and {@link #updateNotificationInformation(String, String, String, Bitmap, Bitmap)} and can be retrieved
-     * with {@link #getNotification(android.app.PendingIntent)}
+     * with {@link #getNotification(android.app.PendingIntent, Class)}
      *
      * @param enabled True if notifications should be shown
      */
@@ -94,7 +99,7 @@ public class NotificationHelper {
         notificationInfo.setShowNotifications(enabled);
 
         //Remove the notification when disabling
-        if (!enabled) {
+        if (!enabled && notificationManager != null) {
             notificationManager.cancel(notificationInfo.getNotificationId());
         }
     }
@@ -175,8 +180,9 @@ public class NotificationHelper {
         notificationInfo.setSecondaryImage(secondaryNotificationImage);
         notificationInfo.setMediaState(notificationMediaState);
 
-        if (notificationInfo.getShowNotifications()) {
-            notificationManager.notify(notificationInfo.getNotificationId(), getNotification(notificationInfo.getPendingIntent()));
+        if (notificationInfo.getShowNotifications() && notificationManager != null && mediaServiceClass != null) {
+            Notification notification = getNotification(notificationInfo.getPendingIntent(), mediaServiceClass);
+            notificationManager.notify(notificationInfo.getNotificationId(), notification);
         }
     }
 
@@ -189,16 +195,16 @@ public class NotificationHelper {
      * @return The constructed notification
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    public Notification getNotification(@Nullable PendingIntent pendingIntent) {
+    public Notification getNotification(@Nullable PendingIntent pendingIntent, @NonNull Class<? extends Service> serviceClass) {
         setClickPendingIntent(pendingIntent);
-        RemoteViews customNotificationViews = getCustomNotification();
+        RemoteViews customNotificationViews = getCustomNotification(serviceClass);
 
         boolean allowSwipe = notificationInfo.getMediaState() == null || !notificationInfo.getMediaState().isPlaying();
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
         builder.setContent(customNotificationViews);
         builder.setContentIntent(pendingIntent);
-        builder.setDeleteIntent(createPendingIntent(RemoteActions.ACTION_STOP, mediaServiceClass));
+        builder.setDeleteIntent(createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
         builder.setSmallIcon(notificationInfo.getAppIcon());
         builder.setAutoCancel(allowSwipe);
         builder.setOngoing(!allowSwipe);
@@ -216,7 +222,7 @@ public class NotificationHelper {
         //Build the notification and set the expanded content view if there is a service to inform of clicks
         Notification notification = builder.build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && mediaServiceClass != null) {
-            notification.bigContentView = getBigNotification();
+            notification.bigContentView = getBigNotification(serviceClass);
             notification.bigContentView.setOnClickPendingIntent(R.id.playlistcore_big_notification_touch_area, pendingIntent);
         }
 
@@ -229,12 +235,12 @@ public class NotificationHelper {
      * @return The resulting RemoteViews
      */
     @NonNull
-    private RemoteViews getCustomNotification() {
+    private RemoteViews getCustomNotification(@NonNull Class<? extends Service> serviceClass) {
         customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
 
-        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, mediaServiceClass));
-        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, mediaServiceClass));
-        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, mediaServiceClass));
+        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
+        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
+        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
 
         customNotification.setTextViewText(R.id.playlistcore_notification_title, notificationInfo.getTitle());
         customNotification.setTextViewText(R.id.playlistcore_notification_album, notificationInfo.getAlbum());
@@ -256,13 +262,13 @@ public class NotificationHelper {
      * @return The resulting RemoteViews
      */
     @NonNull
-    private RemoteViews getBigNotification() {
+    private RemoteViews getBigNotification(Class<? extends Service> serviceClass) {
         bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
 
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_close, createPendingIntent(RemoteActions.ACTION_STOP, mediaServiceClass));
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, mediaServiceClass));
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, mediaServiceClass));
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, mediaServiceClass));
+        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_close, createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
+        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
+        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
+        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
 
         bigContent.setTextViewText(R.id.playlistcore_big_notification_title, notificationInfo.getTitle());
         bigContent.setTextViewText(R.id.playlistcore_big_notification_album, notificationInfo.getAlbum());

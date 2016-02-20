@@ -44,13 +44,14 @@ public class MediaControlsHelper {
     public static final String SESSION_TAG = "MediaControlsHelper.Session";
     public static final String RECEIVER_EXTRA_CLASS = "com.devbrackets.android.playlistcore.RECEIVER_EXTRA_CLASS";
 
+    @NonNull
     private Context context;
-    private Class<? extends Service> mediaServiceClass;
+    @Nullable
+    private Bitmap appIconBitmap;
+    @Nullable
+    private MediaSessionCompat mediaSession;
 
     private boolean enabled = true;
-
-    private Bitmap appIconBitmap;
-    private MediaSessionCompat mediaSession;
 
     /**
      * Creates a new MediaControlsHelper object
@@ -60,13 +61,12 @@ public class MediaControlsHelper {
      */
     public MediaControlsHelper(@NonNull Context context, @NonNull Class<? extends Service> mediaServiceClass) {
         this.context = context;
-        this.mediaServiceClass = mediaServiceClass;
 
         ComponentName componentName = new ComponentName(context, MediaControlsReceiver.class.getName());
 
-        mediaSession = new MediaSessionCompat(context, SESSION_TAG, componentName, getMediaButtonReceiverPendingIntent(componentName));
+        mediaSession = new MediaSessionCompat(context, SESSION_TAG, componentName, getMediaButtonReceiverPendingIntent(componentName, mediaServiceClass));
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        mediaSession.setCallback(new SessionCallback());
+        mediaSession.setCallback(new SessionCallback(mediaServiceClass));
     }
 
     public void release() {
@@ -74,10 +74,7 @@ public class MediaControlsHelper {
             mediaSession.release();
         }
 
-        context = null;
         appIconBitmap = null;
-        mediaServiceClass = null;
-        mediaServiceClass = null;
     }
 
     /**
@@ -96,7 +93,7 @@ public class MediaControlsHelper {
         this.enabled = enabled;
 
         //Remove the remote views and controls when disabling
-        if (!enabled) {
+        if (!enabled && mediaSession != null) {
             mediaSession.setActive(false);
         }
     }
@@ -131,16 +128,21 @@ public class MediaControlsHelper {
                        @NonNull NotificationHelper.NotificationMediaState notificationMediaState) {
         //Updates the current media MetaData
         MediaMetadataCompat.Builder metaDataBuilder = new MediaMetadataCompat.Builder();
-        metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, appIconBitmap);
         metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
         metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
         metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
+
+        if (appIconBitmap != null) {
+            metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, appIconBitmap);
+        }
 
         if (mediaArtwork != null) {
             metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mediaArtwork);
         }
 
-        mediaSession.setMetadata(metaDataBuilder.build());
+        if (mediaSession != null) {
+            mediaSession.setMetadata(metaDataBuilder.build());
+        }
 
 
         //Updates the available playback controls
@@ -157,11 +159,11 @@ public class MediaControlsHelper {
     }
 
     @NonNull
-    protected PendingIntent getMediaButtonReceiverPendingIntent(ComponentName componentName) {
+    protected PendingIntent getMediaButtonReceiverPendingIntent(ComponentName componentName, @NonNull Class<? extends Service> serviceClass) {
         Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
         mediaButtonIntent.setComponent(componentName);
 
-        mediaButtonIntent.putExtra(RECEIVER_EXTRA_CLASS, mediaServiceClass.getName());
+        mediaButtonIntent.putExtra(RECEIVER_EXTRA_CLASS, serviceClass.getName());
         return PendingIntent.getBroadcast(context, 0, mediaButtonIntent, PendingIntent.FLAG_CANCEL_CURRENT);
     }
 
@@ -208,17 +210,17 @@ public class MediaControlsHelper {
 
     /**
      * A simple callback class to listen to the notifications received from the remote view
-     * and forward them to the {@link #mediaServiceClass}
+     * and forward them to the specified Class
      */
     protected class SessionCallback extends MediaSessionCompat.Callback {
         protected PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent;
 
-        public SessionCallback() {
+        public SessionCallback(Class<? extends Service> serviceClass) {
             super();
 
-            playPausePendingIntent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, mediaServiceClass);
-            nextPendingIntent = createPendingIntent(RemoteActions.ACTION_NEXT, mediaServiceClass);
-            previousPendingIntent = createPendingIntent(RemoteActions.ACTION_PREVIOUS, mediaServiceClass);
+            playPausePendingIntent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass);
+            nextPendingIntent = createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass);
+            previousPendingIntent = createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass);
         }
 
         @Override

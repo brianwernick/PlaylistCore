@@ -44,8 +44,10 @@ public class NotificationInfo {
 
     private boolean showNotifications;
 
+    @Nullable
     private PendingIntent pendingIntent;
 
+    @Nullable
     private NotificationHelper.NotificationMediaState mediaState;
 
     public void clean() {
@@ -93,7 +95,7 @@ public class NotificationInfo {
         this.showNotifications = showNotifications;
     }
 
-    public void setPendingIntent(PendingIntent pendingIntent) {
+    public void setPendingIntent(@Nullable PendingIntent pendingIntent) {
         this.pendingIntent = pendingIntent;
     }
 

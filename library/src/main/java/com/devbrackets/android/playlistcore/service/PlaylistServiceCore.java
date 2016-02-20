@@ -76,8 +76,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     @Nullable //Null if the WAKE_LOCK permission wasn't requested
     protected WifiManager.WifiLock wifiLock;
+    @Nullable
     protected AudioFocusHelper audioFocusHelper;
 
+    @Nullable
     protected AudioPlayerApi audioPlayer;
     @NonNull
     protected MediaProgressPoll mediaProgressPoll = new MediaProgressPoll();
@@ -282,10 +284,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         relaxResources(true);
         getPlaylistManager().unRegisterService();
-        audioFocusHelper.setAudioFocusCallback(null);
-        audioFocusHelper.abandonFocus();
 
-        audioFocusHelper = null;
+        if (audioFocusHelper != null) {
+            audioFocusHelper.setAudioFocusCallback(null);
+            audioFocusHelper = null;
+        }
 
         onCreateCalled = false;
     }
@@ -333,7 +336,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     @Override
     public boolean onAudioFocusGained() {
-        if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
+        if (!currentItemIsType(BasePlaylistManager.AUDIO) || audioPlayer == null) {
             return false;
         }
 
@@ -360,12 +363,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     @Override
     public boolean onAudioFocusLost(boolean canDuckAudio) {
-        if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
+        if (!currentItemIsType(BasePlaylistManager.AUDIO) || audioPlayer == null) {
             return false;
         }
 
         //Either pauses or reduces the volume of the audio in playback
-        if (audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
+        if (!canDuckAudio) {
             if (audioPlayer.isPlaying()) {
                 pausedForFocusLoss = true;
                 audioPlayer.pause();
@@ -548,9 +551,14 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * {@link BasePlaylistManager#invokeSeekStarted()}
      */
     protected void performSeekStarted() {
-        VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
-        boolean isPlaying = (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer.isPlaying()) ||
-                (currentItemIsType(BasePlaylistManager.VIDEO) && videoPlayer != null && videoPlayer.isPlaying());
+        boolean isPlaying = false;
+
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
+            isPlaying = audioPlayer != null && audioPlayer.isPlaying();
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
+            VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
+            isPlaying = videoPlayer != null && videoPlayer.isPlaying();
+        }
 
         if (isPlaying) {
             pausedForSeek = true;
@@ -613,7 +621,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         // let go of all resources
         relaxResources(true);
-        audioFocusHelper.abandonFocus();
 
         getPlaylistManager().reset();
         stopSelf();
@@ -739,10 +746,13 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     protected boolean playAudioItem() {
         stopVideoPlayback();
         initializeAudioPlayer();
-        audioFocusHelper.requestFocus();
+        if (audioFocusHelper != null) {
+            audioFocusHelper.requestFocus();
+        }
 
-        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
+        //noinspection ConstantConditions - The audioPlayer won't be null due to initializeAudioPlayer()
         audioPlayer.setStreamType(AudioManager.STREAM_MUSIC);
+        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
 
         //noinspection ConstantConditions -  currentPlaylistItem is not null at this point (see calling method for null check)
         audioPlayer.setDataSource(this, Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
@@ -800,7 +810,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Stops the AudioPlayer from playing.
      */
     protected void stopAudioPlayback() {
-        audioFocusHelper.abandonFocus();
+        if (audioFocusHelper != null) {
+            audioFocusHelper.abandonFocus();
+        }
 
         if (audioPlayer != null) {
             audioPlayer.stop();
@@ -831,7 +843,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             return;
         }
 
-        if (audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
+        if (audioFocusHelper == null || audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
             // If we don't have audio focus and can't duck we have to pause, even if state is playing
             // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
             if (audioPlayer.isPlaying()) {
@@ -870,6 +882,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
 
             getPlaylistManager().setCurrentPosition(Integer.MAX_VALUE);
+        }
+
+        if (audioFocusHelper != null) {
+            audioFocusHelper.abandonFocus();
         }
 
         updateWiFiLock(false);
@@ -1048,7 +1064,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             //Immediately pauses
             if (immediatelyPause) {
                 immediatelyPause = false;
-                if (audioPlayer.isPlaying()) {
+                if (mediaPlayerApi.isPlaying()) {
                     performPause();
                 }
             }
@@ -1089,7 +1105,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
             setPlaybackState(PlaybackState.ERROR);
             relaxResources(true);
-            audioFocusHelper.abandonFocus();
             return false;
         }
 
