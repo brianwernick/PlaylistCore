@@ -84,7 +84,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     @NonNull
     protected MediaProgressPoll mediaProgressPoll = new MediaProgressPoll();
     @NonNull
-    protected AudioListener audioListener = new AudioListener();
+    protected MediaListener mediaListener = new MediaListener();
     @NonNull
     protected MediaProgress currentMediaProgress = new MediaProgress(0, 0, 0);
 
@@ -178,13 +178,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when the media player has failed to play the current audio item.
-     */
-    protected void onMediaPlayerResetting() {
-        //Purposefully left blank
-    }
-
-    /**
      * Called when the {@link #performStop()} has been called.
      *
      * @param playlistItem The playlist item that has been stopped
@@ -194,25 +187,25 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when a current audio item has ended playback.  This is called when we
-     * are unable to play an audio item.
+     * Called when a current media item has ended playback.  This is called when we
+     * are unable to play an item.
      *
      * @param playlistItem The PlaylistItem that has ended
      * @param currentPosition The position the playlist item ended at
      * @param duration The duration of the PlaylistItem
      */
-    protected void onAudioPlaybackEnded(I playlistItem, long currentPosition, long duration) {
+    protected void onMediaPlaybackEnded(I playlistItem, long currentPosition, long duration) {
         //Purposefully left blank
     }
 
     /**
-     * Called when an audio item has started playback.
+     * Called when a media item has started playback.
      *
      * @param playlistItem The PlaylistItem that has started playback
      * @param currentPosition The position the playback has started at
      * @param duration The duration of the PlaylistItem
      */
-    protected void onAudioPlaybackStarted(I playlistItem, long currentPosition, long duration) {
+    protected void onMediaPlaybackStarted(I playlistItem, long currentPosition, long duration) {
         //Purposefully left blank
     }
 
@@ -225,9 +218,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when an audio item in playback has ended
+     * Called when a media item in playback has ended
      */
-    protected void onAudioPlaybackEnded() {
+    protected void onMediaPlaybackEnded() {
         //Purposefully left blank
     }
 
@@ -536,12 +529,19 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     /**
      * Performs the functionality for when a media item
-     * has finished playback.  By default the completion
-     * will seek to the next available media item.  This is
-     * called from the Audio listener.
+     * has finished playback.
      */
-    protected void performMediaCompletion() {
+    protected void performOnMediaCompletion() {
         //Left for the extending class to implement
+    }
+
+    /**
+     * Called when the playback of the specified media item has
+     * encountered an error.
+     */
+    protected void performOnMediaError() {
+        setPlaybackState(PlaybackState.ERROR);
+        relaxResources(true);
     }
 
     /**
@@ -636,10 +636,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @param position The position to seek to in milliseconds
      */
     protected void performSeek(int position) {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            if (audioPlayer != null) {
-                audioPlayer.seekTo(position);
-            }
+        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
+            audioPlayer.seekTo(position);
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
@@ -655,10 +653,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * playback.
      */
     protected void performPause() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            if (audioPlayer != null) {
-                audioPlayer.pause();
-            }
+        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
+            audioPlayer.pause();
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
@@ -675,10 +671,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * item.
      */
     protected void performPlay() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            if (audioPlayer != null) {
-                audioPlayer.play();
-            }
+        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
+            audioPlayer.play();
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
@@ -701,24 +695,21 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Starts the actual item playback, correctly determining if the
-     * item is a video or an audio item.
+     * Starts the actual media playback
      * <p>
      * <em><b>NOTE:</b></em> In order to play videos you will need to specify the
-     * VideoView with {@link BasePlaylistManager#setVideoPlayer(VideoPlayerApi)}
+     * VideoPlayerApi with {@link BasePlaylistManager#setVideoPlayer(VideoPlayerApi)}
      */
     protected void startItemPlayback() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            onAudioPlaybackEnded();
-        }
-
+        onMediaPlaybackEnded();
         seekToNextPlayableItem();
         mediaItemChanged();
 
         //Performs the playback for the correct media type
         boolean playbackHandled = false;
+        mediaListener.resetRetryCount();
+
         if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            audioListener.resetRetryCount();
             playbackHandled = playAudioItem();
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             playbackHandled = playVideoItem();
@@ -750,11 +741,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             audioFocusHelper.requestFocus();
         }
 
-        //noinspection ConstantConditions - The audioPlayer won't be null due to initializeAudioPlayer()
-        audioPlayer.setStreamType(AudioManager.STREAM_MUSIC);
-        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
+        mediaProgressPoll.update(audioPlayer);
+        mediaProgressPoll.reset();
 
-        //noinspection ConstantConditions -  currentPlaylistItem is not null at this point (see calling method for null check)
+        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
+        //noinspection ConstantConditions - currentPlaylistItem and the audioPlayer are not null at this point
         audioPlayer.setDataSource(this, Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
 
         setPlaybackState(PlaybackState.PREPARING);
@@ -773,22 +764,25 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Starts the actual playback of the specified video item.
      *
      * @return True if the item playback was correctly handled
-     * TODO: we should be treating Video playback with the same level of control as audio (playback states, foreground, etc.)
      */
     protected boolean playVideoItem() {
         stopAudioPlayback();
-        setupAsForeground();
+        initializeVideoPlayer();
 
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
         if (videoPlayer == null) {
             return false;
         }
 
-        videoPlayer.stop();
-        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
+        mediaProgressPoll.update(videoPlayer);
+        mediaProgressPoll.reset();
 
+        boolean isItemDownloaded = isDownloaded(currentPlaylistItem);
         //noinspection ConstantConditions -  currentPlaylistItem is not null at this point (see calling method for null check)
         videoPlayer.setDataSource(Uri.parse(isItemDownloaded ? currentPlaylistItem.getDownloadedMediaUri() : currentPlaylistItem.getMediaUrl()));
+
+        setPlaybackState(PlaybackState.PREPARING);
+        setupAsForeground();
 
         // If we are streaming from the internet, we want to hold a Wifi lock, which prevents
         // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
@@ -832,6 +826,19 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
+     * Starts the appropriate media playback based on the current item type.
+     * If the current item is audio, then the playback will make sure to pay
+     * attention to the current audio focus.
+     */
+    protected void startMediaPlayer() {
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
+            startAudioPlayer();
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
+            startVideoPlayer();
+        }
+    }
+
+    /**
      * Reconfigures audioPlayer according to audio focus settings and starts/restarts it. This
      * method starts/restarts the audioPlayer respecting the current audio focus state. So if
      * we have focus, it will play normally; if we don't have focus, it will either leave the
@@ -848,7 +855,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
             if (audioPlayer.isPlaying()) {
                 audioPlayer.pause();
-                onAudioPlaybackEnded(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());
+                onMediaPlaybackEnded(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());
             }
 
             return;
@@ -861,7 +868,25 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         mediaProgressPoll.start();
         if (!audioPlayer.isPlaying()) {
             audioPlayer.play();
-            onAudioPlaybackStarted(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());
+            onMediaPlaybackStarted(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());
+        }
+    }
+
+    /**
+     * Starts the playback of the specified video, attaching the
+     * {@link #mediaProgressPoll} to retrieve the correct playback
+     * information.
+     */
+    protected void startVideoPlayer() {
+        VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
+        if (videoPlayer == null) {
+            return;
+        }
+
+        mediaProgressPoll.start();
+        if (!videoPlayer.isPlaying()) {
+            videoPlayer.play();
+            onMediaPlaybackStarted(currentPlaylistItem, videoPlayer.getCurrentPosition(), videoPlayer.getDuration());
         }
     }
 
@@ -961,7 +986,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     /**
      * Handles the remote actions from the big notification and lock screen to control
-     * the audio playback
+     * the media playback
      *
      * @param action The action from the intent to handle
      * @param extras The extras packaged with the intent associated with the action
@@ -1026,42 +1051,53 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         audioPlayer = getNewAudioPlayer();
-        mediaProgressPoll.update(audioPlayer);
-        mediaProgressPoll.reset();
         audioPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+        audioPlayer.setStreamType(AudioManager.STREAM_MUSIC);
 
         //Sets the listeners
-        audioPlayer.setOnMediaPreparedListener(audioListener);
-        audioPlayer.setOnMediaCompletionListener(audioListener);
-        audioPlayer.setOnMediaErrorListener(audioListener);
-        audioPlayer.setOnMediaSeekCompletionListener(audioListener);
+        audioPlayer.setOnMediaPreparedListener(mediaListener);
+        audioPlayer.setOnMediaCompletionListener(mediaListener);
+        audioPlayer.setOnMediaErrorListener(mediaListener);
+        audioPlayer.setOnMediaSeekCompletionListener(mediaListener);
     }
 
     /**
-     * A class to listen to the EMAudioPlayer events, and will
-     * retry audio playback once when an error is encountered.
+     * Initializes the video players connection to this Service.
+     */
+    protected void initializeVideoPlayer() {
+        VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
+        if (videoPlayer == null) {
+            return;
+        }
+
+        //Makes sure the VideoPlayer is in a good state for the new playback items
+        videoPlayer.stop();
+
+        //Sets the listeners
+        videoPlayer.setOnMediaPreparedListener(mediaListener);
+        videoPlayer.setOnMediaCompletionListener(mediaListener);
+        videoPlayer.setOnMediaErrorListener(mediaListener);
+        videoPlayer.setOnMediaSeekCompletionListener(mediaListener);
+    }
+
+    /**
+     * A class to listen to the {@link MediaPlayerApi} events, and will
+     * retry playback once if the media is audio when an error is encountered.
      * This is done to workaround an issue on older (pre 4.1)
      * devices where playback will fail due to a race condition
      * in the {@link MediaPlayer}
-     *
-     * TODO: this only handles audio.... what about videos?
      */
-    protected class AudioListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener, OnMediaSeekCompletionListener {
+    protected class MediaListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener, OnMediaSeekCompletionListener {
         private static final int MAX_RETRY_COUNT = 1;
         private int retryCount = 0;
 
         @Override
         public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
-            //Make sure to only perform this functionality when playing audio
-            if (!currentItemIsType(BasePlaylistManager.AUDIO)) {
-                return;
-            }
-
             retryCount = 0;
             setPlaybackState(PlaybackState.PLAYING);
-            startAudioPlayer();
+            startMediaPlayer();
 
-            //Immediately pauses
+            //Immediately pauses the media
             if (immediatelyPause) {
                 immediatelyPause = false;
                 if (mediaPlayerApi.isPlaying()) {
@@ -1081,30 +1117,15 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         @Override
         public void onCompletion(@NonNull MediaPlayerApi mediaPlayerApi) {
-            //Make sure to only perform this functionality when playing audio
-            if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-                performMediaCompletion();
-            }
+            performOnMediaCompletion();
         }
 
         @Override
         public boolean onError(@NonNull MediaPlayerApi mediaPlayerApi) {
-            //Make sure to only perform this functionality when playing audio
-            if (!currentItemIsType(BasePlaylistManager.VIDEO)) {
-                return false;
+            if (!retryAudio()) {
+                performOnMediaError();
             }
 
-            //The retry count is a workaround for when the EMAudioPlayer will occasionally fail to load valid content due to the MediaPlayer on pre 4.1 devices
-            if (++retryCount <= MAX_RETRY_COUNT) {
-                Log.d(TAG, "Retrying audio playback.  Retry count: " + retryCount);
-                playAudioItem();
-                return false;
-            }
-
-            onMediaPlayerResetting();
-
-            setPlaybackState(PlaybackState.ERROR);
-            relaxResources(true);
             return false;
         }
 
@@ -1120,6 +1141,22 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         public void resetRetryCount() {
             retryCount = 0;
+        }
+
+        /**
+         * The retry count is a workaround for when the EMAudioPlayer will occasionally fail
+         * to load valid content due to the MediaPlayer on pre 4.1 devices
+         *
+         * @return True if a retry was started
+         */
+        public boolean retryAudio() {
+            if (currentItemIsType(BasePlaylistManager.VIDEO) || ++retryCount <= MAX_RETRY_COUNT) {
+                Log.d(TAG, "Retrying audio playback.  Retry count: " + retryCount);
+                playAudioItem();
+                return true;
+            }
+
+            return false;
         }
     }
 }

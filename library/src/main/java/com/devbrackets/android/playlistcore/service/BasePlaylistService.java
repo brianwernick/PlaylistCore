@@ -46,13 +46,13 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     @Nullable
     protected MediaControlsHelper mediaControlsHelper;
 
-    protected boolean foregroundSetup;
-    protected boolean notificationSetup;
-
     @Nullable
     protected String currentLargeNotificationUrl;
     @Nullable
     protected String currentLockScreenArtworkUrl;
+
+    protected boolean foregroundSetup;
+    protected boolean notificationSetup;
 
     /**
      * Retrieves the ID to use for the notification and registering this
