@@ -17,6 +17,7 @@
 package com.devbrackets.android.playlistcore.util;
 
 import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -24,11 +25,19 @@ import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
 
+/**
+ * A utility used to poll the progress of the currently playing media.
+ * This will allows listeners to be informed of progress updates for display
+ * or storage.
+ */
 public class MediaProgressPoll {
     private static final String TAG = "MediaProgressPoll";
 
+    @NonNull
     protected Repeater pollRepeater = new Repeater();
+    @NonNull
     protected StopWatch overriddenPositionStopWatch = new StopWatch();
+    @NonNull
     protected final MediaProgress currentMediaProgressEvent = new MediaProgress(0, 0, 0);
 
     @Nullable
@@ -46,10 +55,21 @@ public class MediaProgressPoll {
         pollRepeater.setRepeatListener(new OnRepeat());
     }
 
+    /**
+     * Specifies the listener to be informed of progress updates
+     * at periodic intervals specified with {@link #setProgressPollDelay(int)}
+     *
+     * @param progressListener The listener to be informed of changes or null
+     */
     public void setProgressListener(@Nullable ProgressListener progressListener) {
         this.progressListener = progressListener;
     }
 
+    /**
+     * Starts polling for media progress.  If a progress listener has
+     * not been specified with {@link #setProgressListener(ProgressListener)} then
+     * the poll won't start.
+     */
     public void start() {
         if (progressListener == null) {
             Log.w(TAG, "Not started due to no progress listener specified");
@@ -63,11 +83,19 @@ public class MediaProgressPoll {
         }
     }
 
+    /**
+     * Stops polling for progress
+     */
     public void stop() {
         pollRepeater.stop();
         overriddenPositionStopWatch.stop();
     }
 
+    /**
+     * Stops the current progress poll and clears out the
+     * previously set values with {@link #setOverridePosition(boolean)},
+     * {@link #setOverrideDuration(boolean)}, and {@link #setOverriddenDuration(long)}
+     */
     public void reset() {
         stop();
         overriddenPositionStopWatch.reset();
@@ -76,19 +104,28 @@ public class MediaProgressPoll {
         overriddenDuration = 0;
     }
 
+    /**
+     * Releases all resources associated with the poll including
+     * the media player specified with {@link #update(MediaPlayerApi)} and
+     * the progress listener specified with {@link #setProgressListener(ProgressListener)}.
+     * <p/>
+     * NOTE: this calls {@link #reset()}
+     */
     public void release() {
         reset();
         mediaPlayerApi = null;
         progressListener = null;
     }
 
+    /**
+     * Updates the media player that should be continuously
+     * polled.  This will reset any previously specified values
+     * with {@link #reset()}
+     *
+     * @param mediaPlayerApi The new {@link MediaPlayerApi} that should be polled or null
+     */
     public void update(@Nullable MediaPlayerApi mediaPlayerApi) {
         this.mediaPlayerApi = mediaPlayerApi;
-        if (mediaPlayerApi == null) {
-            stop();
-            return;
-        }
-
         reset();
     }
 
@@ -136,10 +173,30 @@ public class MediaProgressPoll {
         overridePosition = override;
     }
 
+    /**
+     * Specifies if the duration for the media currently being polled
+     * should be overridden.  This should be called in conjunction with
+     * {@link #setOverriddenDuration(long)}
+     *
+     * @param override True if the duration should be overridden
+     */
     public void setOverrideDuration(boolean override) {
         overrideDuration = override;
     }
 
+    /**
+     * Specifies the value to use for returning the duration of the
+     * media currently being polled.  This should only be used if the
+     * media doesn't contain the duration, or the provided value is
+     * incorrect.
+     * <p/>
+     * An example of this would be when streaming a live broadcast or
+     * radio station.
+     * <p/>
+     * This should be called in conjunction with {@link #setOverrideDuration(boolean)}
+     *
+     * @param duration The duration in milliseconds for the media being polled
+     */
     public void setOverriddenDuration(@IntRange(from = 0) long duration) {
         overriddenDuration = duration;
     }
@@ -160,7 +217,9 @@ public class MediaProgressPoll {
     }
 
     /**
-     * Retrieves the duration of the current media item.  If no media item is currently
+     * Retrieves the duration of the current media item. If the value has
+     * been overridden with {@link #setOverriddenDuration(long)} then that value
+     * will be returned instead.  If no media item is currently
      * prepared or in playback then the value will be 0.
      *
      * @return The millisecond value for the duration
@@ -185,6 +244,11 @@ public class MediaProgressPoll {
         return mediaPlayerApi != null ? mediaPlayerApi.getBufferedPercent() : 0;
     }
 
+    /**
+     * Performs the actual periodic polling of the progress and informing the
+     * listener.  If the listener has not been specified, or was set to null, then
+     * the polling will be stopped.
+     */
     protected class OnRepeat implements Repeater.RepeatListener {
         @Override
         public void onRepeat() {

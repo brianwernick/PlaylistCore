@@ -16,6 +16,11 @@
 
 package com.devbrackets.android.playlistcore.service;
 
+/**
+ * A simple container for the remote actions used by the
+ * {@link com.devbrackets.android.playlistcore.manager.BasePlaylistManager}
+ * to inform the {@link BasePlaylistService} of processes to handle.
+ */
 public class RemoteActions {
     private static final String PREFIX = "com.devbrackets.android.playlistcore.";
 
