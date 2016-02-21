@@ -23,6 +23,8 @@ import android.support.annotation.Nullable;
 
 /**
  * An implementation of the {@link BasePlaylistManager} that supports Cursors
+ *
+ * {@inheritDoc}
  */
 @SuppressWarnings("unused")
 public abstract class CursorPlaylistManager<I extends IPlaylistItem> extends BasePlaylistManager<I> {

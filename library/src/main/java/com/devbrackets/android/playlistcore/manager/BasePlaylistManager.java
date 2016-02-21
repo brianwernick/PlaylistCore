@@ -131,6 +131,9 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
         constructControlIntents(getMediaServiceClass(), application);
     }
 
+    /**
+     * Resets the current positions and ids
+     */
     public void reset() {
         setId(INVALID_ID);
         setCurrentPosition(0);
@@ -293,10 +296,21 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
         }
     }
 
+    /**
+     * Registers the listener to be notified of progress updates.
+     *
+     * @param listener The listener to notify of progress updates
+     */
     public void registerProgressListener(@NonNull ProgressListener listener) {
         progressListeners.add(new WeakReference<>(listener));
     }
 
+    /**
+     * UnRegisters the specified listener.  This should only be called for listeners
+     * that have been registered with {@link #registerProgressListener(ProgressListener)}
+     *
+     * @param listener The listener to unregister
+     */
     public void unRegisterProgressListener(@NonNull ProgressListener listener) {
         Iterator<WeakReference<ProgressListener>> iterator = progressListeners.iterator();
         while (iterator.hasNext()) {
@@ -307,6 +321,14 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
         }
     }
 
+    /**
+     * Performs the functionality to play the current item in the playlist.  This will
+     * interact with the service specified with {@link #getMediaServiceClass()}.  If there
+     * are no items in the current playlist then no action will be performed.
+     *
+     * @param seekPosition The position to start the current items playback at
+     * @param startPaused True if the media item should not start playing when it has been prepared
+     */
     public void play(@IntRange(from = 0) int seekPosition, boolean startPaused) {
         I currentItem = getCurrentItem();
         if (currentItem == null) {
@@ -333,9 +355,11 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     /**
      * Sets the type of media that we can currently play.  When set,
      * the {@link #next()} and {@link #previous()} will skip any items
-     * that do not match the allowed type.
+     * that do not match the allowed type.  This should be one or a combination of
+     * {@link #AUDIO}, {@link #VIDEO}, or any custom types supported by the extending
+     * class.
      *
-     * @param flags
+     * @param flags The flags depicting the allowed media types
      */
     public void setAllowedMediaType(@SupportedMediaType int flags) {
         this.allowedTypeFlag = flags;
@@ -442,10 +466,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     }
 
     /**
-     * Determines the current items type.  If the item doesn't exist or
-     * isn't and audio or video item then
+     * Determines the current items type.  This will be one of
+     * {@link #AUDIO}, {@link #VIDEO), or any custom types provided by
+     * the extending class.  If the current item doesn't exist then
+     * 0 will be returned
      *
-     * @return
+     * @return The flag associated with the current media type or 0
      */
     @SupportedMediaType
     public int getCurrentItemType() {
@@ -522,6 +548,11 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
         this.videoPlayer = new WeakReference<>(videoPlayer);
     }
 
+    /**
+     * Retrieves the video player specified with {@link #setVideoPlayer(VideoPlayerApi)}
+     *
+     * @return The {@link VideoPlayerApi} or null
+     */
     @Nullable
     public VideoPlayerApi getVideoPlayer() {
         return videoPlayer.get();

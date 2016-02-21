@@ -29,13 +29,11 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 
 /**
- * A base service for adding media playback support using the {@link BasePlaylistManager}.
- * <p>
- * <b>NOTE:</b> This service will request a wifi wakelock if the item
- * being played isn't downloaded (see {@link #isDownloaded(IPlaylistItem)}).
- * <p>
- * Additionally, the manifest permission &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
- * should be requested to avoid interrupted playback.
+ * An extension of the {@link PlaylistServiceCore} that adds support for handling
+ * notifications and media controls (such as the lock screen, bluetooth controls,
+ * Android Wear interactions, etc.)
+ *
+ * {@inheritDoc}
  */
 @SuppressWarnings("unused")
 public abstract class BasePlaylistService<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends PlaylistServiceCore<I, M> {
@@ -224,7 +222,9 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     protected void relaxResources(boolean releaseAudioPlayer) {
         super.relaxResources(releaseAudioPlayer);
         stopForeground(true);
+
         foregroundSetup = false;
+        notificationSetup = false;
 
         if (notificationHelper != null) {
             notificationHelper.release();
@@ -233,8 +233,6 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         if (mediaControlsHelper != null) {
             mediaControlsHelper.release();
         }
-
-        notificationSetup = false;
     }
 
     /**

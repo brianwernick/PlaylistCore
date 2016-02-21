@@ -23,6 +23,8 @@ import java.util.List;
 
 /**
  * An implementation of the {@link BasePlaylistManager} that supports Lists
+ *
+ * {@inheritDoc}
  */
 @SuppressWarnings("unused")
 public abstract class ListPlaylistManager<I extends IPlaylistItem> extends BasePlaylistManager<I> {

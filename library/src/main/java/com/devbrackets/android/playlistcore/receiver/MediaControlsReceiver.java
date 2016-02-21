@@ -22,6 +22,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -37,24 +38,22 @@ public class MediaControlsReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (!Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
-            return;
+        if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+            handleMediaButtonIntent(context, intent);
         }
+    }
 
-        //Retrieves the class to inform of media button clicks
-        Class<? extends Service> mediaServiceClass = null;
-        String className = intent.getStringExtra(MediaControlsHelper.RECEIVER_EXTRA_CLASS);
-        if (className != null) {
-            try {
-                //noinspection unchecked
-                mediaServiceClass = (Class<? extends Service>) Class.forName(className);
-            } catch (Exception e) {
-                //Purposefully left blank
-            }
-        }
-
-        //Informs the mediaService of the event
+    /**
+     * Performs the functionality to handle the {@link Intent#ACTION_MEDIA_BUTTON} intent
+     * action.  This will pass the appropriate value to the {@link com.devbrackets.android.playlistcore.service.PlaylistServiceCore}
+     *
+     * @param context The Context the intent was received with
+     * @param intent The Intent that was received
+     */
+    private void handleMediaButtonIntent(Context context, Intent intent) {
+        Class<? extends Service> mediaServiceClass = getServiceClass(intent, MediaControlsHelper.RECEIVER_EXTRA_CLASS);
         KeyEvent event = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+
         if (mediaServiceClass != null && event != null && event.getAction() == KeyEvent.ACTION_UP) {
             handleKeyEvent(context, mediaServiceClass, event);
         }
@@ -84,6 +83,29 @@ public class MediaControlsReceiver extends BroadcastReceiver {
             default:
                 //Do nothing
         }
+    }
+
+    /**
+     * Retrieves the class from the intent with the specified key if it exists
+     *
+     * @param intent The Intent to retrieve the class associated with <code>key</code>
+     * @param key The key to retrieve the class with
+     * @return The stored class or null
+     */
+    @Nullable
+    private Class<? extends Service> getServiceClass(Intent intent, String key) {
+        Class<? extends Service> serviceClass = null;
+        String className = intent.getStringExtra(key);
+        if (className != null) {
+            try {
+                //noinspection unchecked
+                serviceClass = (Class<? extends Service>) Class.forName(className);
+            } catch (Exception e) {
+                //Purposefully left blank
+            }
+        }
+
+        return serviceClass;
     }
 
     /**

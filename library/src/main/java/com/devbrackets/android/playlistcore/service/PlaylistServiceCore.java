@@ -56,11 +56,16 @@ import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
 /**
  * A base service for adding media playback support using the {@link BasePlaylistManager}.
  * <p>
- * <b>NOTE:</b> This service will request a wifi wakelock if the item
- * being played isn't downloaded (see {@link #isDownloaded(IPlaylistItem)}).
+ * This service will request a wifi wakelock if the item being played isn't
+ * downloaded (see {@link #isDownloaded(IPlaylistItem)}) and the manifest permission
+ * &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
+ * has been specified.  This will allow the audio to be played without interruptions.
  * <p>
- * Additionally, the manifest permission &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
- * should be requested to avoid interrupted playback.
+ * Due to not knowing the actual class for the playlist service, if you want to handle
+ * audio becoming noisy (e.g. when a headphone cable is pulled out) then you will need
+ * to create your own {@link android.content.BroadcastReceiver} as outlined at
+ * <a href="http://developer.android.com/guide/topics/media/mediaplayer.html#noisyintent">
+ *     http://developer.android.com/guid/topics/media/mediaplayer.html#noisyintent</a>
  */
 @SuppressWarnings("unused")
 public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
@@ -976,7 +981,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     /**
      * Called when the current media item has changed, this will update the notification and
-     * lock screen values.
+     * media control values.
      */
     protected void mediaItemChanged() {
         //Validates that the currentPlaylistItem is for the currentItem
@@ -989,15 +994,16 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Handles the remote actions from the big notification and lock screen to control
-     * the media playback
+     * Handles the remote actions from the big notification and media controls
+     * to control the media playback
      *
      * @param action The action from the intent to handle
      * @param extras The extras packaged with the intent associated with the action
+     * @return True if the remote action was handled
      */
-    protected void handleRemoteAction(String action, Bundle extras) {
+    protected boolean handleRemoteAction(String action, Bundle extras) {
         if (action == null || action.isEmpty()) {
-            return;
+            return false;
         }
 
         switch (action) {
@@ -1039,8 +1045,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
                 break;
 
             default:
-                break;
+                return false;
         }
+
+        return true;
     }
 
     /**
@@ -1063,10 +1071,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         audioPlayer.setOnMediaCompletionListener(mediaListener);
         audioPlayer.setOnMediaErrorListener(mediaListener);
         audioPlayer.setOnMediaSeekCompletionListener(mediaListener);
+        audioPlayer.setOnMediaBufferUpdateListener(mediaListener);
     }
 
     /**
-     * Initializes the video players connection to this Service.
+     * Initializes the video players connection to this Service, including
+     * adding media playback listeners.
      */
     protected void initializeVideoPlayer() {
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
@@ -1082,6 +1092,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         videoPlayer.setOnMediaCompletionListener(mediaListener);
         videoPlayer.setOnMediaErrorListener(mediaListener);
         videoPlayer.setOnMediaSeekCompletionListener(mediaListener);
+        videoPlayer.setOnMediaBufferUpdateListener(mediaListener);
     }
 
     /**

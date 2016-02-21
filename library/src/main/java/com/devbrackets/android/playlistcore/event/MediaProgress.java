@@ -19,7 +19,8 @@ package com.devbrackets.android.playlistcore.event;
 /**
  * An event to be used to inform listeners of media (e.g. audio, video) progress
  * changes.  This event will be re-used internally to avoid over-creating objects,
- * if you need to store the current values use
+ * if you need to store the current values use {@link #obtain(MediaProgress)} to
+ * create a duplicate of the current progress
  */
 public class MediaProgress {
     public static final int MAX_BUFFER_PERCENT = 100;
