@@ -548,7 +548,14 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     protected void performOnMediaError() {
         setPlaybackState(PlaybackState.ERROR);
-        relaxResources(true);
+
+        stopForeground();
+        updateWiFiLock(false);
+        mediaProgressPoll.stop();
+
+        if (audioFocusHelper != null) {
+            audioFocusHelper.abandonFocus();
+        }
     }
 
     /**
