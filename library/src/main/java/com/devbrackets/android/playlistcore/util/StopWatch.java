@@ -98,7 +98,6 @@ public class StopWatch {
         }
 
         tickRunnable.performTick();
-
     }
 
     /**

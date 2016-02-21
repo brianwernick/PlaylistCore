@@ -29,6 +29,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.FloatRange;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -41,6 +42,7 @@ import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
+import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaCompletionListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaErrorListener;
 import com.devbrackets.android.playlistcore.listener.OnMediaPreparedListener;
@@ -662,6 +664,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         }
 
+        mediaProgressPoll.stop();
         setPlaybackState(PlaybackState.PAUSED);
         stopForeground();
     }
@@ -680,6 +683,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         }
 
+        mediaProgressPoll.start();
         setPlaybackState(PlaybackState.PLAYING);
         setupForeground();
     }
@@ -1087,7 +1091,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * devices where playback will fail due to a race condition
      * in the {@link MediaPlayer}
      */
-    protected class MediaListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener, OnMediaSeekCompletionListener {
+    protected class MediaListener implements OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener, OnMediaSeekCompletionListener, OnMediaBufferUpdateListener {
         private static final int MAX_RETRY_COUNT = 1;
         private int retryCount = 0;
 
@@ -1136,6 +1140,15 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
                 pausedForSeek = false;
             } else {
                 performPause();
+            }
+        }
+
+        @Override
+        public void onBufferingUpdate(@NonNull MediaPlayerApi mediaPlayerApi, @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT) int percent) {
+            //Makes sure to update listeners of buffer updates even when playback is paused
+            if (!mediaPlayerApi.isPlaying() && currentMediaProgress.getBufferPercent() != percent) {
+                currentMediaProgress.update(mediaPlayerApi.getCurrentPosition(), percent, mediaPlayerApi.getDuration());
+                onProgressUpdated(currentMediaProgress);
             }
         }
 

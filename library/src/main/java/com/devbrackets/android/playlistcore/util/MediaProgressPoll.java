@@ -38,7 +38,7 @@ public class MediaProgressPoll {
     @NonNull
     protected StopWatch overriddenPositionStopWatch = new StopWatch();
     @NonNull
-    protected final MediaProgress currentMediaProgressEvent = new MediaProgress(0, 0, 0);
+    protected final MediaProgress currentMediaProgress = new MediaProgress(0, 0, 0);
 
     @Nullable
     protected ProgressListener progressListener;
@@ -252,9 +252,9 @@ public class MediaProgressPoll {
     protected class OnRepeat implements Repeater.RepeatListener {
         @Override
         public void onRepeat() {
-            currentMediaProgressEvent.update(getCurrentPosition(), getBufferPercentage(), getDuration());
+            currentMediaProgress.update(getCurrentPosition(), getBufferPercentage(), getDuration());
             if (progressListener != null) {
-                progressListener.onProgressUpdated(currentMediaProgressEvent);
+                progressListener.onProgressUpdated(currentMediaProgress);
             } else {
                 pollRepeater.stop();
                 Log.w(TAG, "Stopping due to no listeners");
