@@ -108,7 +108,7 @@ public class MediaProgressPoll {
      * Releases all resources associated with the poll including
      * the media player specified with {@link #update(MediaPlayerApi)} and
      * the progress listener specified with {@link #setProgressListener(ProgressListener)}.
-     * <p/>
+     * <p>
      * NOTE: this calls {@link #reset()}
      */
     public void release() {
@@ -189,10 +189,10 @@ public class MediaProgressPoll {
      * media currently being polled.  This should only be used if the
      * media doesn't contain the duration, or the provided value is
      * incorrect.
-     * <p/>
+     * <p>
      * An example of this would be when streaming a live broadcast or
      * radio station.
-     * <p/>
+     * <p>
      * This should be called in conjunction with {@link #setOverrideDuration(boolean)}
      *
      * @param duration The duration in milliseconds for the media being polled

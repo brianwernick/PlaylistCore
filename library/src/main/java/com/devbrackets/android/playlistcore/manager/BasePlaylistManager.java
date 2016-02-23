@@ -467,7 +467,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
 
     /**
      * Determines the current items type.  This will be one of
-     * {@link #AUDIO}, {@link #VIDEO), or any custom types provided by
+     * {@link #AUDIO}, {@link #VIDEO}, or any custom types provided by
      * the extending class.  If the current item doesn't exist then
      * 0 will be returned
      *
