@@ -16,6 +16,7 @@
 
 package com.devbrackets.android.playlistcore.manager;
 
+import android.app.Application;
 import android.database.Cursor;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
@@ -33,6 +34,14 @@ public abstract class CursorPlaylistManager<I extends IPlaylistItem> extends Bas
     protected boolean isValidData;
 
     protected abstract long getItemId(@NonNull Cursor cursor);
+
+    public CursorPlaylistManager() {
+        super();
+    }
+
+    public CursorPlaylistManager(@NonNull Application application) {
+        super(application);
+    }
 
     @Override
     public int getPositionForItem(@IntRange(from = 0) long itemId) {

@@ -16,7 +16,9 @@
 
 package com.devbrackets.android.playlistcore.manager;
 
+import android.app.Application;
 import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.List;
@@ -30,6 +32,14 @@ import java.util.List;
 public abstract class ListPlaylistManager<I extends IPlaylistItem> extends BasePlaylistManager<I> {
     @Nullable
     protected List<I> items;
+
+    public ListPlaylistManager() {
+        super();
+    }
+
+    public ListPlaylistManager(@NonNull Application application) {
+        super(application);
+    }
 
     /**
      * A utility method to allow for single line implementations to start playing the media

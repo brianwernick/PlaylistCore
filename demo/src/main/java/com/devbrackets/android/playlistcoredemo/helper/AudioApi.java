@@ -9,7 +9,7 @@ import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
 
-public class AudioApi extends BaseMediaApi implements AudioPlayerApi{
+public class AudioApi extends BaseMediaApi implements AudioPlayerApi {
     private MediaPlayer audioPlayer;
 
     public AudioApi(MediaPlayer audioPlayer) {
