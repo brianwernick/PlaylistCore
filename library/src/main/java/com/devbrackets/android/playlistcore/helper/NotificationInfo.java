@@ -27,28 +27,28 @@ import android.support.annotation.Nullable;
  */
 public class NotificationInfo {
     @Nullable
-    private String title;
+    protected String title;
     @Nullable
-    private String album;
+    protected String album;
     @Nullable
-    private String artist;
+    protected String artist;
 
     @Nullable
-    private Bitmap largeImage;
+    protected Bitmap largeImage;
     @Nullable
-    private Bitmap secondaryImage;
+    protected Bitmap secondaryImage;
 
     @DrawableRes
-    private int appIcon;
-    private int notificationId;
+    protected int appIcon;
+    protected int notificationId;
 
-    private boolean showNotifications;
-
-    @Nullable
-    private PendingIntent pendingIntent;
+    protected boolean showNotifications;
 
     @Nullable
-    private NotificationHelper.NotificationMediaState mediaState;
+    protected PendingIntent pendingIntent;
+
+    @Nullable
+    protected NotificationHelper.NotificationMediaState mediaState;
 
     public void clean() {
         appIcon = 0;

@@ -45,13 +45,13 @@ public class MediaControlsHelper {
     public static final String RECEIVER_EXTRA_CLASS = "com.devbrackets.android.playlistcore.RECEIVER_EXTRA_CLASS";
 
     @NonNull
-    private Context context;
+    protected Context context;
     @Nullable
-    private Bitmap appIconBitmap;
+    protected Bitmap appIconBitmap;
     @Nullable
-    private MediaSessionCompat mediaSession;
+    protected MediaSessionCompat mediaSession;
 
-    private boolean enabled = true;
+    protected boolean enabled = true;
 
     /**
      * Creates a new MediaControlsHelper object

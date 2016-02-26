@@ -41,14 +41,14 @@ import com.devbrackets.android.playlistcore.service.RemoteActions;
  */
 public class NotificationHelper {
     @NonNull
-    private Context context;
+    protected Context context;
     @Nullable
-    private Class<? extends Service> mediaServiceClass;
+    protected Class<? extends Service> mediaServiceClass;
 
     @Nullable
-    private NotificationManager notificationManager;
+    protected NotificationManager notificationManager;
     @NonNull
-    private NotificationInfo notificationInfo = new NotificationInfo();
+    protected NotificationInfo notificationInfo = new NotificationInfo();
 
     public NotificationHelper(@NonNull Context context) {
         this.context = context;
@@ -229,7 +229,7 @@ public class NotificationHelper {
      * @return The resulting RemoteViews
      */
     @NonNull
-    private RemoteViews getCustomNotification(@NonNull Class<? extends Service> serviceClass) {
+    protected RemoteViews getCustomNotification(@NonNull Class<? extends Service> serviceClass) {
         RemoteViews customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
 
         customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
@@ -256,7 +256,7 @@ public class NotificationHelper {
      * @return The resulting RemoteViews
      */
     @NonNull
-    private RemoteViews getBigNotification(Class<? extends Service> serviceClass) {
+    protected RemoteViews getBigNotification(Class<? extends Service> serviceClass) {
         RemoteViews bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
 
         bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_close, createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
@@ -284,7 +284,7 @@ public class NotificationHelper {
      *
      * @param customNotification The RemoteViews to use to modify the state
      */
-    private void updateCustomNotificationMediaState(@Nullable RemoteViews customNotification) {
+    protected void updateCustomNotificationMediaState(@Nullable RemoteViews customNotification) {
         NotificationMediaState state = notificationInfo.getMediaState();
         if (customNotification == null || state == null) {
             return;
@@ -301,7 +301,7 @@ public class NotificationHelper {
      *
      * @param bigContent The RemoteViews to use to modify the state
      */
-    private void updateBigNotificationMediaState(@Nullable RemoteViews bigContent) {
+    protected void updateBigNotificationMediaState(@Nullable RemoteViews bigContent) {
         NotificationMediaState state = notificationInfo.getMediaState();
         if (bigContent == null || state == null) {
             return;
@@ -320,7 +320,7 @@ public class NotificationHelper {
      * @return The resulting PendingIntent
      */
     @NonNull
-    private PendingIntent createPendingIntent(@NonNull String action, @NonNull Class<? extends Service> serviceClass) {
+    protected PendingIntent createPendingIntent(@NonNull String action, @NonNull Class<? extends Service> serviceClass) {
         Intent intent = new Intent(context, serviceClass);
         intent.setAction(action);
 
