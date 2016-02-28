@@ -1181,7 +1181,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
          * @return True if a retry was started
          */
         public boolean retryAudio() {
-            if (currentItemIsType(BasePlaylistManager.VIDEO) || ++retryCount <= MAX_RETRY_COUNT) {
+            if (currentItemIsType(BasePlaylistManager.AUDIO) && ++retryCount <= MAX_RETRY_COUNT) {
                 Log.d(TAG, "Retrying audio playback.  Retry count: " + retryCount);
                 playAudioItem();
                 return true;
