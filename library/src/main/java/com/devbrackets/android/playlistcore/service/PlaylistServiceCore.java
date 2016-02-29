@@ -312,10 +312,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         if (RemoteActions.ACTION_START_SERVICE.equals(intent.getAction())) {
-            startItemPlayback();
-
             seekToPosition = intent.getIntExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, -1);
             immediatelyPause = intent.getBooleanExtra(RemoteActions.ACTION_EXTRA_START_PAUSED, false);
+
+            startItemPlayback();
         } else {
             handleRemoteAction(intent.getAction(), intent.getExtras());
         }
