@@ -16,7 +16,6 @@ import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
 import com.devbrackets.android.playlistcore.service.PlaylistServiceCore;
 import com.devbrackets.android.playlistcoredemo.App;
@@ -37,7 +36,7 @@ import java.util.Locale;
  * and {@link com.devbrackets.android.playlistcore.manager.ListPlaylistManager}
  * classes.
  */
-public class AudioPlayerActivity extends AppCompatActivity implements PlaylistListener, ProgressListener {
+public class AudioPlayerActivity extends AppCompatActivity implements PlaylistListener<MediaItem>, ProgressListener {
     public static final String EXTRA_INDEX = "EXTRA_INDEX";
     public static final int PLAYLIST_ID = 4; //Arbitrary, for the example
 
@@ -91,7 +90,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     }
 
     @Override
-    public boolean onPlaylistItemChanged(@Nullable IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
+    public boolean onPlaylistItemChanged(@Nullable MediaItem currentItem, boolean hasNext, boolean hasPrevious) {
         shouldSetDuration = true;
 
         //Updates the button states
