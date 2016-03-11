@@ -47,7 +47,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     @Nullable
     protected String currentLargeNotificationUrl;
     @Nullable
-    protected String currentLockScreenArtworkUrl;
+    protected String currentRemoteViewArtworkUrl;
 
     protected boolean foregroundSetup;
     protected boolean notificationSetup;
@@ -144,10 +144,10 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Retrieves the image that will be displayed as the lock screen artwork
+     * Retrieves the image that will be displayed as the remote view artwork
      * for the currently playing item.
      *
-     * @return The image to display on the lock screen
+     * @return The image to display on the remote views
      */
     @Nullable
     protected Bitmap getRemoteViewArtwork() {
@@ -155,9 +155,9 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     }
 
     /**
-     * Called when the image for the Lock Screen needs to be updated.
+     * Called when the image for the Remote View needs to be updated.
      *
-     * @param playlistItem The playlist item to get the lock screen image for
+     * @param playlistItem The playlist item to get the remote view image for
      */
     protected void updateRemoteViewArtwork(I playlistItem) {
         //Purposefully left blank
@@ -189,9 +189,9 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
 
     /**
      * This should be called when the extending class has loaded an updated
-     * image for the LockScreen Artwork.
+     * image for the Remote Views Artwork.
      */
-    protected void onLockScreenArtworkUpdated() {
+    protected void onRemoteViewArtworkUpdated() {
         updateRemoteViews();
     }
 
@@ -237,7 +237,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
 
     /**
      * Requests the service be transferred to the foreground, initializing the
-     * LockScreen and Notification helpers for playback control.
+     * RemoteView and Notification helpers for playback control.
      */
     @Override
     protected void setupAsForeground() {
@@ -332,10 +332,10 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
             currentLargeNotificationUrl = currentPlaylistItem.getThumbnailUrl();
         }
 
-        //Starts the lock screen loading
-        if (currentPlaylistItem != null && (currentLockScreenArtworkUrl == null || !currentLockScreenArtworkUrl.equalsIgnoreCase(currentPlaylistItem.getArtworkUrl()))) {
+        //Starts the remote view loading
+        if (currentPlaylistItem != null && (currentRemoteViewArtworkUrl == null || !currentRemoteViewArtworkUrl.equalsIgnoreCase(currentPlaylistItem.getArtworkUrl()))) {
             updateRemoteViewArtwork(currentPlaylistItem);
-            currentLockScreenArtworkUrl = currentPlaylistItem.getArtworkUrl();
+            currentRemoteViewArtworkUrl = currentPlaylistItem.getArtworkUrl();
         }
     }
 }

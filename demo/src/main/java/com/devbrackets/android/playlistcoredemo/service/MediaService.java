@@ -32,10 +32,10 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
 
     private Bitmap defaultLargeNotificationImage;
     private Bitmap largeNotificationImage;
-    private Bitmap lockScreenArtwork;
+    private Bitmap remoteViewArtwork;
 
-    private NotificationTarget notificationImageTarget = new NotificationTarget();
-    private LockScreenTarget lockScreenImageTarget = new LockScreenTarget();
+    private NotificationImageTarget notificationImageTarget = new NotificationImageTarget();
+    private RemoteViewImageTarget remoteViewImageTarget = new RemoteViewImageTarget();
 
     //Picasso is an image loading library (NOTE: google now recommends using glide for image loading)
     private Picasso picasso;
@@ -107,13 +107,13 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
 
     @Override
     protected void updateRemoteViewArtwork(MediaItem playlistItem) {
-        picasso.load(playlistItem.getArtworkUrl()).into(lockScreenImageTarget);
+        picasso.load(playlistItem.getArtworkUrl()).into(remoteViewImageTarget);
     }
 
     @Nullable
     @Override
     protected Bitmap getRemoteViewArtwork() {
-        return lockScreenArtwork;
+        return remoteViewArtwork;
     }
 
     @Nullable
@@ -128,7 +128,7 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
      *
      * <b>NOTE:</b> This is a Picasso Image loader class
      */
-    private class NotificationTarget implements Target {
+    private class NotificationImageTarget implements Target {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
             largeNotificationImage = bitmap;
@@ -147,21 +147,21 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     }
 
     /**
-     * A class used to listen to the loading of the large lock screen images and perform
+     * A class used to listen to the loading of the large remote view images and perform
      * the correct functionality to update the artwork once it is loaded.
      *
      * <b>NOTE:</b> This is a Picasso Image loader class
      */
-    private class LockScreenTarget implements Target {
+    private class RemoteViewImageTarget implements Target {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            lockScreenArtwork = bitmap;
-            onLockScreenArtworkUpdated();
+            remoteViewArtwork = bitmap;
+            onRemoteViewArtworkUpdated();
         }
 
         @Override
         public void onBitmapFailed(Drawable errorDrawable) {
-            lockScreenArtwork = null;
+            remoteViewArtwork = null;
         }
 
         @Override
