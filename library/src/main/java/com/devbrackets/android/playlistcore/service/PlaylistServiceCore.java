@@ -585,9 +585,13 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * media item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_SEEK_ENDED}, through
      * {@link BasePlaylistManager#invokeSeekEnded(int)}
+     *
+     * resume the playback for ExoPlayer as it won't have the callback of
+     * {@link OnMediaSeekCompletionListener#onSeekComplete(MediaPlayerApi))}
      */
     protected void performSeekEnded(int newPosition) {
         performSeek(newPosition);
+        resumePlaybackIfNecessary();
     }
 
     /**
@@ -1150,12 +1154,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         @Override
         public void onSeekComplete(@NonNull MediaPlayerApi mediaPlayerApi) {
-            if (pausedForSeek) {
-                performPlay();
-                pausedForSeek = false;
-            } else {
-                performPause();
-            }
+            resumePlaybackIfNecessary();
         }
 
         @Override
@@ -1185,6 +1184,13 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
 
             return false;
+        }
+    }
+
+    private void resumePlaybackIfNecessary() {
+        if (pausedForSeek) {
+            performPlay();
+            pausedForSeek = false;
         }
     }
 }
