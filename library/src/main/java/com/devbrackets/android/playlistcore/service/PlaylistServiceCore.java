@@ -1153,8 +1153,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             if (pausedForSeek) {
                 performPlay();
                 pausedForSeek = false;
-            } else {
-                performPause();
             }
         }
 
