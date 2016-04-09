@@ -26,14 +26,14 @@ import com.devbrackets.android.playlistcore.service.BasePlaylistService;
  * A simple callback interface for listening to {@link BasePlaylistService}
  * changes.
  */
-public interface PlaylistListener {
+public interface PlaylistListener<T extends IPlaylistItem> {
 
     /**
      * Occurs when the currently playing item has changed
      *
      * @return True if the event has been handled
      */
-    boolean onPlaylistItemChanged(@Nullable IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious);
+    boolean onPlaylistItemChanged(@Nullable T currentItem, boolean hasNext, boolean hasPrevious);
 
     /**
      * Occurs when the current media state changes

@@ -49,7 +49,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@link BasePlaylistService}
  */
 @SuppressWarnings("unused")
-public abstract class BasePlaylistManager<I extends IPlaylistItem> implements PlaylistListener, ProgressListener {
+public abstract class BasePlaylistManager<I extends IPlaylistItem> implements PlaylistListener<I>, ProgressListener {
     private static final String TAG = "PlaylistManager";
 
     public static final int INVALID_ID = -1;
@@ -85,7 +85,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     protected PlaylistServiceCore<I, ?> service;
 
     @NonNull
-    protected List<WeakReference<PlaylistListener>> playlistListeners = new LinkedList<>();
+    protected List<WeakReference<PlaylistListener<I>>> playlistListeners = new LinkedList<>();
     @NonNull
     protected List<WeakReference<ProgressListener>> progressListeners = new LinkedList<>();
     @NonNull
@@ -154,12 +154,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @return True if the event should be consumed
      */
     @Override
-    public boolean onPlaylistItemChanged(@Nullable IPlaylistItem currentItem, boolean hasNext, boolean hasPrevious) {
+    public boolean onPlaylistItemChanged(@Nullable I currentItem, boolean hasNext, boolean hasPrevious) {
         playlistListenersLock.lock();
-        Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
+        Iterator<WeakReference<PlaylistListener<I>>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
-            PlaylistListener listener = iterator.next().get();
+            PlaylistListener<I> listener = iterator.next().get();
             if (listener == null) {
                 iterator.remove();
                 continue;
@@ -185,7 +185,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     @Override
     public boolean onPlaybackStateChanged(@NonNull BasePlaylistService.PlaybackState playbackState) {
         playlistListenersLock.lock();
-        Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
+        Iterator<WeakReference<PlaylistListener<I>>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
             PlaylistListener listener = iterator.next().get();
@@ -290,7 +290,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      *
      * @param listener The listener to register
      */
-    public void registerPlaylistListener(@NonNull PlaylistListener listener) {
+    public void registerPlaylistListener(@NonNull PlaylistListener<I> listener) {
         playlistListenersLock.lock();
         playlistListeners.add(new WeakReference<>(listener));
         playlistListenersLock.unlock();
@@ -304,7 +304,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     public void unRegisterPlaylistListener(@NonNull PlaylistListener listener) {
         playlistListenersLock.lock();
-        Iterator<WeakReference<PlaylistListener>> iterator = playlistListeners.iterator();
+        Iterator<WeakReference<PlaylistListener<I>>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
             PlaylistListener playlistListener = iterator.next().get();
