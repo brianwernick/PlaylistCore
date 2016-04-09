@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     //...
-    compile 'com.devbrackets.android:playlistcore:1.0.2'
+    compile 'com.devbrackets.android:playlistcore:1.1.0'
 }
 ```
 
@@ -52,12 +52,13 @@ License
 
 Attribution
 -----------
-Uses [Material Design icons][Design Icons] icons by Google
-licensed under [Creative Commons 4.0][CC 4.0]
+* Uses [Material Design icons][Design Icons] licensed under [Creative Commons 4.0][CC 4.0]
+* Uses [AppCompat-v7](http://developer.android.com/tools/support-library/features.html#v7-appcompat) licensed under [Apache 2.0][Apache 2.0]
 
 
  [Design Icons]: https://github.com/google/material-design-icons
  [CC 4.0]: http://creativecommons.org/licenses/by/4.0/
  [JCenter]: https://bintray.com/brianwernick/maven/PlaylistCore/view#files
  [Website]: http://devbrackets.com/dev/libs/playlistcore.html
- [Java Docs]: http://devbrackets.com/dev/libs/docs/playlistcore/1.0.0/index.html
+ [Java Docs]: http://devbrackets.com/dev/libs/docs/playlistcore/1.1.0/index.html
+ [Apache 2.0]: https://opensource.org/licenses/Apache-2.0
