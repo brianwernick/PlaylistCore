@@ -39,6 +39,7 @@ import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A manager to keep track of a playlist of items that a service can use for playback.
@@ -87,6 +88,10 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     protected List<WeakReference<PlaylistListener<I>>> playlistListeners = new LinkedList<>();
     @NonNull
     protected List<WeakReference<ProgressListener>> progressListeners = new LinkedList<>();
+    @NonNull
+    protected ReentrantLock playlistListenersLock = new ReentrantLock(true);
+    @NonNull
+    protected ReentrantLock progressListenersLock = new ReentrantLock(true);
 
     @Nullable
     protected Intent seekEndedIntent, allowedTypeChangedIntent;
@@ -150,6 +155,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     @Override
     public boolean onPlaylistItemChanged(@Nullable I currentItem, boolean hasNext, boolean hasPrevious) {
+        playlistListenersLock.lock();
         Iterator<WeakReference<PlaylistListener<I>>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
@@ -160,10 +166,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
             }
 
             if (listener.onPlaylistItemChanged(currentItem, hasNext, hasPrevious)) {
+                playlistListenersLock.unlock();
                 return true;
             }
         }
 
+        playlistListenersLock.unlock();
         return false;
     }
 
@@ -176,6 +184,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     @Override
     public boolean onPlaybackStateChanged(@NonNull BasePlaylistService.PlaybackState playbackState) {
+        playlistListenersLock.lock();
         Iterator<WeakReference<PlaylistListener<I>>> iterator = playlistListeners.iterator();
 
         while (iterator.hasNext()) {
@@ -186,10 +195,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
             }
 
             if (listener.onPlaybackStateChanged(playbackState)) {
+                playlistListenersLock.unlock();
                 return true;
             }
         }
 
+        playlistListenersLock.unlock();
         return false;
     }
 
@@ -202,6 +213,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     @Override
     public boolean onProgressUpdated(@NonNull MediaProgress mediaProgress) {
+        progressListenersLock.lock();
         Iterator<WeakReference<ProgressListener>> iterator = progressListeners.iterator();
 
         while (iterator.hasNext()) {
@@ -212,10 +224,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
             }
 
             if (listener.onProgressUpdated(mediaProgress)) {
+                progressListenersLock.unlock();
                 return true;
             }
         }
 
+        progressListenersLock.unlock();
         return false;
     }
 
@@ -277,7 +291,9 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @param listener The listener to register
      */
     public void registerPlaylistListener(@NonNull PlaylistListener<I> listener) {
+        playlistListenersLock.lock();
         playlistListeners.add(new WeakReference<>(listener));
+        playlistListenersLock.unlock();
     }
 
     /**
@@ -287,13 +303,17 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @param listener The listener to remove
      */
     public void unRegisterPlaylistListener(@NonNull PlaylistListener listener) {
+        playlistListenersLock.lock();
         Iterator<WeakReference<PlaylistListener<I>>> iterator = playlistListeners.iterator();
+
         while (iterator.hasNext()) {
             PlaylistListener playlistListener = iterator.next().get();
             if (playlistListener == null || playlistListener.equals(listener)) {
                 iterator.remove();
             }
         }
+
+        playlistListenersLock.unlock();
     }
 
     /**
@@ -302,7 +322,9 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @param listener The listener to notify of progress updates
      */
     public void registerProgressListener(@NonNull ProgressListener listener) {
+        progressListenersLock.lock();
         progressListeners.add(new WeakReference<>(listener));
+        progressListenersLock.unlock();
     }
 
     /**
@@ -312,13 +334,17 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @param listener The listener to unregister
      */
     public void unRegisterProgressListener(@NonNull ProgressListener listener) {
+        progressListenersLock.lock();
         Iterator<WeakReference<ProgressListener>> iterator = progressListeners.iterator();
+
         while (iterator.hasNext()) {
             ProgressListener progressListener = iterator.next().get();
             if (progressListener == null || progressListener.equals(listener)) {
                 iterator.remove();
             }
         }
+
+        progressListenersLock.unlock();
     }
 
     /**

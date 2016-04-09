@@ -336,16 +336,16 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     @Override
     public boolean onAudioFocusGained() {
-        if (!currentItemIsType(BasePlaylistManager.AUDIO) || audioPlayer == null) {
+        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
             return false;
         }
 
         //Returns the audio to the previous playback state and volume
-        if (!audioPlayer.isPlaying() && pausedForFocusLoss) {
-            audioPlayer.play();
-            updateNotification();
+        if (!isPlaying() && pausedForFocusLoss) {
+            pausedForFocusLoss = false;
+            performPlay();
         } else {
-            audioPlayer.setVolume(1.0f, 1.0f); //reset the audio volume
+            setVolume(1.0f, 1.0f); //reset the audio volume
         }
 
         return true;
@@ -363,19 +363,18 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     @Override
     public boolean onAudioFocusLost(boolean canDuckAudio) {
-        if (!currentItemIsType(BasePlaylistManager.AUDIO) || audioPlayer == null) {
+        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
             return false;
         }
 
         //Either pauses or reduces the volume of the audio in playback
         if (!canDuckAudio) {
-            if (audioPlayer.isPlaying()) {
+            if (isPlaying()) {
                 pausedForFocusLoss = true;
-                audioPlayer.pause();
-                updateNotification();
+                performPause();
             }
         } else {
-            audioPlayer.setVolume(getAudioDuckVolume(), getAudioDuckVolume());
+            setVolume(getAudioDuckVolume(), getAudioDuckVolume());
         }
 
         return true;
@@ -475,15 +474,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * {@link BasePlaylistManager#invokePausePlay()}
      */
     protected void performPlayPause() {
-        if (isPlaying() || pausedForFocusLoss) {
-            pausedForFocusLoss = false;
+        if (isPlaying()) {
             performPause();
         } else {
             performPlay();
         }
-
-        updateRemoteViews();
-        updateNotification();
     }
 
     /**
@@ -553,9 +548,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         updateWiFiLock(false);
         mediaProgressPoll.stop();
 
-        if (audioFocusHelper != null) {
-            audioFocusHelper.abandonFocus();
-        }
+        abandonAudioFocus();
     }
 
     /**
@@ -588,6 +581,25 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     protected void performSeekEnded(int newPosition) {
         performSeek(newPosition);
+    }
+
+    /**
+     * A helper method that allows us to update the audio volume of the media
+     * in playback when AudioFocus is lost or gained and we can dim instead
+     * of pausing playback.
+     *
+     * @param left The left channels audio volume
+     * @param right The right channels audio volume
+     */
+    protected void setVolume(float left, float right) {
+        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
+            audioPlayer.setVolume(left, right);
+        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
+            VideoPlayerApi videoPlayerApi = getPlaylistManager().getVideoPlayer();
+            if (videoPlayerApi != null) {
+                videoPlayerApi.setVolume(1.0f, 1.0f);
+            }
+        }
     }
 
     /**
@@ -624,6 +636,18 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     }
 
     /**
+     * Specifies if the VideoView audio focus should be handled by the
+     * PlaylistService.  This is <code>false</code> by default because
+     * the Android VideoView handles it's own audio focus, which would
+     * cause the video to never play on it's own if this were enabled.
+     *
+     * @return True if the PlaylistService should handle audio focus for videos
+     */
+    protected boolean handleVideoAudioFocus() {
+        return false;
+    }
+
+    /**
      * Performs the functionality to stop the media playback.  This will perform any cleanup
      * and stop the service.
      */
@@ -650,6 +674,20 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @param position The position to seek to in milliseconds
      */
     protected void performSeek(int position) {
+        performSeek(position, true);
+    }
+
+    /**
+     * Performs the functionality to seek the current media item
+     * to the specified position.  This should only be called directly
+     * when performing the initial setup of playback position.  For
+     * normal seeking process use the {@link #performSeekStarted()} in
+     * conjunction with {@link #performSeekEnded(int)}
+     *
+     * @param position The position to seek to in milliseconds
+     * @param updatePlaybackState True if the playback state should be updated
+     */
+    protected void performSeek(int position, boolean updatePlaybackState) {
         if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
             audioPlayer.seekTo(position);
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
@@ -659,7 +697,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         }
 
-        setPlaybackState(PlaybackState.SEEKING);
+        if (updatePlaybackState) {
+            setPlaybackState(PlaybackState.SEEKING);
+        }
     }
 
     /**
@@ -679,6 +719,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         mediaProgressPoll.stop();
         setPlaybackState(PlaybackState.PAUSED);
         stopForeground();
+
+        abandonAudioFocus();
+        updateNotification();
+        updateRemoteViews();
     }
 
     /**
@@ -698,6 +742,10 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         mediaProgressPoll.start();
         setPlaybackState(PlaybackState.PLAYING);
         setupForeground();
+
+        requestAudioFocus();
+        updateNotification();
+        updateRemoteViews();
     }
 
     /**
@@ -753,9 +801,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     protected boolean playAudioItem() {
         stopVideoPlayback();
         initializeAudioPlayer();
-        if (audioFocusHelper != null) {
-            audioFocusHelper.requestFocus();
-        }
+        requestAudioFocus();
 
         mediaProgressPoll.update(audioPlayer);
         mediaProgressPoll.reset();
@@ -784,6 +830,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     protected boolean playVideoItem() {
         stopAudioPlayback();
         initializeVideoPlayer();
+        requestAudioFocus();
 
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
         if (videoPlayer == null) {
@@ -820,10 +867,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Stops the AudioPlayer from playing.
      */
     protected void stopAudioPlayback() {
-        if (audioFocusHelper != null) {
-            audioFocusHelper.abandonFocus();
-        }
-
         if (audioPlayer != null) {
             audioPlayer.stop();
             audioPlayer.reset();
@@ -862,48 +905,80 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * current focus settings.
      */
     protected void startAudioPlayer() {
-        if (audioPlayer == null) {
-            return;
-        }
-
-        if (audioFocusHelper == null || audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
-            // If we don't have audio focus and can't duck we have to pause, even if state is playing
-            // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
-            if (audioPlayer.isPlaying()) {
-                audioPlayer.pause();
-                onMediaPlaybackEnded(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());
-            }
-
-            return;
-        } else if (audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_CAN_DUCK) {
-            audioPlayer.setVolume(getAudioDuckVolume(), getAudioDuckVolume());
-        } else {
-            audioPlayer.setVolume(1.0f, 1.0f);
-        }
-
-        mediaProgressPoll.start();
-        if (!audioPlayer.isPlaying()) {
-            audioPlayer.play();
-            onMediaPlaybackStarted(currentPlaylistItem, audioPlayer.getCurrentPosition(), audioPlayer.getDuration());
+        if (audioPlayer != null) {
+            startMediaPlayer(audioPlayer);
         }
     }
 
     /**
-     * Starts the playback of the specified video, attaching the
-     * {@link #mediaProgressPoll} to retrieve the correct playback
-     * information.
+     * Reconfigures the videoPlayer according to audio focus settings and starts/restarts it. This
+     * method starts/restarts the videoPlayer respecting the current audio focus state. So if
+     * we have focus, it will play normally; if we don't have focus, it will either leave the
+     * videoPlayer paused or set it to a low volume, depending on what is allowed by the
+     * current focus settings.
      */
     protected void startVideoPlayer() {
         VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
-        if (videoPlayer == null) {
-            return;
+        if (videoPlayer != null) {
+            startMediaPlayer(videoPlayer);
+        }
+    }
+
+    /**
+     * Reconfigures the mediaPlayerApi according to audio focus settings and starts/restarts it. This
+     * method starts/restarts the mediaPlayerApi respecting the current audio focus state. So if
+     * we have focus, it will play normally; if we don't have focus, it will either leave the
+     * mediaPlayerApi paused or set it to a low volume, depending on what is allowed by the
+     * current focus settings.
+     */
+    protected void startMediaPlayer(@NonNull MediaPlayerApi mediaPlayerApi) {
+        if (handleVideoAudioFocus() || !(mediaPlayerApi instanceof VideoPlayerApi)) {
+            if (audioFocusHelper == null || audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
+                // If we don't have audio focus and can't duck we have to pause, even if state is playing
+                // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
+                if (isPlaying()) {
+                    pausedForFocusLoss = true;
+                    performPause();
+                    onMediaPlaybackEnded(currentPlaylistItem, mediaPlayerApi.getCurrentPosition(), mediaPlayerApi.getDuration());
+                }
+
+                return;
+            } else if (audioFocusHelper.getCurrentAudioFocus() == AudioFocusHelper.Focus.NO_FOCUS_CAN_DUCK) {
+                setVolume(getAudioDuckVolume(), getAudioDuckVolume());
+            } else {
+                setVolume(1.0f, 1.0f);
+            }
         }
 
         mediaProgressPoll.start();
-        if (!videoPlayer.isPlaying()) {
-            videoPlayer.play();
-            onMediaPlaybackStarted(currentPlaylistItem, videoPlayer.getCurrentPosition(), videoPlayer.getDuration());
+        if (!isPlaying()) {
+            performPlay();
+            onMediaPlaybackStarted(currentPlaylistItem, mediaPlayerApi.getCurrentPosition(), mediaPlayerApi.getDuration());
         }
+    }
+
+    /**
+     * Requests the audio focus
+     */
+    protected boolean requestAudioFocus() {
+        //noinspection SimplifiableIfStatement
+        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
+            return false;
+        }
+
+        return  audioFocusHelper != null && audioFocusHelper.requestFocus();
+    }
+
+    /**
+     * Requests the audio focus to be abandoned
+     */
+    protected boolean abandonAudioFocus() {
+        //noinspection SimplifiableIfStatement
+        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
+            return false;
+        }
+
+        return  audioFocusHelper != null && audioFocusHelper.abandonFocus();
     }
 
     /**
@@ -925,10 +1000,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             getPlaylistManager().setCurrentPosition(Integer.MAX_VALUE);
         }
 
-        if (audioFocusHelper != null) {
-            audioFocusHelper.abandonFocus();
-        }
-
+        abandonAudioFocus();
         updateWiFiLock(false);
     }
 
@@ -1113,7 +1185,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         @Override
         public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
             retryCount = 0;
-            setPlaybackState(PlaybackState.PLAYING);
             startMediaPlayer();
 
             //Immediately pauses the media
@@ -1126,12 +1197,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
             //Seek to the correct position
             if (seekToPosition > 0) {
-                performSeek(seekToPosition);
+                performSeek(seekToPosition, false);
                 seekToPosition = -1;
             }
-
-            updateRemoteViews();
-            updateNotification();
         }
 
         @Override

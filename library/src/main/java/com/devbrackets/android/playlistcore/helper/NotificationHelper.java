@@ -63,7 +63,6 @@ public class NotificationHelper {
         dismiss();
 
         mediaServiceClass = null;
-
         notificationInfo.clean();
     }
 
