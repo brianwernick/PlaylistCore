@@ -650,6 +650,20 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @param position The position to seek to in milliseconds
      */
     protected void performSeek(int position) {
+        performSeek(position, true);
+    }
+
+    /**
+     * Performs the functionality to seek the current media item
+     * to the specified position.  This should only be called directly
+     * when performing the initial setup of playback position.  For
+     * normal seeking process use the {@link #performSeekStarted()} in
+     * conjunction with {@link #performSeekEnded(int)}
+     *
+     * @param position The position to seek to in milliseconds
+     * @param updatePlaybackState True if the playback state should be updated
+     */
+    protected void performSeek(int position, boolean updatePlaybackState) {
         if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
             audioPlayer.seekTo(position);
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
@@ -659,7 +673,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         }
 
-        setPlaybackState(PlaybackState.SEEKING);
+        if (updatePlaybackState) {
+            setPlaybackState(PlaybackState.SEEKING);
+        }
     }
 
     /**
@@ -1126,7 +1142,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
             //Seek to the correct position
             if (seekToPosition > 0) {
-                performSeek(seekToPosition);
+                performSeek(seekToPosition, false);
                 seekToPosition = -1;
             }
 
