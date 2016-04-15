@@ -21,7 +21,7 @@ import com.devbrackets.android.playlistcore.service.PlaylistServiceCore;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
-import com.devbrackets.android.playlistcoredemo.helper.AudioItems;
+import com.devbrackets.android.playlistcoredemo.data.Samples;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 import com.squareup.picasso.Picasso;
 
@@ -264,8 +264,8 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         }
 
         List<MediaItem> mediaItems = new LinkedList<>();
-        for (AudioItems.AudioItem item : AudioItems.getItems()) {
-            MediaItem mediaItem = new MediaItem(item);
+        for (Samples.Sample sample : Samples.getAudioSamples()) {
+            MediaItem mediaItem = new MediaItem(sample, true);
             mediaItems.add(mediaItem);
         }
 

@@ -8,7 +8,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.devbrackets.android.playlistcoredemo.R;
-import com.devbrackets.android.playlistcoredemo.ui.adapter.AudioSelectionListAdapter;
+import com.devbrackets.android.playlistcoredemo.data.Samples;
+import com.devbrackets.android.playlistcoredemo.ui.adapter.SampleListAdapter;
 
 
 /**
@@ -28,7 +29,7 @@ public class AudioSelectionActivity extends AppCompatActivity implements Adapter
         }
 
         ListView exampleList = (ListView) findViewById(R.id.selection_activity_list);
-        exampleList.setAdapter(new AudioSelectionListAdapter(this));
+        exampleList.setAdapter(new SampleListAdapter(this, Samples.getAudioSamples()));
         exampleList.setOnItemClickListener(this);
     }
 

@@ -7,9 +7,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
 import com.devbrackets.android.playlistcoredemo.R;
-import com.devbrackets.android.playlistcoredemo.ui.adapter.VideoSelectionListAdapter;
+import com.devbrackets.android.playlistcoredemo.data.Samples;
+import com.devbrackets.android.playlistcoredemo.ui.adapter.SampleListAdapter;
 
 
 /**
@@ -28,7 +28,7 @@ public class VideoSelectionActivity extends AppCompatActivity implements Adapter
         }
 
         ListView exampleList = (ListView) findViewById(R.id.selection_activity_list);
-        exampleList.setAdapter(new VideoSelectionListAdapter(this));
+        exampleList.setAdapter(new SampleListAdapter(this, Samples.getVideoSamples()));
         exampleList.setOnItemClickListener(this);
     }
 

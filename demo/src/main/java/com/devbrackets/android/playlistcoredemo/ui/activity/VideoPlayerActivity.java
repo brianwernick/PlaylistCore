@@ -8,8 +8,8 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
+import com.devbrackets.android.playlistcoredemo.data.Samples;
 import com.devbrackets.android.playlistcoredemo.helper.VideoApi;
-import com.devbrackets.android.playlistcoredemo.helper.VideoItems;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
 import java.util.LinkedList;
@@ -66,8 +66,8 @@ public class VideoPlayerActivity extends Activity {
         playlistManager = App.getPlaylistManager();
 
         List<MediaItem> mediaItems = new LinkedList<>();
-        for (VideoItems.VideoItem item : VideoItems.getItems()) {
-            MediaItem mediaItem = new MediaItem(item);
+        for (Samples.Sample sample : Samples.getVideoSamples()) {
+            MediaItem mediaItem = new MediaItem(sample, false);
             mediaItems.add(mediaItem);
         }
 
