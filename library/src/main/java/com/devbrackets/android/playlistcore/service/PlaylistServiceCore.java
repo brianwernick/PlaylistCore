@@ -738,6 +738,20 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
                 videoPlayer.play();
             }
         }
+        
+        //Immediately pauses the media
+        if (immediatelyPause) {
+            immediatelyPause = false;
+            if (mediaPlayerApi.isPlaying()) {
+                performPause();
+            }
+        }
+
+        //Seek to the correct position
+        if (seekToPosition > 0) {
+            performSeek(seekToPosition, false);
+            seekToPosition = -1;
+        }
 
         mediaProgressPoll.start();
         setPlaybackState(PlaybackState.PLAYING);
@@ -1186,20 +1200,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
             retryCount = 0;
             startMediaPlayer();
-
-            //Immediately pauses the media
-            if (immediatelyPause) {
-                immediatelyPause = false;
-                if (mediaPlayerApi.isPlaying()) {
-                    performPause();
-                }
-            }
-
-            //Seek to the correct position
-            if (seekToPosition > 0) {
-                performSeek(seekToPosition, false);
-                seekToPosition = -1;
-            }
         }
 
         @Override
