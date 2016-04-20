@@ -742,7 +742,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         //Immediately pauses the media
         if (immediatelyPause) {
             immediatelyPause = false;
-            if (mediaPlayerApi.isPlaying()) {
+            if (isPlaying()) {
                 performPause();
             }
         }
