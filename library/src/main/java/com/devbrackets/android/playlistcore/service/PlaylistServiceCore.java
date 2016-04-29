@@ -103,7 +103,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     protected int seekToPosition = -1;
 
     protected boolean pausedForSeek = false;
-    protected boolean immediatelyPause = false;
+    protected boolean immediatelyPause = false; //TODO: in the next major release rename this to startPaused
     protected boolean pausedForFocusLoss = false;
     protected boolean onCreateCalled = false;
 
@@ -950,10 +950,19 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         }
 
+        //Seek to the correct position
+        if (seekToPosition > 0) {
+            performSeek(seekToPosition, false);
+            seekToPosition = -1;
+        }
+
+        //Start the playback only if requested
         mediaProgressPoll.start();
-        if (!isPlaying()) {
+        if (!isPlaying() && !immediatelyPause) {
             performPlay();
             onMediaPlaybackStarted(currentPlaylistItem, mediaPlayerApi.getCurrentPosition(), mediaPlayerApi.getDuration());
+        } else {
+            setPlaybackState(PlaybackState.PAUSED);
         }
     }
 
@@ -1186,20 +1195,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         public void onPrepared(@NonNull MediaPlayerApi mediaPlayerApi) {
             retryCount = 0;
             startMediaPlayer();
-
-            //Immediately pauses the media
-            if (immediatelyPause) {
-                immediatelyPause = false;
-                if (mediaPlayerApi.isPlaying()) {
-                    performPause();
-                }
-            }
-
-            //Seek to the correct position
-            if (seekToPosition > 0) {
-                performSeek(seekToPosition, false);
-                seekToPosition = -1;
-            }
         }
 
         @Override

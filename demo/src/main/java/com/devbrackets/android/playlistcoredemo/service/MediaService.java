@@ -47,6 +47,13 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     }
 
     @Override
+    protected void performOnMediaCompletion() {
+        //Handles moving to the next playable item
+        performNext();
+        immediatelyPause = false;
+    }
+
+    @Override
     protected int getNotificationId() {
         return NOTIFICATION_ID;
     }
