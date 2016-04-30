@@ -956,7 +956,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             seekToPosition = -1;
         }
 
-        //Start the playback only if requested
+        //Start the playback only if requested, otherwise upate the state to paused
         mediaProgressPoll.start();
         if (!isPlaying() && !immediatelyPause) {
             performPlay();
