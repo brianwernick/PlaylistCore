@@ -33,6 +33,8 @@ public class RemoteActions {
     public static final String ACTION_REPEAT = PREFIX + "repeat";
     public static final String ACTION_SHUFFLE = PREFIX + "shuffle";
 
+    public static final String ACTION_UPDATE_NOTIFICATION = PREFIX + "update_notification";
+
     public static final String ACTION_SEEK_STARTED = PREFIX + "seek_started";
     public static final String ACTION_SEEK_ENDED = PREFIX + "seek_ended";
 
