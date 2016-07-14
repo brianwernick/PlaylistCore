@@ -14,7 +14,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_margin="@dimen/playlistcore_notification_image_margin"
-        android:scaleType="centerInside"
+        android:scaleType="fitCenter"
         tools:background="#ffffff"
         tools:ignore="ContentDescription"/>
 
