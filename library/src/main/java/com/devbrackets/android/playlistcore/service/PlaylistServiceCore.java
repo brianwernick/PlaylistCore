@@ -100,7 +100,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     @Nullable
     protected I currentPlaylistItem;
-    protected int seekToPosition = -1;
+    protected long seekToPosition = -1;
 
     protected boolean pausedForSeek = false;
     protected boolean immediatelyPause = false; //TODO: in the next major release rename this to startPaused
@@ -312,7 +312,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         if (RemoteActions.ACTION_START_SERVICE.equals(intent.getAction())) {
-            seekToPosition = intent.getIntExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, -1);
+            seekToPosition = intent.getLongExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, -1);
             immediatelyPause = intent.getBooleanExtra(RemoteActions.ACTION_EXTRA_START_PAUSED, false);
 
             startItemPlayback();
@@ -577,9 +577,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Performs the functionality to end a seek for the current
      * media item.  This is called through an intent
      * with the {@link RemoteActions#ACTION_SEEK_ENDED}, through
-     * {@link BasePlaylistManager#invokeSeekEnded(int)}
+     * {@link BasePlaylistManager#invokeSeekEnded(long)}
      */
-    protected void performSeekEnded(int newPosition) {
+    protected void performSeekEnded(long newPosition) {
         performSeek(newPosition);
     }
 
@@ -669,11 +669,11 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * to the specified position.  This should only be called directly
      * when performing the initial setup of playback position.  For
      * normal seeking process use the {@link #performSeekStarted()} in
-     * conjunction with {@link #performSeekEnded(int)}
+     * conjunction with {@link #performSeekEnded(long)}
      *
      * @param position The position to seek to in milliseconds
      */
-    protected void performSeek(int position) {
+    protected void performSeek(long position) {
         performSeek(position, true);
     }
 
@@ -682,12 +682,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * to the specified position.  This should only be called directly
      * when performing the initial setup of playback position.  For
      * normal seeking process use the {@link #performSeekStarted()} in
-     * conjunction with {@link #performSeekEnded(int)}
+     * conjunction with {@link #performSeekEnded(long)}
      *
      * @param position The position to seek to in milliseconds
      * @param updatePlaybackState True if the playback state should be updated
      */
-    protected void performSeek(int position, boolean updatePlaybackState) {
+    protected void performSeek(long position, boolean updatePlaybackState) {
         if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
             audioPlayer.seekTo(position);
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
@@ -1124,7 +1124,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
                 break;
 
             case RemoteActions.ACTION_SEEK_ENDED:
-                performSeekEnded(extras.getInt(RemoteActions.ACTION_EXTRA_SEEK_POSITION, 0));
+                performSeekEnded(extras.getLong(RemoteActions.ACTION_EXTRA_SEEK_POSITION, 0));
                 break;
 
             case RemoteActions.ACTION_ALLOWED_TYPE_CHANGED:
