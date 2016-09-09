@@ -352,10 +352,10 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * interact with the service specified with {@link #getMediaServiceClass()}.  If there
      * are no items in the current playlist then no action will be performed.
      *
-     * @param seekPosition The position to start the current items playback at
+     * @param seekPosition The position to start the current items playback at (milliseconds)
      * @param startPaused True if the media item should not start playing when it has been prepared
      */
-    public void play(@IntRange(from = 0) int seekPosition, boolean startPaused) {
+    public void play(@IntRange(from = 0) long seekPosition, boolean startPaused) {
         I currentItem = getCurrentItem();
         if (currentItem == null) {
             return;
@@ -659,9 +659,9 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * the current item. The service specified with
      * {@link #getMediaServiceClass()} will be informed using the action
      * {@link RemoteActions#ACTION_SEEK_ENDED} and have an intent extra with the
-     * key {@link RemoteActions#ACTION_EXTRA_SEEK_POSITION} (integer)
+     * key {@link RemoteActions#ACTION_EXTRA_SEEK_POSITION} (long)
      */
-    public void invokeSeekEnded(@IntRange(from = 0) int seekPosition) {
+    public void invokeSeekEnded(@IntRange(from = 0) long seekPosition) {
         //Tries to start the intent
         if (seekEndedIntent != null) {
             seekEndedIntent.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition);

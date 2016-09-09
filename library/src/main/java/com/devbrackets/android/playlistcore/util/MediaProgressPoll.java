@@ -145,13 +145,13 @@ public class MediaProgressPoll {
      *
      * @param offset The millisecond value to offset the position
      */
-    public void setPositionOffset(int offset) {
+    public void setPositionOffset(long offset) {
         positionOffset = offset;
     }
 
     /**
      * Restarts the audio position to the start if the position is being overridden (see {@link #setOverridePosition(boolean)}).
-     * This will be the value specified with {@link #setPositionOffset(int)} or 0 if it hasn't been set.
+     * This will be the value specified with {@link #setPositionOffset(long)} or 0 if it hasn't been set.
      */
     public void restartOverridePosition() {
         overriddenPositionStopWatch.reset();
