@@ -103,6 +103,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     protected long seekToPosition = -1;
 
     protected boolean pausedForSeek = false;
+    protected boolean playingBeforeSeek = false;
     protected boolean immediatelyPause = false; //TODO: in the next major release rename this to startPaused
     protected boolean pausedForFocusLoss = false;
     protected boolean onCreateCalled = false;
@@ -688,15 +689,20 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @param updatePlaybackState True if the playback state should be updated
      */
     protected void performSeek(long position, boolean updatePlaybackState) {
+        boolean isPlaying = false;
+
         if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
+            isPlaying = audioPlayer.isPlaying();
             audioPlayer.seekTo(position);
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
+                isPlaying = videoPlayer.isPlaying();
                 videoPlayer.seekTo(position);
             }
         }
 
+        playingBeforeSeek = isPlaying;
         if (updatePlaybackState) {
             setPlaybackState(PlaybackState.SEEKING);
         }
@@ -1213,9 +1219,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         @Override
         public void onSeekComplete(@NonNull MediaPlayerApi mediaPlayerApi) {
-            if (pausedForSeek) {
+            if (pausedForSeek || playingBeforeSeek) {
                 performPlay();
                 pausedForSeek = false;
+                playingBeforeSeek = false;
+            } else {
+                performPause();
             }
         }
 
