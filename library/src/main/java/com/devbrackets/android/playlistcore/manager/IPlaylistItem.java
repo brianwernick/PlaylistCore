@@ -16,6 +16,8 @@
 
 package com.devbrackets.android.playlistcore.manager;
 
+import android.support.annotation.Nullable;
+
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 
 public interface IPlaylistItem {
@@ -26,17 +28,24 @@ public interface IPlaylistItem {
     @SupportedMediaType
     int getMediaType();
 
+    @Nullable
     String getMediaUrl();
 
+    @Nullable
     String getDownloadedMediaUri();
 
+    @Nullable
     String getThumbnailUrl();
 
+    @Nullable
     String getArtworkUrl();
 
+    @Nullable
     String getTitle();
 
+    @Nullable
     String getAlbum();
 
+    @Nullable
     String getArtist();
 }
