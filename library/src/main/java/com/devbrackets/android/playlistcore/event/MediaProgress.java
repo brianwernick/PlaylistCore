@@ -16,6 +16,8 @@
 
 package com.devbrackets.android.playlistcore.event;
 
+import android.support.annotation.NonNull;
+
 /**
  * An event to be used to inform listeners of media (e.g. audio, video) progress
  * changes.  This event will be re-used internally to avoid over-creating objects,
@@ -92,6 +94,7 @@ public class MediaProgress {
      * @param event The MediaProgress to copy
      * @return A copy of the event
      */
+    @NonNull
     public static MediaProgress obtain(MediaProgress event) {
         return new MediaProgress(event.position, event.bufferPercent, event.duration);
     }

@@ -159,7 +159,7 @@ public class MediaControlsHelper {
     }
 
     @NonNull
-    protected PendingIntent getMediaButtonReceiverPendingIntent(ComponentName componentName, @NonNull Class<? extends Service> serviceClass) {
+    protected PendingIntent getMediaButtonReceiverPendingIntent(@NonNull ComponentName componentName, @NonNull Class<? extends Service> serviceClass) {
         Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
         mediaButtonIntent.setComponent(componentName);
 

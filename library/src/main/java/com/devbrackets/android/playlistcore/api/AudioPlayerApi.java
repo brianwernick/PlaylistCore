@@ -26,7 +26,7 @@ import com.devbrackets.android.playlistcore.annotation.WakeMode;
 public interface AudioPlayerApi extends MediaPlayerApi {
     void setStreamType(@AudioStreamType int streamType);
 
-    void setWakeMode(Context context, @WakeMode int mode);
+    void setWakeMode(@NonNull Context context, @WakeMode int mode);
 
     void setDataSource(@NonNull Context context, @NonNull Uri uri);
 

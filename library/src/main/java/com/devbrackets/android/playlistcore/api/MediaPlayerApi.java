@@ -18,6 +18,7 @@ package com.devbrackets.android.playlistcore.api;
 
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
+import android.support.annotation.Nullable;
 
 import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.listener.OnMediaBufferUpdateListener;
@@ -65,13 +66,13 @@ public interface MediaPlayerApi {
     @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT)
     int getBufferedPercent();
 
-    void setOnMediaPreparedListener(OnMediaPreparedListener listener);
+    void setOnMediaPreparedListener(@Nullable OnMediaPreparedListener listener);
 
-    void setOnMediaBufferUpdateListener(OnMediaBufferUpdateListener listener);
+    void setOnMediaBufferUpdateListener(@Nullable OnMediaBufferUpdateListener listener);
 
-    void setOnMediaSeekCompletionListener(OnMediaSeekCompletionListener listener);
+    void setOnMediaSeekCompletionListener(@Nullable OnMediaSeekCompletionListener listener);
 
-    void setOnMediaCompletionListener(OnMediaCompletionListener listener);
+    void setOnMediaCompletionListener(@Nullable OnMediaCompletionListener listener);
 
-    void setOnMediaErrorListener(OnMediaErrorListener listener);
+    void setOnMediaErrorListener(@Nullable OnMediaErrorListener listener);
 }
