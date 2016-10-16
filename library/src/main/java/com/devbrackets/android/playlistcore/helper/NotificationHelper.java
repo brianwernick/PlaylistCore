@@ -39,6 +39,7 @@ import com.devbrackets.android.playlistcore.service.RemoteActions;
  * A class to help simplify notification creation and modification for
  * media playback applications.
  */
+@SuppressWarnings("unused")
 public class NotificationHelper {
     @NonNull
     protected Context context;
@@ -213,13 +214,13 @@ public class NotificationHelper {
         }
 
         //Build the notification and set the expanded content view if there is a service to inform of clicks
-        Notification notification = builder.build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && mediaServiceClass != null) {
-            notification.bigContentView = getBigNotification(serviceClass);
-            notification.bigContentView.setOnClickPendingIntent(R.id.playlistcore_big_notification_touch_area, pendingIntent);
+            RemoteViews bigNotificationView = getBigNotification(serviceClass);
+            bigNotificationView.setOnClickPendingIntent(R.id.playlistcore_big_notification_touch_area, pendingIntent);
+            builder.setCustomBigContentView(bigNotificationView);
         }
 
-        return notification;
+        return builder.build();
     }
 
     /**
