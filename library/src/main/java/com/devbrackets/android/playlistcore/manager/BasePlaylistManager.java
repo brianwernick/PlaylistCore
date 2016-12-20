@@ -409,7 +409,11 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
             position = getItemCount() - 1;
         }
 
-        currentPosition = findNextAllowedPosition(position);
+        if (position < 0) {
+            currentPosition = INVALID_POSITION;
+        } else {
+            currentPosition = findNextAllowedPosition(position);
+        }
     }
 
     /**
