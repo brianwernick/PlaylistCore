@@ -704,7 +704,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
             return getItemCount();
         }
 
-        while (position < getItemCount() && !isAllowedType(getItem(position))) {
+        while (position < getItemCount() && position >= 0 && !isAllowedType(getItem(position))) {
             position++;
         }
 
