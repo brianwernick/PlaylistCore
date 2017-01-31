@@ -4,7 +4,7 @@ apply plugin: 'com.novoda.bintray-release'
 
 def versionMajor = 1
 def versionMinor = 1
-def versionPatch = 1
+def versionPatch = 2
 
 def libraryGroupId = 'com.devbrackets.android'
 def libraryBaseName = 'playlistcore'
@@ -12,7 +12,7 @@ def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}" // releas
 
 dependencies {
     // Android
-    compile 'com.android.support:appcompat-v7:25.1.0' // includes support-v4
+    compile 'com.android.support:appcompat-v7:25.1.1' // includes support-v4
 }
 
 android {
