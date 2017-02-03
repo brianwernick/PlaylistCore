@@ -331,6 +331,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private void startPlayback(boolean forceStart) {
         //If we are changing audio files, or we haven't played before then start the playback
         if (forceStart || playlistManager.getCurrentPosition() != selectedPosition) {
+            playlistManager.setCurrentPosition(selectedPosition);
             playlistManager.play(0, false);
         }
     }
