@@ -714,10 +714,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     protected void performPause() {
         if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            audioPlayer.pause();
+            if (audioPlayer.isPlaying()) {
+                audioPlayer.pause();
+            }
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
-            if (videoPlayer != null) {
+            if (videoPlayer != null && videoPlayer.isPlaying()) {
                 videoPlayer.pause();
             }
         }
@@ -737,10 +739,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      */
     protected void performPlay() {
         if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            audioPlayer.play();
+            if (!audioPlayer.isPlaying()) {
+                audioPlayer.play();
+            }
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
-            if (videoPlayer != null) {
+            if (videoPlayer != null && !videoPlayer.isPlaying()) {
                 videoPlayer.play();
             }
         }
@@ -957,7 +961,8 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         //Seek to the correct position
-        if (seekToPosition > 0) {
+        boolean seekRequested = seekToPosition > 0;
+        if (seekRequested) {
             performSeek(seekToPosition, false);
             seekToPosition = -1;
         }
@@ -965,6 +970,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         //Start the playback only if requested, otherwise upate the state to paused
         mediaProgressPoll.start();
         if (!isPlaying() && !immediatelyPause) {
+            pausedForSeek = seekRequested;
             performPlay();
             onMediaPlaybackStarted(currentPlaylistItem, mediaPlayerApi.getCurrentPosition(), mediaPlayerApi.getDuration());
         } else {
