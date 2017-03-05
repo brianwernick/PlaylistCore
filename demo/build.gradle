@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 dependencies {
     compile project(':library')
-    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'com.squareup.picasso:picasso:2.5.2'
 }
 
@@ -16,5 +16,9 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
+    }
+
+    lintOptions {
+        abortOnError false
     }
 }
