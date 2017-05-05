@@ -437,7 +437,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         //Attempts to obtain the wifi lock only if the manifest has requested the permission
         if (getPackageManager().checkPermission(Manifest.permission.WAKE_LOCK, getPackageName()) == PackageManager.PERMISSION_GRANTED) {
-            wifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE)).createWifiLock(WifiManager.WIFI_MODE_FULL, "mcLock");
+            wifiLock = ((WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE)).createWifiLock(WifiManager.WIFI_MODE_FULL, "mcLock");
             wifiLock.setReferenceCounted(false);
         } else {
             Log.w(TAG, "Unable to acquire WAKE_LOCK due to missing manifest permission");
