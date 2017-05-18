@@ -1,5 +1,6 @@
 package com.devbrackets.android.playlistcoredemo.data;
 
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
@@ -27,6 +28,7 @@ public class MediaItem implements IPlaylistItem {
     }
 
     @Override
+    @SupportedMediaType
     public int getMediaType() {
         return isAudio ? PlaylistManager.AUDIO : PlaylistManager.VIDEO;
     }

@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
@@ -30,10 +29,6 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     private static final int FOREGROUND_REQUEST_CODE = 246; //Arbitrary
     private static final float AUDIO_DUCK_VOLUME = 0.1f;
 
-    private Bitmap defaultLargeNotificationImage;
-    private Bitmap largeNotificationImage;
-    private Bitmap remoteViewArtwork;
-
     private NotificationImageTarget notificationImageTarget = new NotificationImageTarget();
     private RemoteViewImageTarget remoteViewImageTarget = new RemoteViewImageTarget();
 
@@ -44,13 +39,15 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     public void onCreate() {
         super.onCreate();
         picasso = Picasso.with(getApplicationContext());
+
+        setDefaultLargeNotificationImage(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
     }
 
     @Override
     protected void performOnMediaCompletion() {
         //Handles moving to the next playable item
         performNext();
-        immediatelyPause = false;
+        setStartPaused(false);
     }
 
     @Override
@@ -83,21 +80,6 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     }
 
     @Override
-    protected Bitmap getDefaultLargeNotificationImage() {
-        if (defaultLargeNotificationImage == null) {
-            defaultLargeNotificationImage  = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
-        }
-
-        return defaultLargeNotificationImage;
-    }
-
-    @Nullable
-    @Override
-    protected Bitmap getDefaultLargeNotificationSecondaryImage() {
-        return null;
-    }
-
-    @Override
     protected int getNotificationIconRes() {
         return R.mipmap.ic_launcher;
     }
@@ -108,25 +90,13 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     }
 
     @Override
-    protected void updateLargeNotificationImage(int size, MediaItem playlistItem) {
+    protected void updateLargeNotificationImage(int size, @NonNull MediaItem playlistItem) {
         picasso.load(playlistItem.getThumbnailUrl()).into(notificationImageTarget);
     }
 
     @Override
-    protected void updateRemoteViewArtwork(MediaItem playlistItem) {
+    protected void updateRemoteViewArtwork(@NonNull MediaItem playlistItem) {
         picasso.load(playlistItem.getArtworkUrl()).into(remoteViewImageTarget);
-    }
-
-    @Nullable
-    @Override
-    protected Bitmap getRemoteViewArtwork() {
-        return remoteViewArtwork;
-    }
-
-    @Nullable
-    @Override
-    protected Bitmap getLargeNotificationImage() {
-        return largeNotificationImage;
     }
 
     /**
@@ -138,13 +108,13 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     private class NotificationImageTarget implements Target {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            largeNotificationImage = bitmap;
+            setLargeNotificationImage(bitmap);
             onLargeNotificationImageUpdated();
         }
 
         @Override
         public void onBitmapFailed(Drawable errorDrawable) {
-            largeNotificationImage = null;
+            setLargeNotificationImage(null);
         }
 
         @Override
@@ -162,13 +132,13 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     private class RemoteViewImageTarget implements Target {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            remoteViewArtwork = bitmap;
+            setRemoteViewArtwork(bitmap);
             onRemoteViewArtworkUpdated();
         }
 
         @Override
         public void onBitmapFailed(Drawable errorDrawable) {
-            remoteViewArtwork = null;
+            setRemoteViewArtwork(null);
         }
 
         @Override
