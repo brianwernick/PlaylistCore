@@ -96,7 +96,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     @Nullable
     protected Intent seekEndedIntent, allowedTypeChangedIntent;
     @Nullable
-    protected PendingIntent playPausePendingIntent, nextPendingIntent, previousPendingIntent, stopPendingIntent, repeatPendingIntent, shufflePendingIntent, seekStartedPendingIntent;
+    protected PendingIntent updateNotificationPendingIntent, playPausePendingIntent, nextPendingIntent, previousPendingIntent, stopPendingIntent, repeatPendingIntent, shufflePendingIntent, seekStartedPendingIntent;
 
     /**
      * Retrieves the application to use when starting and communicating with the
@@ -670,6 +670,16 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
     }
 
     /**
+     * Update status bar notification if user change some data
+     * {@link #getMediaServiceClass()} will be informed using the action
+     * {@link RemoteActions#ACTION_SEEK_ENDED} and have an intent extra with the
+     * key {@link RemoteActions#ACTION_UPDATE_NOTIFICATION} (integer)
+     */
+    public void updateNotification() {
+        sendPendingIntent( updateNotificationPendingIntent );
+    }
+
+    /**
      * Creates the Intents that will be used to interact with the playlist service
      *
      * @param mediaServiceClass The class to inform of any media playback controls
@@ -681,6 +691,8 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
         playPausePendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PLAY_PAUSE);
         repeatPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_REPEAT);
         shufflePendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_SHUFFLE);
+
+        updateNotificationPendingIntent = createPendingIntent( application, mediaServiceClass, RemoteActions.ACTION_UPDATE_NOTIFICATION );
 
         stopPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_STOP);
         seekStartedPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_SEEK_STARTED);

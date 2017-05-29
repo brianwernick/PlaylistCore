@@ -1144,6 +1144,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
                 updateAllowedMediaType(extras.getInt(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE));
                 break;
 
+            case RemoteActions.ACTION_UPDATE_NOTIFICATION:
+                updateRemoteViews();
+                updateNotification();
+                mediaItemChanged();
+                break;
+
             default:
                 return false;
         }
