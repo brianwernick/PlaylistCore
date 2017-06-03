@@ -41,6 +41,7 @@ import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper
 import com.devbrackets.android.playlistcore.listener.*
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager.Companion.AUDIO
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
@@ -729,7 +730,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * @return True if the current media item is of the same passed type
      */
     protected fun currentItemIsType(@SupportedMediaType type: Int): Boolean {
-        return currentPlaylistItem != null && currentPlaylistItem!!.mediaType and type != 0
+        return (currentPlaylistItem?.mediaType ?: 0) and type != 0
     }
 
     /**
@@ -1056,7 +1057,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * @param extras The extras packaged with the intent associated with the action
      * @return True if the remote action was handled
      */
-    protected fun handleRemoteAction(action: String?, extras: Bundle): Boolean {
+    protected fun handleRemoteAction(action: String?, extras: Bundle?): Boolean {
         if (action == null || action.isEmpty()) {
             return false
         }
@@ -1069,8 +1070,8 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
             RemoteActions.ACTION_SHUFFLE -> performShuffle()
             RemoteActions.ACTION_STOP -> performStop()
             RemoteActions.ACTION_SEEK_STARTED -> performSeekStarted()
-            RemoteActions.ACTION_SEEK_ENDED -> performSeekEnded(extras.getLong(RemoteActions.ACTION_EXTRA_SEEK_POSITION, 0))
-            RemoteActions.ACTION_ALLOWED_TYPE_CHANGED -> updateAllowedMediaType(extras.getInt(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE))
+            RemoteActions.ACTION_SEEK_ENDED -> performSeekEnded(extras?.getLong(RemoteActions.ACTION_EXTRA_SEEK_POSITION, 0) ?: 0)
+            RemoteActions.ACTION_ALLOWED_TYPE_CHANGED -> updateAllowedMediaType(extras?.getInt(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE) ?: AUDIO)
 
             else -> return false
         }
@@ -1089,16 +1090,17 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
             return
         }
 
-        audioPlayer = newAudioPlayer
-        audioPlayer!!.setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)
-        audioPlayer!!.setStreamType(AudioManager.STREAM_MUSIC)
+        audioPlayer = newAudioPlayer.apply {
+            setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)
+            setStreamType(AudioManager.STREAM_MUSIC)
 
-        //Sets the listeners
-        audioPlayer!!.setOnMediaPreparedListener(mediaListener)
-        audioPlayer!!.setOnMediaCompletionListener(mediaListener)
-        audioPlayer!!.setOnMediaErrorListener(mediaListener)
-        audioPlayer!!.setOnMediaSeekCompletionListener(mediaListener)
-        audioPlayer!!.setOnMediaBufferUpdateListener(mediaListener)
+            // Sets the listeners
+            setOnMediaPreparedListener(mediaListener)
+            setOnMediaCompletionListener(mediaListener)
+            setOnMediaErrorListener(mediaListener)
+            setOnMediaSeekCompletionListener(mediaListener)
+            setOnMediaBufferUpdateListener(mediaListener)
+        }
     }
 
     /**

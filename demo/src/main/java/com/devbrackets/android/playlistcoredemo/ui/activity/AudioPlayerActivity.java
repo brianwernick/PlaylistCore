@@ -155,7 +155,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private void updateCurrentPlaybackInformation() {
         PlaylistItemChange<MediaItem> itemChange = playlistManager.getCurrentItemChange();
         if (itemChange != null) {
-            onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.hasNext(), itemChange.hasPrevious());
+            onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.getHasNext(), itemChange.getHasPrevious());
         }
 
         PlaylistServiceCore.PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
