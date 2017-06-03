@@ -16,7 +16,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     // Android
-    compile 'com.android.support:appcompat-v7:25.3.1' // includes support-v4
+    compile 'com.android.support:appcompat-v7:25.3.1'
 }
 
 android {
