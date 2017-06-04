@@ -16,13 +16,17 @@
 
 package com.devbrackets.android.playlistcore.service
 
+import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.graphics.Bitmap
 import android.support.annotation.DrawableRes
-
+import android.support.v4.media.session.MediaSessionCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
-import com.devbrackets.android.playlistcore.helper.NotificationHelper
+import com.devbrackets.android.playlistcore.helper.notification.NotificationInfo
+import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
+import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotificationPresenter
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem
 
@@ -34,11 +38,6 @@ import com.devbrackets.android.playlistcore.manager.IPlaylistItem
  * {@inheritDoc}
  */
 abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>> : PlaylistServiceCore<I, M>() {
-    companion object {
-        private val TAG = "BasePlaylistService"
-    }
-
-    protected var notificationHelper: NotificationHelper? = null
     protected var mediaControlsHelper: MediaControlsHelper? = null
 
     protected var currentLargeNotificationUrl: String? = null
@@ -46,6 +45,17 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
 
     protected var foregroundSetup: Boolean = false
     protected var notificationSetup: Boolean = false
+
+    var notificationPresenter: PlaylistNotificationPresenter? = null
+    protected val notificationManager: NotificationManager by lazy {
+        baseContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    }
+
+    protected val notificationInfo = NotificationInfo()
+    protected val mediaState = NotificationMediaState()
+    protected val mediaSession: MediaSessionCompat by lazy {
+        MediaSessionCompat(baseContext, "BasePlaylistService") //todo correct setup and teardown
+    }
 
     /**
      * Retrieves the ID to use for the notification and registering this
@@ -148,14 +158,12 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
     override fun onDestroy() {
         super.onDestroy()
 
-        notificationHelper = null
         mediaControlsHelper = null
     }
 
     override fun onServiceCreate() {
         super.onServiceCreate()
 
-        notificationHelper = NotificationHelper(applicationContext)
         mediaControlsHelper = MediaControlsHelper(applicationContext, javaClass)
     }
 
@@ -179,9 +187,13 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
      * Sets up the service as a Foreground service only if we aren't already registered as such
      */
     override fun setupForeground() {
-        if (!foregroundSetup && notificationSetup && notificationHelper != null) {
+        if (!notificationSetup || foregroundSetup) {
+            return
+        }
+
+        notificationPresenter?.buildNotification(notificationInfo, mediaSession, javaClass)?.let {
             foregroundSetup = true
-            startForeground(notificationId, notificationHelper!!.getNotification(notificationClickPendingIntent, javaClass))
+            startForeground(notificationId, it)
         }
     }
 
@@ -203,13 +215,8 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
         foregroundSetup = false
         notificationSetup = false
 
-        if (notificationHelper != null) {
-            notificationHelper!!.release()
-        }
-
-        if (mediaControlsHelper != null) {
-            mediaControlsHelper!!.release()
-        }
+        notificationManager.cancel(notificationId)
+        mediaControlsHelper?.release()
     }
 
     /**
@@ -218,16 +225,15 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
      */
     override fun setupAsForeground() {
         //Sets up the Lock Screen playback controls
-        if (mediaControlsHelper != null) {
-            mediaControlsHelper!!.setMediaControlsEnabled(true)
-            mediaControlsHelper!!.setBaseInformation(remoteViewIconRes)
+        mediaControlsHelper?.let {
+            it.setMediaControlsEnabled(true)
+            it.setBaseInformation(remoteViewIconRes)
         }
 
         //Sets up the Notifications
-        if (notificationHelper != null) {
-            notificationHelper!!.setNotificationsEnabled(true)
-            notificationHelper!!.setNotificationBaseInformation(notificationId, notificationIconRes, javaClass)
-        }
+        notificationInfo.showNotifications = true
+        notificationInfo.notificationId = notificationId
+        notificationInfo.appIcon = notificationIconRes
 
         //Starts the service as the foreground audio player
         notificationSetup = true
@@ -242,34 +248,30 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
      * associated with the current playlist item.
      */
     override fun updateNotification() {
-        if (currentPlaylistItem == null || !notificationSetup || notificationHelper == null) {
+        if (currentPlaylistItem == null || !notificationSetup) {
             return
         }
 
-        //Generate the notification state
-        val mediaState = NotificationHelper.NotificationMediaState()
+        // Generate the notification state
         mediaState.isNextEnabled = playlistManager.isNextAvailable
         mediaState.isPreviousEnabled = playlistManager.isPreviousAvailable
         mediaState.isPlaying = isPlaying
+        mediaState.isLoading = isLoading
 
 
-        //Update the big notification images
-        var bitmap = largeNotificationImage
-        if (bitmap == null) {
-            bitmap = defaultLargeNotificationImage
+        // Updates the notification information
+        notificationInfo.mediaState = mediaState
+        notificationInfo.title = currentPlaylistItem?.title.orEmpty()
+        notificationInfo.album = currentPlaylistItem?.album.orEmpty()
+        notificationInfo.artist = currentPlaylistItem?.artist.orEmpty()
+        notificationInfo.largeImage = largeNotificationImage ?: defaultLargeNotificationImage
+        notificationInfo.secondaryImage = largeNotificationSecondaryImage ?: defaultLargeNotificationSecondaryImage
+        notificationInfo.pendingIntent = notificationClickPendingIntent
+
+        // Updates the notification
+        notificationPresenter?.buildNotification(notificationInfo, mediaSession, javaClass)?.let {
+            notificationManager.notify(notificationInfo.notificationId, it)
         }
-
-        var secondaryImage = largeNotificationSecondaryImage
-        if (secondaryImage == null) {
-            secondaryImage = defaultLargeNotificationSecondaryImage
-        }
-
-        //Finish up the update
-        val title = currentPlaylistItem!!.title
-        val album = currentPlaylistItem!!.album
-        val artist = currentPlaylistItem!!.artist
-        notificationHelper!!.setClickPendingIntent(notificationClickPendingIntent)
-        notificationHelper!!.updateNotificationInformation(title, album, artist, bitmap, secondaryImage, mediaState)
     }
 
     /**
@@ -282,17 +284,18 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
         }
 
         //Generate the notification state
-        val mediaState = NotificationHelper.NotificationMediaState()
+        val mediaState = NotificationMediaState()
         mediaState.isNextEnabled = playlistManager.isNextAvailable
         mediaState.isPreviousEnabled = playlistManager.isPreviousAvailable
         mediaState.isPlaying = isPlaying
+        mediaState.isLoading = isLoading
 
 
         //Finish up the update
         val title = currentPlaylistItem!!.title
         val album = currentPlaylistItem!!.album
         val artist = currentPlaylistItem!!.artist
-        mediaControlsHelper!!.update(title, album, artist, remoteViewArtwork, mediaState)
+        mediaControlsHelper?.update(title, album, artist, remoteViewArtwork, mediaState)
     }
 
     override fun mediaItemChanged() {
@@ -300,7 +303,7 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
 
         //Starts the notification loading
         if (currentPlaylistItem != null && (currentLargeNotificationUrl == null || currentLargeNotificationUrl != currentPlaylistItem!!.thumbnailUrl)) {
-            val size = resources.getDimensionPixelSize(R.dimen.playlistcore_big_notification_height)
+            val size = resources.getDimensionPixelSize(R.dimen.playlistcore_large_notification_size)
             updateLargeNotificationImage(size, currentPlaylistItem!!)
             currentLargeNotificationUrl = currentPlaylistItem!!.thumbnailUrl
         }

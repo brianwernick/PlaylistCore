@@ -446,6 +446,13 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
             return false
         }
 
+    protected val isLoading: Boolean
+        get() {
+            return currentPlaybackState == PlaybackState.RETRIEVING ||
+                    currentPlaybackState == PlaybackState.PREPARING ||
+                    currentPlaybackState == PlaybackState.SEEKING
+        }
+
     /**
      * Performs the functionality to pause and/or resume
      * the media playback.  This is called through an intent

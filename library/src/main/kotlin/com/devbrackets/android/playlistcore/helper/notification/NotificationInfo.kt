@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper
+package com.devbrackets.android.playlistcore.helper.notification
 
 import android.app.PendingIntent
 import android.graphics.Bitmap
 import android.support.annotation.DrawableRes
+import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
 
 /**
  * An object to hold the information necessary to populate a notification
@@ -32,7 +33,6 @@ class NotificationInfo {
     var secondaryImage: Bitmap? = null
 
     @DrawableRes
-    @get:DrawableRes
     var appIcon: Int = 0
     var notificationId: Int = 0
 
@@ -40,7 +40,7 @@ class NotificationInfo {
 
     var pendingIntent: PendingIntent? = null
 
-    var mediaState: NotificationHelper.NotificationMediaState? = null
+    var mediaState: NotificationMediaState? = null
 
     fun clean() {
         appIcon = 0
