@@ -28,13 +28,13 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
 import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
 /**
  * A class to help simplify playback control and artwork display for
  * remote views such as Android Wear, Bluetooth devices, Lock Screens, etc.
- * similar to how the [NotificationHelper] simplifies notifications
  */
 class MediaControlsHelper
 /**
@@ -51,7 +51,7 @@ class MediaControlsHelper
     }
 
     protected var appIconBitmap: Bitmap? = null
-    protected var mediaSession: MediaSessionCompat
+    protected var mediaSession: MediaSessionCompat //TODO: this needs to be the same as the one for the Notifications
 
     protected var enabled = true
 
@@ -113,9 +113,7 @@ class MediaControlsHelper
      * @param artist The name of the artist for the media item
      * @param notificationMediaState The current media state for the expanded (big) notification
      */
-    //getPlaybackOptions() and getPlaybackState() return the correctly annotated items
-    fun update(title: String?, album: String?, artist: String?, mediaArtwork: Bitmap?,
-               notificationMediaState: NotificationHelper.NotificationMediaState) {
+    fun update(title: String?, album: String?, artist: String?, mediaArtwork: Bitmap?, notificationMediaState: NotificationMediaState) {
         //Updates the current media MetaData
         val metaDataBuilder = MediaMetadataCompat.Builder()
         metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
@@ -130,7 +128,7 @@ class MediaControlsHelper
             metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mediaArtwork)
         }
 
-        mediaSession?.setMetadata(metaDataBuilder.build())
+        mediaSession.setMetadata(metaDataBuilder.build())
 
 
         //Updates the available playback controls
@@ -138,11 +136,11 @@ class MediaControlsHelper
         playbackStateBuilder.setActions(getPlaybackOptions(notificationMediaState))
         playbackStateBuilder.setState(getPlaybackState(notificationMediaState.isPlaying), PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
 
-        mediaSession!!.setPlaybackState(playbackStateBuilder.build())
-        Log.d(TAG, "update, controller is null ? " + if (mediaSession!!.controller == null) "true" else "false")
+        mediaSession.setPlaybackState(playbackStateBuilder.build())
+        Log.d(TAG, "update, controller is null ? " + if (mediaSession.controller == null) "true" else "false")
 
-        if (enabled && !mediaSession!!.isActive) {
-            mediaSession!!.isActive = true
+        if (enabled && !mediaSession.isActive) {
+            mediaSession.isActive = true
         }
     }
 
@@ -166,7 +164,7 @@ class MediaControlsHelper
      * @return The available playback options
      */
     @PlaybackStateCompat.Actions
-    protected fun getPlaybackOptions(mediaState: NotificationHelper.NotificationMediaState): Long {
+    protected fun getPlaybackOptions(mediaState: NotificationMediaState): Long {
         var availableActions = PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_PLAY_PAUSE
 
         if (mediaState.isNextEnabled) {

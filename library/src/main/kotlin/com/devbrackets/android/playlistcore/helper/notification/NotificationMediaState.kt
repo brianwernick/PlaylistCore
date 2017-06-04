@@ -14,29 +14,11 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.manager
+package com.devbrackets.android.playlistcore.helper.notification
 
-import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
-
-interface IPlaylistItem {
-    val id: Long
-
-    val playlistId: Long
-
-    @SupportedMediaType
-    val mediaType: Int
-
-    val mediaUrl: String?
-
-    val downloadedMediaUri: String?
-
-    val thumbnailUrl: String?
-
-    val artworkUrl: String?
-
-    val title: String?
-
-    val album: String?
-
-    val artist: String?
+open class NotificationMediaState {
+    var isPlaying: Boolean = false
+    var isLoading: Boolean = false
+    var isPreviousEnabled: Boolean = false
+    var isNextEnabled: Boolean = false
 }

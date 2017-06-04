@@ -67,11 +67,9 @@ class MediaControlsReceiver : BroadcastReceiver() {
     private fun handleKeyEvent(context: Context, mediaServiceClass: Class<out Service>, keyEvent: KeyEvent) {
         when (keyEvent.keyCode) {
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> sendPendingIntent(createPendingIntent(context, RemoteActions.ACTION_PLAY_PAUSE, mediaServiceClass))
-
             KeyEvent.KEYCODE_MEDIA_NEXT -> sendPendingIntent(createPendingIntent(context, RemoteActions.ACTION_NEXT, mediaServiceClass))
-
             KeyEvent.KEYCODE_MEDIA_PREVIOUS -> sendPendingIntent(createPendingIntent(context, RemoteActions.ACTION_PREVIOUS, mediaServiceClass))
-        }//Do nothing
+        }
     }
 
     /**
