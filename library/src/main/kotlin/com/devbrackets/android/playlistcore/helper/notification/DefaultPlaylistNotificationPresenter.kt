@@ -30,7 +30,7 @@ import com.devbrackets.android.playlistcore.service.RemoteActions
 open class DefaultPlaylistNotificationPresenter(protected val context: Context) : PlaylistNotificationPresenter {
 
     //TODO: or should the mediaSession be "owned" by this class? (i.e. not passed in to build)
-    override fun buildNotification(info: NotificationInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
+    override fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
         return NotificationCompat.Builder(context).apply {
             setSmallIcon(info.appIcon)
             setLargeIcon(info.largeNotificationIcon)
@@ -60,7 +60,7 @@ open class DefaultPlaylistNotificationPresenter(protected val context: Context) 
         }.build()
     }
 
-    protected open fun setActions(builder: NotificationCompat.Builder, info: NotificationInfo, serviceClass: Class<out Service>) {
+    protected open fun setActions(builder: NotificationCompat.Builder, info: MediaInfo, serviceClass: Class<out Service>) {
         val playing = info.mediaState.isPlaying
         val playPauseIconRes = if (!playing) R.drawable.playlistcore_notification_play else R.drawable.playlistcore_notification_pause
 

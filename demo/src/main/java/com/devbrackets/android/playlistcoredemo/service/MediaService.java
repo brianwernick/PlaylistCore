@@ -10,7 +10,6 @@ import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
-import com.devbrackets.android.playlistcore.helper.notification.DefaultPlaylistNotificationPresenter;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
@@ -37,12 +36,11 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     private Picasso picasso;
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    protected void onServiceCreate() {
+        super.onServiceCreate();
         picasso = Picasso.with(getApplicationContext());
 
         setDefaultLargeNotificationImage(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
-        setNotificationPresenter(new DefaultPlaylistNotificationPresenter(getBaseContext()));
     }
 
     @Override

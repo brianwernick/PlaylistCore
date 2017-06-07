@@ -22,9 +22,12 @@ import android.support.annotation.DrawableRes
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem
 
 /**
- * An object to hold the information necessary to populate a notification
+ * An object to hold the information necessary to populate the
+ * [PlaylistNotificationPresenter] and [MediaSessionProvider]
+ * with the information associated with the current playlist
+ * item
  */
-class NotificationInfo {
+class MediaInfo {
     var playlistItem: IPlaylistItem? = null
     var largeNotificationIcon: Bitmap? = null
     var artwork: Bitmap? = null
