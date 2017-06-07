@@ -28,6 +28,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import com.devbrackets.android.playlistcore.helper.notification.NotificationInfo
 import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
 import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver
 import com.devbrackets.android.playlistcore.service.RemoteActions
@@ -113,19 +114,19 @@ class MediaControlsHelper
      * @param artist The name of the artist for the media item
      * @param notificationMediaState The current media state for the expanded (big) notification
      */
-    fun update(title: String?, album: String?, artist: String?, mediaArtwork: Bitmap?, notificationMediaState: NotificationMediaState) {
+    fun update(notificationInfo: NotificationInfo) {
         //Updates the current media MetaData
         val metaDataBuilder = MediaMetadataCompat.Builder()
-        metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
-        metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
-        metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+        metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, notificationInfo.title)
+        metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, notificationInfo.album)
+        metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, notificationInfo.artist)
 
         if (appIconBitmap != null) {
             metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, appIconBitmap)
         }
 
-        if (mediaArtwork != null) {
-            metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mediaArtwork)
+        if (notificationInfo.artwork != null) {
+            metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, notificationInfo.artwork)
         }
 
         mediaSession.setMetadata(metaDataBuilder.build())
@@ -133,8 +134,8 @@ class MediaControlsHelper
 
         //Updates the available playback controls
         val playbackStateBuilder = PlaybackStateCompat.Builder()
-        playbackStateBuilder.setActions(getPlaybackOptions(notificationMediaState))
-        playbackStateBuilder.setState(getPlaybackState(notificationMediaState.isPlaying), PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
+        playbackStateBuilder.setActions(getPlaybackOptions(notificationInfo.mediaState))
+        playbackStateBuilder.setState(getPlaybackState(notificationInfo.mediaState.isPlaying), PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
 
         mediaSession.setPlaybackState(playbackStateBuilder.build())
         Log.d(TAG, "update, controller is null ? " + if (mediaSession.controller == null) "true" else "false")

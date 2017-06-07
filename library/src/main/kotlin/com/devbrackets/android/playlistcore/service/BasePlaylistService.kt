@@ -25,7 +25,6 @@ import android.support.v4.media.session.MediaSessionCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
 import com.devbrackets.android.playlistcore.helper.notification.NotificationInfo
-import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
 import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotificationPresenter
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem
@@ -37,6 +36,7 @@ import com.devbrackets.android.playlistcore.manager.IPlaylistItem
  *
  * {@inheritDoc}
  */
+@Deprecated("Merge with PlaylistServiceCore") //todo
 abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>> : PlaylistServiceCore<I, M>() {
     protected var mediaControlsHelper: MediaControlsHelper? = null
 
@@ -52,7 +52,6 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
     }
 
     protected val notificationInfo = NotificationInfo()
-    protected val mediaState = NotificationMediaState()
     protected val mediaSession: MediaSessionCompat by lazy {
         MediaSessionCompat(baseContext, "BasePlaylistService") //todo correct setup and teardown
     }
@@ -74,14 +73,6 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
      * @return The PendingIntent to use when the notification is clicked
      */
     protected abstract val notificationClickPendingIntent: PendingIntent
-
-    /**
-     * Retrieves the Image to use for the large notification (the double tall notification)
-     * when [.getLargeNotificationImage] returns null.
-     *
-     * @return The image to use on the large notification when no other one is provided
-     */
-    protected var defaultLargeNotificationImage: Bitmap? = null
 
     /**
      * Retrieves the Drawable resource that specifies the icon to place in the
@@ -110,22 +101,28 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
     protected var largeNotificationImage: Bitmap? = null
 
     /**
-     * Retrieves the image that will be displayed in the notification as a secondary
-     * image.  This can be used to specify playback type (e.g. Chromecast).
+     * Retrieves the Image to use for the large notification (the double tall notification)
+     * when [.getLargeNotificationImage] returns null.
      *
-     * This will be called any time the notification is updated
-     *
-     * @return The image to display in the secondary position
+     * @return The image to use on the large notification when no other one is provided
      */
-    protected var largeNotificationSecondaryImage: Bitmap? = null
+    protected var defaultLargeNotificationImage: Bitmap? = null
 
     /**
-     * Retrieves the image that will be displayed in the notification as a secondary
-     * image if [.getLargeNotificationSecondaryImage] returns null.
+     * Retrieves the image that will be displayed as the remote view artwork
+     * for the currently playing item.
 
-     * @return The fallback image to display in the secondary position
+     * @return The image to display on the remote views
      */
-    protected var defaultLargeNotificationSecondaryImage: Bitmap? = null
+    protected var remoteViewArtwork: Bitmap? = null
+
+    /**
+     * Retrieves the image that will be displayed as the remote view artwork
+     * image if [.getRemoteViewArtwork] returns null.
+
+     * @return The fallback image to display
+     */
+    protected var defaultRemoteViewArtwork: Bitmap? = null
 
     /**
      * Called when the image in the notification needs to be updated.
@@ -139,14 +136,6 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
     }
 
     /**
-     * Retrieves the image that will be displayed as the remote view artwork
-     * for the currently playing item.
-
-     * @return The image to display on the remote views
-     */
-    protected var remoteViewArtwork: Bitmap? = null
-
-    /**
      * Called when the image for the Remote View needs to be updated.
 
      * @param playlistItem The playlist item to get the remote view image for
@@ -157,7 +146,6 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
 
     override fun onDestroy() {
         super.onDestroy()
-
         mediaControlsHelper = null
     }
 
@@ -165,22 +153,6 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
         super.onServiceCreate()
 
         mediaControlsHelper = MediaControlsHelper(applicationContext, javaClass)
-    }
-
-    /**
-     * This should be called when the extending class has loaded an updated
-     * image for the Large Notification.
-     */
-    protected fun onLargeNotificationImageUpdated() {
-        updateNotification()
-    }
-
-    /**
-     * This should be called when the extending class has loaded an updated
-     * image for the Remote Views Artwork.
-     */
-    protected fun onRemoteViewArtworkUpdated() {
-        updateRemoteViews()
     }
 
     /**
@@ -238,64 +210,22 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
         //Starts the service as the foreground audio player
         notificationSetup = true
         setupForeground()
-
-        updateRemoteViews()
-        updateNotification()
     }
 
-    /**
-     * Performs the process to update the playback controls and images in the notification
-     * associated with the current playlist item.
-     */
-    override fun updateNotification() {
+    override fun updateMediaControls() {
         if (currentPlaylistItem == null || !notificationSetup) {
             return
         }
 
-        // Generate the notification state
-        mediaState.isNextEnabled = playlistManager.isNextAvailable
-        mediaState.isPreviousEnabled = playlistManager.isPreviousAvailable
-        mediaState.isPlaying = isPlaying
-        mediaState.isLoading = isLoading
+        updateMediaInfo()
 
-
-        // Updates the notification information
-        notificationInfo.mediaState = mediaState
-        notificationInfo.title = currentPlaylistItem?.title.orEmpty()
-        notificationInfo.album = currentPlaylistItem?.album.orEmpty()
-        notificationInfo.artist = currentPlaylistItem?.artist.orEmpty()
-        notificationInfo.largeImage = largeNotificationImage ?: defaultLargeNotificationImage
-        notificationInfo.secondaryImage = largeNotificationSecondaryImage ?: defaultLargeNotificationSecondaryImage
-        notificationInfo.pendingIntent = notificationClickPendingIntent
+        //todo share mediaSession
+        mediaControlsHelper?.update(notificationInfo)
 
         // Updates the notification
         notificationPresenter?.buildNotification(notificationInfo, mediaSession, javaClass)?.let {
             notificationManager.notify(notificationInfo.notificationId, it)
         }
-    }
-
-    /**
-     * Performs the process to update the playback controls and the background
-     * (artwork) image displayed on the lock screen and other remote views.
-     */
-    override fun updateRemoteViews() {
-        if (currentPlaylistItem == null || !notificationSetup || mediaControlsHelper == null) {
-            return
-        }
-
-        //Generate the notification state
-        val mediaState = NotificationMediaState()
-        mediaState.isNextEnabled = playlistManager.isNextAvailable
-        mediaState.isPreviousEnabled = playlistManager.isPreviousAvailable
-        mediaState.isPlaying = isPlaying
-        mediaState.isLoading = isLoading
-
-
-        //Finish up the update
-        val title = currentPlaylistItem!!.title
-        val album = currentPlaylistItem!!.album
-        val artist = currentPlaylistItem!!.artist
-        mediaControlsHelper?.update(title, album, artist, remoteViewArtwork, mediaState)
     }
 
     override fun mediaItemChanged() {
@@ -313,5 +243,35 @@ abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>
             updateRemoteViewArtwork(currentPlaylistItem!!)
             currentRemoteViewArtworkUrl = currentPlaylistItem!!.artworkUrl
         }
+    }
+
+    /**
+     * This should be called when the extending class has loaded an updated
+     * image for the Large Notification.
+     */
+    protected open fun onLargeNotificationImageUpdated() {
+        updateMediaControls()
+    }
+
+    /**
+     * This should be called when the extending class has loaded an updated
+     * image for the Remote Views Artwork.
+     */
+    protected open fun onRemoteViewArtworkUpdated() {
+        updateMediaControls()
+    }
+
+    protected open fun updateMediaInfo() {
+        // Generate the notification state
+        notificationInfo.mediaState.isPlaying = isPlaying
+        notificationInfo.mediaState.isLoading = isLoading
+        notificationInfo.mediaState.isNextEnabled = playlistManager.isNextAvailable
+        notificationInfo.mediaState.isPreviousEnabled = playlistManager.isPreviousAvailable
+
+        // Updates the notification information
+        notificationInfo.playlistItem = currentPlaylistItem
+        notificationInfo.pendingIntent = notificationClickPendingIntent
+        notificationInfo.artwork = remoteViewArtwork ?: defaultRemoteViewArtwork
+        notificationInfo.largeNotificationIcon = largeNotificationImage ?: defaultLargeNotificationImage
     }
 }
