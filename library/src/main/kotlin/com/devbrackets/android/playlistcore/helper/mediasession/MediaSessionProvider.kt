@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper.notification
+package com.devbrackets.android.playlistcore.helper.mediasession
 
-import android.app.Notification
-import android.app.Service
 import android.support.v4.media.session.MediaSessionCompat
+import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
 
-/**
- * Handles the creation and presentation of the Media notification
- * for the Playlist.
- *
- * TODO: This should end up taking place of the notification helper and be delegated by
- * the PlaylistService so that we won't need the BasePlaylistService and PlaylistServiceCore
- * to be separate anymore
- */
-interface PlaylistNotificationPresenter {
-    fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification
+interface MediaSessionProvider {
+    fun get(): MediaSessionCompat
+    fun update(mediaInfo: MediaInfo)
 }
