@@ -33,7 +33,7 @@ open class DefaultPlaylistNotificationPresenter(protected val context: Context) 
     override fun buildNotification(info: NotificationInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
         return NotificationCompat.Builder(context).apply {
             setSmallIcon(info.appIcon)
-            setLargeIcon(info.largeImage)
+            setLargeIcon(info.largeNotificationIcon)
 
             setContentTitle(info.title)
             setContentText("${info.album} - ${info.artist}") //todo only if both are not empty
@@ -41,7 +41,7 @@ open class DefaultPlaylistNotificationPresenter(protected val context: Context) 
             setContentIntent(info.pendingIntent)
             setDeleteIntent(createPendingIntent(serviceClass, RemoteActions.ACTION_STOP))
 
-            val allowSwipe = !(info.mediaState?.isPlaying ?: false)
+            val allowSwipe = !(info.mediaState.isPlaying)
             setAutoCancel(allowSwipe)
             setOngoing(!allowSwipe)
 
@@ -61,7 +61,7 @@ open class DefaultPlaylistNotificationPresenter(protected val context: Context) 
     }
 
     protected open fun setActions(builder: NotificationCompat.Builder, info: NotificationInfo, serviceClass: Class<out Service>) {
-        val playing = info.mediaState?.isPlaying ?: false
+        val playing = info.mediaState.isPlaying
         val playPauseIconRes = if (!playing) R.drawable.playlistcore_notification_play else R.drawable.playlistcore_notification_pause
 
         //todo enable/disable states

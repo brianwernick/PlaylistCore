@@ -19,18 +19,15 @@ package com.devbrackets.android.playlistcore.helper.notification
 import android.app.PendingIntent
 import android.graphics.Bitmap
 import android.support.annotation.DrawableRes
-import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
+import com.devbrackets.android.playlistcore.manager.IPlaylistItem
 
 /**
  * An object to hold the information necessary to populate a notification
  */
 class NotificationInfo {
-    var title: String = ""
-    var album: String = ""
-    var artist: String = ""
-
-    var largeImage: Bitmap? = null
-    var secondaryImage: Bitmap? = null
+    var playlistItem: IPlaylistItem? = null
+    var largeNotificationIcon: Bitmap? = null
+    var artwork: Bitmap? = null
 
     @DrawableRes
     var appIcon: Int = 0
@@ -40,18 +37,19 @@ class NotificationInfo {
 
     var pendingIntent: PendingIntent? = null
 
-    var mediaState: NotificationMediaState? = null
+    var mediaState: NotificationMediaState = NotificationMediaState()
+
+    val title: String get() = playlistItem?.title.orEmpty()
+    val album: String get() = playlistItem?.album.orEmpty()
+    val artist: String get() = playlistItem?.artist.orEmpty()
 
     fun clean() {
         appIcon = 0
         notificationId = 0
+        playlistItem = null
 
-        title = ""
-        album = ""
-        artist = ""
-
-        largeImage = null
-        secondaryImage = null
+        largeNotificationIcon = null
+        artwork = null
         pendingIntent = null
     }
 }

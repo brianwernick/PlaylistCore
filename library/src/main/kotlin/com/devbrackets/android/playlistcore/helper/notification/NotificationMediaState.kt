@@ -21,4 +21,11 @@ open class NotificationMediaState {
     var isLoading: Boolean = false
     var isPreviousEnabled: Boolean = false
     var isNextEnabled: Boolean = false
+
+    open fun reset() {
+        isPlaying = false
+        isLoading = false
+        isPreviousEnabled = false
+        isNextEnabled = false
+    }
 }

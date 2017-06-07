@@ -235,25 +235,9 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         //Purposefully left blank
     }
 
-    /**
-     * Called when the notification needs to be updated.
-     * This occurs when playback state updates or the current
-     * item in playback is changed.
-     */
-    protected open fun updateNotification() {
-        //Purposefully left blank
-    }
+    //todo
+    protected open fun updateMediaControls() {
 
-    /**
-     * Similar to [.updateNotification], this is called when
-     * the remote views need to be updated due to playback state
-     * updates and item changes.
-     *
-     * The remote views handle the lock screen, bluetooth controls,
-     * Android Wear interactions, etc.
-     */
-    protected open fun updateRemoteViews() {
-        //Purposefully left blank
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -698,8 +682,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         stopForeground()
 
         abandonAudioFocus()
-        updateNotification()
-        updateRemoteViews()
+        updateMediaControls()
     }
 
     /**
@@ -726,8 +709,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         setupForeground()
 
         requestAudioFocus()
-        updateNotification()
-        updateRemoteViews()
+        updateMediaControls()
     }
 
     /**
