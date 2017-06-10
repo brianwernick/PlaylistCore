@@ -22,8 +22,6 @@ import android.app.Service
 import android.content.Intent
 import android.support.annotation.IntRange
 import android.util.Log
-import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
-import com.devbrackets.android.playlistcore.api.VideoPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
@@ -53,7 +51,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
          * A flag used to represent either an Audio item or
          * support for Audio items.  This is a flag that is
          * referenced by [.allowedTypeFlag] and
-         * [IPlaylistItem.getMediaType]
+         * [IPlaylistItem.mediaType]
          */
         const val AUDIO = 1
 
@@ -61,7 +59,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
          * A flag used to represent either a Video item or
          * support for Video items.  This is a flag that is
          * referenced by [.allowedTypeFlag] and
-         * [IPlaylistItem.getMediaType]
+         * [IPlaylistItem.mediaType]
          */
         const val VIDEO = 1 shl 1
     }
@@ -72,7 +70,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return True if there is an item after the current one
      */
     val isNextAvailable: Boolean
-        get() = itemCount > findNextAllowedPosition(currentPosition + 1)
+        get() = currentPosition + 1 < itemCount
 
     /**
      * Determines if there is an item in the play list before the current one.
@@ -80,22 +78,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return True if there is an item before the current one
      */
     val isPreviousAvailable: Boolean
-        get() = findPreviousAllowedPosition(currentPosition - 1) != itemCount
-
-    /**
-     * Determines the current items type.  This will be one of
-     * [.AUDIO], [.VIDEO], or any custom types provided by
-     * the extending class.  If the current item doesn't exist then
-     * 0 will be returned
-     *
-     * @return The flag associated with the current media type or 0
-     */
-    val currentItemType: Int
-        @SupportedMediaType
-        get() {
-            val item = currentItem
-            return item?.mediaType ?: 0
-        }
+        get() = currentPosition > 0
 
     /**
      * Retrieves the Item representing the currently selected
@@ -137,20 +120,11 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
          * @param position The position to become the current playback position.
          */
         set(value) {
-            var workingPosition = value
-            if (workingPosition >= itemCount) {
-                workingPosition = itemCount - 1
-            }
-
-            field = findNextAllowedPosition(workingPosition)
+            field =  Math.min(Math.min(value, itemCount -1), itemCount)
         }
 
     @IntRange(from = INVALID_ID)
     var id = INVALID_ID
-
-    @SupportedMediaType
-    protected var allowedTypeFlag = AUDIO
-    protected var videoPlayer = WeakReference<VideoPlayerApi>(null)
 
     protected var service: PlaylistServiceCore<I, *>? = null
 
@@ -160,7 +134,6 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
     protected var progressListenersLock = ReentrantLock(true)
 
     protected var seekEndedIntent: Intent? = null
-    protected var allowedTypeChangedIntent: Intent? = null
     protected var playPausePendingIntent: PendingIntent? = null
     protected var nextPendingIntent: PendingIntent? = null
     protected var previousPendingIntent: PendingIntent? = null
@@ -223,24 +196,9 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return `true` if the event should be consumed
      */
     override fun onPlaylistItemChanged(currentItem: I?, hasNext: Boolean, hasPrevious: Boolean): Boolean {
-        playlistListenersLock.lock()
-        val iterator = playlistListeners.iterator()
-
-        while (iterator.hasNext()) {
-            val listener = iterator.next().get()
-            if (listener == null) {
-                iterator.remove()
-                continue
-            }
-
-            if (listener.onPlaylistItemChanged(currentItem, hasNext, hasPrevious)) {
-                playlistListenersLock.unlock()
-                return true
-            }
+        return notifyListeners(playlistListenersLock, playlistListeners) {
+            it.onPlaylistItemChanged(currentItem, hasNext, hasPrevious)
         }
-
-        playlistListenersLock.unlock()
-        return false
     }
 
     /**
@@ -251,24 +209,9 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return True if the event should be consumed
      */
     override fun onPlaybackStateChanged(playbackState: PlaylistServiceCore.PlaybackState): Boolean {
-        playlistListenersLock.lock()
-        val iterator = playlistListeners.iterator()
-
-        while (iterator.hasNext()) {
-            val listener = iterator.next().get()
-            if (listener == null) {
-                iterator.remove()
-                continue
-            }
-
-            if (listener.onPlaybackStateChanged(playbackState)) {
-                playlistListenersLock.unlock()
-                return true
-            }
+        return notifyListeners(playlistListenersLock, playlistListeners) {
+            it.onPlaybackStateChanged(playbackState)
         }
-
-        playlistListenersLock.unlock()
-        return false
     }
 
     /**
@@ -279,24 +222,9 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return True if the mediaProgress should be consumed
      */
     override fun onProgressUpdated(mediaProgress: MediaProgress): Boolean {
-        progressListenersLock.lock()
-        val iterator = progressListeners.iterator()
-
-        while (iterator.hasNext()) {
-            val listener = iterator.next().get()
-            if (listener == null) {
-                iterator.remove()
-                continue
-            }
-
-            if (listener.onProgressUpdated(mediaProgress)) {
-                progressListenersLock.unlock()
-                return true
-            }
+        return notifyListeners(progressListenersLock, progressListeners) {
+            it.onProgressUpdated(mediaProgress)
         }
-
-        progressListenersLock.unlock()
-        return false
     }
 
     /**
@@ -423,25 +351,6 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
     }
 
     /**
-     * Sets the type of media that we can currently play.  When set,
-     * the [.next] and [.previous] will skip any items
-     * that do not match the allowed type.  This should be one or a combination of
-     * [.AUDIO], [.VIDEO], or any custom types supported by the extending
-     * class.
-     *
-     * @param flags The flags depicting the allowed media types
-     */
-    fun setAllowedMediaType(@SupportedMediaType flags: Int) {
-        this.allowedTypeFlag = flags
-
-        //Tries to start the intent
-        allowedTypeChangedIntent?.let {
-            it.putExtra(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE, flags)
-            application.startService(it)
-        }
-    }
-
-    /**
      * Attempts to find the position for the item with the specified itemId.  If no
      * such item exists then the current position will NOT be modified.  However if the item
      * is found then that position will be used to update the current position.  You can also
@@ -473,11 +382,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
     fun isPlayingItem(item: I?): Boolean {
         val workingCurrentItem = currentItem
 
-        if (item == null || workingCurrentItem == null) {
-            return false
-        }
-
-        return item.id == workingCurrentItem.id && item.playlistId == id
+        return item != null && workingCurrentItem != null && item.id == workingCurrentItem.id
     }
 
     /**
@@ -489,7 +394,6 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      */
     abstract fun getItem(@IntRange(from = 0) position: Int): I?
 
-
     /**
      * Updates the currently selected item to the next one and retrieves the
      * Item representing that item.  If there aren't any items in the play
@@ -498,7 +402,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return The next Item or null
      */
     fun next(): I? {
-        currentPosition = findNextAllowedPosition(currentPosition + 1)
+        currentPosition =  Math.min(currentPosition + 1, itemCount)
         return currentItem
     }
 
@@ -510,26 +414,8 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
      * @return The previous Item or null
      */
     fun previous(): I? {
-        currentPosition = findPreviousAllowedPosition(currentPosition - 1)
+        currentPosition = Math.max(0, currentPosition -1)
         return currentItem
-    }
-
-    /**
-     * Holds a weak reference to the LDSVideoView to use for playback events such as next or previous.
-     *
-     * @param videoPlayer The LDSVideoView to use, or null
-     */
-    fun setVideoPlayer(videoPlayer: VideoPlayerApi?) {
-        this.videoPlayer = WeakReference<VideoPlayerApi>(videoPlayer)
-    }
-
-    /**
-     * Retrieves the video player specified with [.setVideoPlayer]
-     *
-     * @return The [VideoPlayerApi] or null
-     */
-    fun getVideoPlayer(): VideoPlayerApi? {
-        return videoPlayer.get()
     }
 
     /**
@@ -617,6 +503,27 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
         }
     }
 
+    protected inline fun <T> notifyListeners(lock: ReentrantLock, list: MutableList<WeakReference<T>>, handler: (T) -> Boolean) : Boolean {
+        lock.lock()
+        val iterator = list.iterator()
+
+        while (iterator.hasNext()) {
+            val listener = iterator.next().get()
+            if (listener == null) {
+                iterator.remove()
+                continue
+            }
+
+            if (handler.invoke(listener)) {
+                lock.unlock()
+                return true
+            }
+        }
+
+        lock.unlock()
+        return false
+    }
+
     /**
      * Creates the Intents that will be used to interact with the playlist service
 
@@ -634,66 +541,9 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
         stopPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_STOP)
         seekStartedPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_SEEK_STARTED)
 
-        seekEndedIntent = Intent(application, mediaServiceClass)
-        seekEndedIntent!!.action = RemoteActions.ACTION_SEEK_ENDED
-
-        allowedTypeChangedIntent = Intent(application, mediaServiceClass)
-        allowedTypeChangedIntent!!.action = RemoteActions.ACTION_ALLOWED_TYPE_CHANGED
-    }
-
-    /**
-     * Finds the next item position that has an allowed type
-
-     * @param position The position to start with
-     * *
-     * @return The new position, or the list size if none exist
-     */
-    @IntRange(from = 0)
-    protected fun findNextAllowedPosition(@IntRange(from = 0) position: Int): Int {
-        var workingPosition = position
-        if (workingPosition >= itemCount) {
-            return itemCount
+        seekEndedIntent = Intent(application, mediaServiceClass).apply {
+            action = RemoteActions.ACTION_SEEK_ENDED
         }
-
-        while (workingPosition in 0..(itemCount - 1) && !isAllowedType(getItem(workingPosition))) {
-            workingPosition++
-        }
-
-        return if (workingPosition < itemCount) workingPosition else itemCount
-    }
-
-    /**
-     * Finds the previous item position that has an allowed type
-
-     * @param position The position to start with
-     * *
-     * @return The new position, or the list size if none exist
-     */
-    @IntRange(from = 0)
-    protected fun findPreviousAllowedPosition(@IntRange(from = 0) position: Int): Int {
-        var workingPosition = position
-        if (workingPosition >= itemCount) {
-            return itemCount
-        }
-
-        while (workingPosition >= 0 && !isAllowedType(getItem(workingPosition))) {
-            workingPosition--
-        }
-
-        return if (workingPosition >= 0) workingPosition else itemCount
-    }
-
-    /**
-     * Determines if the passed item is of the correct type to allow playback
-
-     * @param item The item to determine if it is allowed
-     * *
-     * @return True if the item is null or is allowed
-     */
-    protected fun isAllowedType(item: I?): Boolean {
-        return item?.let {
-            allowedTypeFlag and it.mediaType != 0
-        } ?: false
     }
 
     /**

@@ -21,7 +21,7 @@ import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
 interface IPlaylistItem {
     val id: Long
 
-    val playlistId: Long
+    val downloaded: Boolean
 
     @SupportedMediaType
     val mediaType: Int

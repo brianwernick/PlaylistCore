@@ -21,27 +21,20 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioManager
-import android.media.MediaPlayer
-import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.IBinder
-import android.os.PowerManager
 import android.support.annotation.FloatRange
-import android.support.annotation.IntRange
 import android.util.Log
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
-import com.devbrackets.android.playlistcore.api.AudioPlayerApi
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
-import com.devbrackets.android.playlistcore.api.VideoPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper
-import com.devbrackets.android.playlistcore.listener.*
+import com.devbrackets.android.playlistcore.listener.ProgressListener
+import com.devbrackets.android.playlistcore.listener.ServiceListener
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.manager.BasePlaylistManager.Companion.AUDIO
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
@@ -60,7 +53,7 @@ import com.devbrackets.android.playlistcore.util.MediaProgressPoll
  * to create your own [android.content.BroadcastReceiver] as outlined at
  * [http://developer.android.com/guid/topics/media/mediaplayer.html#noisyintent](http://developer.android.com/guide/topics/media/mediaplayer.html#noisyintent)
  */
-abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>> : Service(), AudioFocusHelper.AudioFocusCallback, ProgressListener {
+abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManager<I>> : Service(), AudioFocusHelper.AudioFocusCallback, ProgressListener {
     companion object {
         private val TAG = "PlaylistServiceCore"
     }
@@ -75,13 +68,16 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         ERROR          // An error occurred, we are stopped
     }
 
-    protected //Null if the WAKE_LOCK permission wasn't requested
-    var wifiLock: WifiManager.WifiLock? = null
+    protected var wifiLock: WifiManager.WifiLock? = null
     protected var audioFocusHelper: AudioFocusHelper? = null
 
-    protected var audioPlayer: AudioPlayerApi? = null
     protected var mediaProgressPoll = MediaProgressPoll()
-    protected var mediaListener = MediaListener()
+    protected var mediaListener = DefaultPlaylistServiceMediaStatusListener(this)
+
+    protected var currentMediaPlayer: MediaPlayerApi? = null
+    //todo add to list
+    protected val mediaPlayers = mutableListOf<MediaPlayerApi>()
+
     /**
      * Retrieves the current playback progress.
      *
@@ -99,13 +95,14 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         protected set
 
     protected var currentPlaylistItem: I? = null
+
     /**
      * Performs the functionality to seek the current media item
      * to the specified position.  This should only be called directly
      * when performing the initial setup of playback position.  For
      * normal seeking process use the [.performSeekStarted] in
      * conjunction with [.performSeekEnded]
-
+     *
      * @param position The position to seek to in milliseconds
      */
     protected var seekToPosition: Long = -1
@@ -116,16 +113,9 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
     protected var pausedForFocusLoss = false
     protected var onCreateCalled = false
 
-    protected var workaroundIntent: Intent? = null
+    protected var workaroundIntent: Intent? = null //todo do we still need this?
 
-    /**
-     * Retrieves a new instance of the [AudioPlayerApi]. This will only
-     * be called the first time an Audio Player is needed; afterwards a cached
-     * instance will be used.
-     *
-     * @return The [AudioPlayerApi] to use for playback
-     */
-    protected abstract val newAudioPlayer: AudioPlayerApi
+    var serviceListener: ServiceListener<I>? = null
 
     protected abstract fun setupAsForeground()
     protected abstract fun setupForeground()
@@ -177,67 +167,8 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
     protected val isNetworkAvailable: Boolean
         get() = true
 
-    /**
-     * Used to determine if the specified playlistItem has been downloaded.  If this is true
-     * then the downloaded copy will be used instead, and no network wakelock will be acquired.
-     *
-     * @param playlistItem The playlist item to determine if it is downloaded.
-     * @return True if the specified playlistItem is downloaded. [default: false]
-     */
-    protected fun isDownloaded(playlistItem: I): Boolean {
-        return false
-    }
-
-    /**
-     * Called when the [.performStop] has been called.
-     *
-     * @param playlistItem The playlist item that has been stopped
-     */
-    protected fun onMediaStopped(playlistItem: I) {
-        //Purposefully left blank
-    }
-
-    /**
-     * Called when a current media item has ended playback.  This is called when we
-     * are unable to play an item.
-     *
-     * @param playlistItem The PlaylistItem that has ended
-     * @param currentPosition The position the playlist item ended at
-     * @param duration The duration of the PlaylistItem
-     */
-    protected fun onMediaPlaybackEnded(playlistItem: I, currentPosition: Long, duration: Long) {
-        //Purposefully left blank
-    }
-
-    /**
-     * Called when a media item has started playback.
-     *
-     * @param playlistItem The PlaylistItem that has started playback
-     * @param currentPosition The position the playback has started at
-     * @param duration The duration of the PlaylistItem
-     */
-    protected fun onMediaPlaybackStarted(playlistItem: I, currentPosition: Long, duration: Long) {
-        //Purposefully left blank
-    }
-
-    /**
-     * Called when the service is unable to seek to the next playable item when
-     * no network is available.
-     */
-    protected fun onNoNonNetworkItemsAvailable() {
-        //Purposefully left blank
-    }
-
-    /**
-     * Called when a media item in playback has ended
-     */
-    protected fun onMediaPlaybackEnded() {
-        //Purposefully left blank
-    }
-
-    //todo
     protected open fun updateMediaControls() {
-
+        //todo
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -318,7 +249,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * was called.
      */
     override fun onAudioFocusGained(): Boolean {
-        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
+        if (currentMediaPlayer?.handlesOwnAudioFocus ?: false) {
             return false
         }
 
@@ -344,7 +275,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * is called.
      */
     override fun onAudioFocusLost(canDuckAudio: Boolean): Boolean {
-        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
+        if (currentMediaPlayer?.handlesOwnAudioFocus ?: false) {
             return false
         }
 
@@ -390,6 +321,8 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * Used to perform the onCreate functionality when the service is actually created.  This
      * should be overridden instead of [.onCreate] due to a bug in some Samsung devices
      * where [.onStartCommand] will get called before [.onCreate].
+     *
+     * TODO: do we still need the Samsung workaround?  I doubt it, IIRC it was a 4.1 device that should have been patched by now
      */
     protected open fun onServiceCreate() {
         mediaProgressPoll.progressListener = this
@@ -420,15 +353,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * @return True if media is currently playing
      */
     protected val isPlaying: Boolean
-        get() {
-            if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-                return audioPlayer != null && audioPlayer!!.isPlaying
-            } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-                return playlistManager.getVideoPlayer() != null && playlistManager.getVideoPlayer()!!.isPlaying
-            }
-
-            return false
-        }
+        get() = currentMediaPlayer?.isPlaying ?: false
 
     protected val isLoading: Boolean
         get() {
@@ -486,6 +411,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * through [BasePlaylistManager.invokeRepeat]
      */
     protected fun performRepeat() {
+        //TODO remove or provide default functionality
         //Left for the extending class to implement
     }
 
@@ -496,6 +422,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * through [BasePlaylistManager.invokeShuffle]
      */
     protected fun performShuffle() {
+        //TODO remove or provide default functionality
         //Left for the extending class to implement
     }
 
@@ -503,15 +430,17 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * Performs the functionality for when a media item
      * has finished playback.
      */
-    protected open fun performOnMediaCompletion() {
-        //Left for the extending class to implement
+    open fun performOnMediaCompletion() {
+        // Handles moving to the next playable item
+        performNext()
+        startPaused = false
     }
 
     /**
      * Called when the playback of the specified media item has
      * encountered an error.
      */
-    protected fun performOnMediaError() {
+    open fun performOnMediaError() {
         setPlaybackState(PlaybackState.ERROR)
 
         stopForeground()
@@ -521,6 +450,16 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         abandonAudioFocus()
     }
 
+    open fun performOnSeekComplete() {
+        if (pausedForSeek || playingBeforeSeek) {
+            performPlay()
+            pausedForSeek = false
+            playingBeforeSeek = false
+        } else {
+            performPause()
+        }
+    }
+
     /**
      * Performs the functionality to start a seek for the current
      * media item.  This is called through an intent
@@ -528,15 +467,6 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * [BasePlaylistManager.invokeSeekStarted]
      */
     protected fun performSeekStarted() {
-        var isPlaying = false
-
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            isPlaying = audioPlayer != null && audioPlayer!!.isPlaying
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            val videoPlayer = playlistManager.getVideoPlayer()
-            isPlaying = videoPlayer != null && videoPlayer.isPlaying
-        }
-
         if (isPlaying) {
             pausedForSeek = true
             performPause()
@@ -563,27 +493,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * @param right The right channels audio volume
      */
     protected fun setVolume(left: Float, right: Float) {
-        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            audioPlayer?.setVolume(left, right)
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            val videoPlayerApi = playlistManager.getVideoPlayer()
-            videoPlayerApi?.setVolume(1.0f, 1.0f)
-        }
-    }
-
-    /**
-     * Sets the media type to be allowed in the playlist.  If the type is changed
-     * during media playback, the current item will be compared against the new
-     * allowed type.  If the current item type and the new type are not compatible
-     * then the playback will be seeked to the next valid item.
-
-     * @param newType The new allowed media type
-     */
-    protected fun updateAllowedMediaType(@SupportedMediaType newType: Int) {
-        //We seek through the items until an allowed one is reached, or none is reached and the service is stopped.
-        if (currentPlaylistItem != null && newType and currentPlaylistItem!!.mediaType == 0) {
-            performNext()
-        }
+        currentMediaPlayer?.setVolume(left, right)
     }
 
     /**
@@ -605,24 +515,14 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
     }
 
     /**
-     * Specifies if the VideoView audio focus should be handled by the
-     * PlaylistService.  This is `false` by default because
-     * the Android VideoView handles it's own audio focus, which would
-     * cause the video to never play on it's own if this were enabled.
-     *
-     * @return True if the PlaylistService should handle audio focus for videos
-     */
-    protected fun handleVideoAudioFocus(): Boolean {
-        return false
-    }
-
-    /**
      * Performs the functionality to stop the media playback.  This will perform any cleanup
      * and stop the service.
      */
     protected fun performStop() {
         setPlaybackState(PlaybackState.STOPPED)
-        currentPlaylistItem?.let { onMediaStopped(it) }
+        currentPlaylistItem?.let {
+            serviceListener?.onMediaStopped(it)
+        }
 
         // let go of all resources
         relaxResources(true)
@@ -641,20 +541,11 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * @param position The position to seek to in milliseconds
      * @param updatePlaybackState True if the playback state should be updated
      */
-    @JvmOverloads protected fun performSeek(position: Long, updatePlaybackState: Boolean = true) {
-        var isPlaying = false
-
-        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            isPlaying = audioPlayer?.isPlaying ?: false
-            audioPlayer?.seekTo(position)
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            playlistManager.getVideoPlayer()?.let {
-                isPlaying = it.isPlaying
-                it.seekTo(position)
-            }
-        }
-
+    @JvmOverloads
+    protected fun performSeek(position: Long, updatePlaybackState: Boolean = true) {
         playingBeforeSeek = isPlaying
+        currentMediaPlayer?.seekTo(position)
+
         if (updatePlaybackState) {
             setPlaybackState(PlaybackState.SEEKING)
         }
@@ -665,16 +556,8 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * playback.
      */
     protected fun performPause() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            if (audioPlayer?.isPlaying ?: false) {
-                audioPlayer?.pause()
-            }
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            playlistManager.getVideoPlayer()?.let {
-                if (it.isPlaying) {
-                    it.pause()
-                }
-            }
+        if (isPlaying) {
+            currentMediaPlayer?.pause()
         }
 
         mediaProgressPoll.stop()
@@ -690,18 +573,8 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * item.
      */
     protected fun performPlay() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            audioPlayer?.let {
-                if (!it.isPlaying) {
-                    it.play()
-                }
-            }
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            playlistManager.getVideoPlayer()?.let {
-                if (!it.isPlaying) {
-                    it.play()
-                }
-            }
+        if (!isPlaying) {
+            currentMediaPlayer?.play()
         }
 
         mediaProgressPoll.start()
@@ -714,7 +587,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
 
     /**
      * Determines if the current media item is of the passed type.  This is specified
-     * with [IPlaylistItem.getMediaType]
+     * with [IPlaylistItem.mediaType]
      *
      * @return True if the current media item is of the same passed type
      */
@@ -729,23 +602,14 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * VideoPlayerApi with [BasePlaylistManager.setVideoPlayer]
      */
     protected fun startItemPlayback() {
-        onMediaPlaybackEnded()
-        seekToNextPlayableItem()
-        mediaItemChanged()
+        serviceListener?.onMediaPlaybackEnded()
+        getNextPlayableItem()
 
-        //Performs the playback for the correct media type
-        var playbackHandled = false
-        mediaListener.resetRetryCount()
+        val item = currentPlaylistItem
+        currentMediaPlayer = item?.let { getMediaPlayerForItem(it) }
 
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            playbackHandled = playAudioItem()
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            playbackHandled = playVideoItem()
-        } else if (currentPlaylistItem != null && currentPlaylistItem!!.mediaType != 0) {
-            playbackHandled = playOtherItem()
-        }
-
-        if (playbackHandled) {
+        mediaItemChanged(item)
+        if (play(currentMediaPlayer, item)) {
             return
         }
 
@@ -757,53 +621,29 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         }
     }
 
+    protected fun getMediaPlayerForItem(item: I) : MediaPlayerApi? {
+        // TODO: should we prioritize the current player or ones higher in the list?
+        if (currentMediaPlayer?.handlesItem(item) ?: false) {
+            return currentMediaPlayer
+        }
+
+        return mediaPlayers.firstOrNull { it.handlesItem(item) }
+    }
+
     /**
      * Starts the actual playback of the specified audio item.
      *
      * @return True if the item playback was correctly handled
      */
-    protected fun playAudioItem(): Boolean {
-        stopVideoPlayback()
-        initializeAudioPlayer()
+    protected fun play(mediaPlayer: MediaPlayerApi?, item: I?): Boolean {
+        if (mediaPlayer == null || item == null) {
+            return false
+        }
+
+        initializeMediaPlayer(mediaPlayer)
         requestAudioFocus()
 
-        mediaProgressPoll.update(audioPlayer)
-        mediaProgressPoll.reset()
-
-        val isItemDownloaded = isDownloaded(currentPlaylistItem!!)
-
-        audioPlayer?.setDataSource(this, Uri.parse(if (isItemDownloaded) currentPlaylistItem!!.downloadedMediaUri else currentPlaylistItem!!.mediaUrl))
-
-        setPlaybackState(PlaybackState.PREPARING)
-        setupAsForeground()
-
-        audioPlayer?.prepareAsync()
-
-        // If we are streaming from the internet, we want to hold a Wifi lock, which prevents
-        // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
-        // we are NOT streaming, we want to release the lock.
-        updateWiFiLock(!isItemDownloaded)
-        return true
-    }
-
-    /**
-     * Starts the actual playback of the specified video item.
-     *
-     * @return True if the item playback was correctly handled
-     */
-    protected fun playVideoItem(): Boolean {
-        stopAudioPlayback()
-        initializeVideoPlayer()
-        requestAudioFocus()
-
-        val videoPlayer = playlistManager.getVideoPlayer() ?: return false
-
-        mediaProgressPoll.update(videoPlayer)
-        mediaProgressPoll.reset()
-
-        val isItemDownloaded = isDownloaded(currentPlaylistItem!!)
-
-        videoPlayer.setDataSource(Uri.parse(if (isItemDownloaded) currentPlaylistItem!!.downloadedMediaUri else currentPlaylistItem!!.mediaUrl))
+        mediaPlayer.playItem(item)
 
         setPlaybackState(PlaybackState.PREPARING)
         setupAsForeground()
@@ -811,76 +651,8 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         // If we are streaming from the internet, we want to hold a Wifi lock, which prevents
         // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
         // we are NOT streaming, we want to release the lock.
-        updateWiFiLock(!isItemDownloaded)
+        updateWiFiLock(!(currentPlaylistItem?.downloaded ?: true))
         return true
-    }
-
-    /**
-     * Starts the playback of the specified other item type.
-     *
-     * @return True if the item playback was correctly handled
-     */
-    protected fun playOtherItem(): Boolean {
-        return false
-    }
-
-    /**
-     * Stops the AudioPlayer from playing.
-     */
-    protected fun stopAudioPlayback() {
-        audioPlayer?.let {
-            it.stop()
-            it.reset()
-        }
-    }
-
-    /**
-     * Stops the VideoView from playing if we have access to it.
-     */
-    protected fun stopVideoPlayback() {
-        playlistManager.getVideoPlayer()?.let {
-            it.stop()
-            it.reset()
-        }
-    }
-
-    /**
-     * Starts the appropriate media playback based on the current item type.
-     * If the current item is audio, then the playback will make sure to pay
-     * attention to the current audio focus.
-     */
-    protected fun startMediaPlayer() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            startAudioPlayer()
-        } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
-            startVideoPlayer()
-        }
-    }
-
-    /**
-     * Reconfigures audioPlayer according to audio focus settings and starts/restarts it. This
-     * method starts/restarts the audioPlayer respecting the current audio focus state. So if
-     * we have focus, it will play normally; if we don't have focus, it will either leave the
-     * audioPlayer paused or set it to a low volume, depending on what is allowed by the
-     * current focus settings.
-     */
-    protected fun startAudioPlayer() {
-        audioPlayer?.let {
-            startMediaPlayer(it)
-        }
-    }
-
-    /**
-     * Reconfigures the videoPlayer according to audio focus settings and starts/restarts it. This
-     * method starts/restarts the videoPlayer respecting the current audio focus state. So if
-     * we have focus, it will play normally; if we don't have focus, it will either leave the
-     * videoPlayer paused or set it to a low volume, depending on what is allowed by the
-     * current focus settings.
-     */
-    protected fun startVideoPlayer() {
-        playlistManager.getVideoPlayer()?.let {
-            startMediaPlayer(it)
-        }
     }
 
     /**
@@ -890,15 +662,15 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * mediaPlayerApi paused or set it to a low volume, depending on what is allowed by the
      * current focus settings.
      */
-    protected fun startMediaPlayer(mediaPlayerApi: MediaPlayerApi) {
-        if (handleVideoAudioFocus() || mediaPlayerApi !is VideoPlayerApi) {
-            if (audioFocusHelper == null || audioFocusHelper!!.currentAudioFocus === AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
+    open fun startMediaPlayer() {
+        if (!(currentMediaPlayer?.handlesOwnAudioFocus ?: true)) {
+            if (audioFocusHelper == null || audioFocusHelper!!.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
                 // If we don't have audio focus and can't duck we have to pause, even if state is playing
                 // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
                 if (isPlaying) {
                     pausedForFocusLoss = true
                     performPause()
-                    onMediaPlaybackEnded(currentPlaylistItem!!, mediaPlayerApi.currentPosition, mediaPlayerApi.duration)
+                    serviceListener?.onMediaPlaybackEnded(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
                 }
 
                 return
@@ -921,7 +693,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         if (!isPlaying && !startPaused) {
             pausedForSeek = seekRequested
             performPlay()
-            onMediaPlaybackStarted(currentPlaylistItem!!, mediaPlayerApi.currentPosition, mediaPlayerApi.duration)
+            serviceListener?.onMediaPlaybackStarted(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
         } else {
             setPlaybackState(PlaybackState.PAUSED)
         }
@@ -931,22 +703,14 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * Requests the audio focus
      */
     protected fun requestAudioFocus(): Boolean {
-        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
-            return false
-        }
-
-        return audioFocusHelper?.requestFocus() ?: false
+        return currentMediaPlayer?.handlesOwnAudioFocus ?: false || audioFocusHelper?.requestFocus() ?: false
     }
 
     /**
      * Requests the audio focus to be abandoned
      */
     protected fun abandonAudioFocus(): Boolean {
-        if (!handleVideoAudioFocus() && currentItemIsType(BasePlaylistManager.VIDEO)) {
-            return false
-        }
-
-        return audioFocusHelper?.abandonFocus() ?: false
+        return currentMediaPlayer?.handlesOwnAudioFocus ?: false || audioFocusHelper?.abandonFocus() ?: false
     }
 
     /**
@@ -959,10 +723,10 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         mediaProgressPoll.release()
 
         if (releaseAudioPlayer) {
-            audioPlayer?.let {
+            currentMediaPlayer?.let {
                 it.reset()
                 it.release()
-                audioPlayer = null
+                currentMediaPlayer = null
             }
 
             playlistManager.currentPosition = Integer.MAX_VALUE
@@ -992,7 +756,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
 
      * @param state The new PlaybackState
      */
-    protected fun setPlaybackState(state: PlaybackState) {
+    protected open fun setPlaybackState(state: PlaybackState) {
         currentPlaybackState = state
         postPlaybackStateChanged()
     }
@@ -1002,35 +766,34 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
      * Normally this will be the current item, however if they don't have network then
      * it will be the next downloaded item.
      */
-    protected fun seekToNextPlayableItem() {
-        var currentItem = playlistManager.currentItem
-        if (currentItem == null) {
-            currentPlaylistItem = null
-            return
-        }
+    protected open fun getNextPlayableItem() : I? {
+        currentPlaylistItem = playlistManager.currentItem
+        currentPlaylistItem ?: return null
 
-        //Only iterate through the list if we aren't connected to the internet
-        if (!isNetworkAvailable) {
-            while (currentItem != null && !isDownloaded(currentItem)) {
-                currentItem = playlistManager.next()
-            }
+        // TODO: if we can't play an item should we inform the listener as to why exactly? or just say "eh, we can't play `this` item"
+        var item = currentPlaylistItem
+        while(item != null && !isPlayable(item)) {
+            item = playlistManager.next()
         }
 
         //If we are unable to get a next playable item, post a network error
-        if (currentItem == null) {
-            onNoNonNetworkItemsAvailable()
-        }
+        item ?: serviceListener?.onNoNonNetworkItemsAvailable()
+        currentPlaylistItem = item
 
-        currentPlaylistItem = playlistManager.currentItem
+        return currentPlaylistItem
+    }
+
+    protected open fun isPlayable(item: I) : Boolean {
+        return (isNetworkAvailable || item.downloaded) && getMediaPlayerForItem(item) != null
     }
 
     /**
      * Called when the current media item has changed, this will update the notification and
      * media control values.
      */
-    protected open fun mediaItemChanged() {
+    protected open fun mediaItemChanged(item : I?) {
         //Validates that the currentPlaylistItem is for the currentItem
-        if (!playlistManager.isPlayingItem(currentPlaylistItem)) {
+        if (!playlistManager.isPlayingItem(item)) {
             Log.d(TAG, "forcing currentPlaylistItem update")
             currentPlaylistItem = playlistManager.currentItem
         }
@@ -1060,7 +823,6 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
             RemoteActions.ACTION_STOP -> performStop()
             RemoteActions.ACTION_SEEK_STARTED -> performSeekStarted()
             RemoteActions.ACTION_SEEK_ENDED -> performSeekEnded(extras?.getLong(RemoteActions.ACTION_EXTRA_SEEK_POSITION, 0) ?: 0)
-            RemoteActions.ACTION_ALLOWED_TYPE_CHANGED -> updateAllowedMediaType(extras?.getInt(RemoteActions.ACTION_EXTRA_ALLOWED_TYPE) ?: AUDIO)
 
             else -> return false
         }
@@ -1068,109 +830,15 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, M : BasePlaylistManager<I>
         return true
     }
 
-    /**
-     * Initializes the audio player.
-     * If the audio player has already been initialized, then it will
-     * be reset to prepare for the next playback item.
-     */
-    protected fun initializeAudioPlayer() {
-        audioPlayer?.let {
-            it.reset()
-            return
+    protected fun initializeMediaPlayer(mediaPlayer: MediaPlayerApi) {
+        mediaPlayer.apply {
+            stop()
+            reset()
+            setMediaStatusListener(mediaListener)
         }
 
-        audioPlayer = newAudioPlayer.apply {
-            setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)
-            setStreamType(AudioManager.STREAM_MUSIC)
-
-            // Sets the listeners
-            setOnMediaPreparedListener(mediaListener)
-            setOnMediaCompletionListener(mediaListener)
-            setOnMediaErrorListener(mediaListener)
-            setOnMediaSeekCompletionListener(mediaListener)
-            setOnMediaBufferUpdateListener(mediaListener)
-        }
+        mediaProgressPoll.update(mediaPlayer)
+        mediaProgressPoll.reset()
     }
 
-    /**
-     * Initializes the video players connection to this Service, including
-     * adding media playback listeners.
-     */
-    protected fun initializeVideoPlayer() {
-        val videoPlayer = playlistManager.getVideoPlayer() ?: return
-
-        //Sets the listeners
-        videoPlayer.setOnMediaPreparedListener(mediaListener)
-        videoPlayer.setOnMediaCompletionListener(mediaListener)
-        videoPlayer.setOnMediaErrorListener(mediaListener)
-        videoPlayer.setOnMediaSeekCompletionListener(mediaListener)
-        videoPlayer.setOnMediaBufferUpdateListener(mediaListener)
-    }
-
-    /**
-     * A class to listen to the [MediaPlayerApi] events, and will
-     * retry playback once if the media is audio when an error is encountered.
-     * This is done to workaround an issue on older (pre 4.1)
-     * devices where playback will fail due to a race condition
-     * in the [MediaPlayer]
-     */
-    protected inner class MediaListener : OnMediaPreparedListener, OnMediaCompletionListener, OnMediaErrorListener, OnMediaSeekCompletionListener, OnMediaBufferUpdateListener {
-        private val MAX_RETRY_COUNT = 1
-        private var retryCount = 0
-
-        override fun onPrepared(mediaPlayerApi: MediaPlayerApi) {
-            retryCount = 0
-            startMediaPlayer()
-        }
-
-        override fun onCompletion(mediaPlayerApi: MediaPlayerApi) {
-            performOnMediaCompletion()
-        }
-
-        override fun onError(mediaPlayerApi: MediaPlayerApi): Boolean {
-            if (!retryAudio()) {
-                performOnMediaError()
-            }
-
-            return false
-        }
-
-        override fun onSeekComplete(mediaPlayerApi: MediaPlayerApi) {
-            if (pausedForSeek || playingBeforeSeek) {
-                performPlay()
-                pausedForSeek = false
-                playingBeforeSeek = false
-            } else {
-                performPause()
-            }
-        }
-
-        override fun onBufferingUpdate(mediaPlayerApi: MediaPlayerApi, @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT.toLong()) percent: Int) {
-            //Makes sure to update listeners of buffer updates even when playback is paused
-            if (!mediaPlayerApi.isPlaying && currentMediaProgress.bufferPercent != percent) {
-                currentMediaProgress.update(mediaPlayerApi.currentPosition, percent, mediaPlayerApi.duration)
-                onProgressUpdated(currentMediaProgress)
-            }
-        }
-
-        fun resetRetryCount() {
-            retryCount = 0
-        }
-
-        /**
-         * The retry count is a workaround for when the EMAudioPlayer will occasionally fail
-         * to load valid content due to the MediaPlayer on pre 4.1 devices
-
-         * @return True if a retry was started
-         */
-        fun retryAudio(): Boolean {
-            if (currentItemIsType(BasePlaylistManager.AUDIO) && ++retryCount <= MAX_RETRY_COUNT) {
-                Log.d(TAG, "Retrying audio playback.  Retry count: " + retryCount)
-                playAudioItem()
-                return true
-            }
-
-            return false
-        }
-    }
 }

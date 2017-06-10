@@ -4,12 +4,10 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.VideoView;
 
-import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.data.Samples;
-import com.devbrackets.android.playlistcoredemo.helper.VideoApi;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
 import java.util.LinkedList;
@@ -54,7 +52,7 @@ public class VideoPlayerActivity extends Activity {
 
         videoView = (VideoView) findViewById(R.id.video_play_activity_video_view);
 
-        playlistManager.setVideoPlayer(new VideoApi(videoView));
+//        playlistManager.setVideoPlayer(new VideoApi(videoView)); //todo add to the mediaPlayers list in the service... should we have a Manager function to do this?
         playlistManager.play(0, false);
     }
 
@@ -71,7 +69,6 @@ public class VideoPlayerActivity extends Activity {
             mediaItems.add(mediaItem);
         }
 
-        playlistManager.setAllowedMediaType(BasePlaylistManager.AUDIO | BasePlaylistManager.VIDEO);
         playlistManager.setParameters(mediaItems, selectedIndex);
         playlistManager.setId(PLAYLIST_ID);
     }

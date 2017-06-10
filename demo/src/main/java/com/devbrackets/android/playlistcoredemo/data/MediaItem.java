@@ -23,8 +23,8 @@ public class MediaItem implements IPlaylistItem {
     }
 
     @Override
-    public long getPlaylistId() {
-        return 0;
+    public boolean getDownloaded() {
+        return false;
     }
 
     @Override

@@ -24,7 +24,7 @@ import com.devbrackets.android.playlistcore.service.PlaylistServiceCore
  * A simple callback interface for listening to [BasePlaylistService]
  * changes.
  */
-interface PlaylistListener<T : IPlaylistItem> {
+interface PlaylistListener<in T : IPlaylistItem> {
 
     /**
      * Occurs when the currently playing item has changed

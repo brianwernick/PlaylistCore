@@ -37,15 +37,12 @@ class MediaProgressPoll {
     protected var overriddenPositionStopWatch = StopWatch()
     protected val currentMediaProgress = MediaProgress(0, 0, 0)
 
+    /**
+     * Specifies the listener to be informed of progress updates
+     * at periodic intervals specified with [.setProgressPollDelay]
+     */
     var progressListener: ProgressListener? = null
-        get
-        /**
-         * Specifies the listener to be informed of progress updates
-         * at periodic intervals specified with [.setProgressPollDelay]
 
-         * @param progressListener The listener to be informed of changes or null
-         */
-        set
     protected var mediaPlayerApi: MediaPlayerApi? = null
 
     protected var overridePosition = false
@@ -65,40 +62,76 @@ class MediaProgressPoll {
             field = value
         }
 
+    /**
+     * Specifies if the duration for the media currently being polled
+     * should be overridden.  This should be called in conjunction with
+     * [.setOverriddenDuration]
+     */
     protected var overrideDuration = false
-        /**
-         * Specifies if the duration for the media currently being polled
-         * should be overridden.  This should be called in conjunction with
-         * [.setOverriddenDuration]
-         *
-         * @param override True if the duration should be overridden
-         */
         set
 
+    /**
+     * Sets the amount of time to change the return value from [.getCurrentPosition].
+     * This value will be reset when a new audio item is selected.
+     */
     protected var positionOffset: Long = 0
-        /**
-         * Sets the amount of time to change the return value from [.getCurrentPosition].
-         * This value will be reset when a new audio item is selected.
-
-         * @param offset The millisecond value to offset the position
-         */
         set
 
+    /**
+     * Specifies the value to use for returning the duration of the
+     * media currently being polled.  This should only be used if the
+     * media doesn't contain the duration, or the provided value is
+     * incorrect.
+     *
+     * An example of this would be when streaming a live broadcast or
+     * radio station.
+     *
+     * This should be called in conjunction with [.setOverrideDuration]
+     */
     protected var overriddenDuration: Long = 0
-        /**
-         * Specifies the value to use for returning the duration of the
-         * media currently being polled.  This should only be used if the
-         * media doesn't contain the duration, or the provided value is
-         * incorrect.
-         *
-         * An example of this would be when streaming a live broadcast or
-         * radio station.
-         *
-         * This should be called in conjunction with [.setOverrideDuration]
-         *
-         * @param duration The duration in milliseconds for the media being polled
-         */
         set
+
+    /**
+     * Retrieves the current position of the media item.  If no media item is currently
+     * prepared or in playback then the value will be 0.
+
+     * @return The millisecond value for the current position
+     */
+    protected val currentPosition: Long
+        @IntRange(from = 0)
+        get() {
+            if (overridePosition) {
+                return positionOffset + overriddenPositionStopWatch.time
+            }
+
+            return mediaPlayerApi?.currentPosition ?: 0
+        }
+
+    /**
+     * Retrieves the duration of the current media item. If the value has
+     * been overridden with [.setOverriddenDuration] then that value
+     * will be returned instead.  If no media item is currently
+     * prepared or in playback then the value will be 0.
+
+     * @return The millisecond value for the duration
+     */
+    protected val duration: Long
+        @IntRange(from = 0)
+        get() {
+            if (overrideDuration) {
+                return overriddenDuration
+            }
+
+            return mediaPlayerApi?.duration ?: 0
+        }
+
+    /**
+     * Retrieves the current buffer percent of the media item.  If no media item is currently
+     * prepared or in playback then the value will be 0.
+     */
+    val bufferPercentage: Int
+        @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT.toLong())
+        get() = if (mediaPlayerApi != null) mediaPlayerApi!!.bufferedPercent else 0
 
     init {
         pollRepeater.setRepeatListener(OnRepeat())
@@ -186,50 +219,6 @@ class MediaProgressPoll {
     fun restartOverridePosition() {
         overriddenPositionStopWatch.reset()
     }
-
-    /**
-     * Retrieves the current position of the media item.  If no media item is currently
-     * prepared or in playback then the value will be 0.
-
-     * @return The millisecond value for the current position
-     */
-    protected val currentPosition: Long
-        @IntRange(from = 0)
-        get() {
-            if (overridePosition) {
-                return positionOffset + overriddenPositionStopWatch.time
-            }
-
-            return if (mediaPlayerApi != null) mediaPlayerApi!!.currentPosition else 0
-        }
-
-    /**
-     * Retrieves the duration of the current media item. If the value has
-     * been overridden with [.setOverriddenDuration] then that value
-     * will be returned instead.  If no media item is currently
-     * prepared or in playback then the value will be 0.
-
-     * @return The millisecond value for the duration
-     */
-    protected val duration: Long
-        @IntRange(from = 0)
-        get() {
-            if (overrideDuration) {
-                return overriddenDuration
-            }
-
-            return if (mediaPlayerApi != null) mediaPlayerApi!!.duration else 0
-        }
-
-    /**
-     * Retrieves the current buffer percent of the media item.  If no media item is currently
-     * prepared or in playback then the value will be 0.
-
-     * @return The integer percent that is buffered [0, 100] inclusive
-     */
-    val bufferPercentage: Int
-        @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT.toLong())
-        get() = if (mediaPlayerApi != null) mediaPlayerApi!!.bufferedPercent else 0
 
     /**
      * Performs the actual periodic polling of the progress and informing the

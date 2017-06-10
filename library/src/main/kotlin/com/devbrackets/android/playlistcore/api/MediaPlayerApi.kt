@@ -1,48 +1,21 @@
-/*
- * Copyright (C) 2016 - 2017 Brian Wernick
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.devbrackets.android.playlistcore.api
 
 import android.support.annotation.FloatRange
 import android.support.annotation.IntRange
 import com.devbrackets.android.playlistcore.event.MediaProgress
-import com.devbrackets.android.playlistcore.listener.*
+import com.devbrackets.android.playlistcore.listener.MediaStatusListener
+import com.devbrackets.android.playlistcore.manager.IPlaylistItem
 
 interface MediaPlayerApi {
     /**
      * Determines if media is currently playing on the
      * implementing object
-
+     *
      * @return True if the media is currently playing
      */
     val isPlaying: Boolean
 
-    fun play()
-
-    fun pause()
-
-    fun stop()
-
-    fun reset()
-
-    fun release()
-
-    fun setVolume(@FloatRange(from = 0.0, to = 1.0) left: Float, @FloatRange(from = 0.0, to = 1.0) right: Float)
-
-    fun seekTo(@IntRange(from = 0) milliseconds: Long)
+    val handlesOwnAudioFocus: Boolean
 
     @get:IntRange(from = 0)
     val currentPosition: Long
@@ -60,13 +33,24 @@ interface MediaPlayerApi {
     @get:IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT.toLong())
     val bufferedPercent: Int
 
-    fun setOnMediaPreparedListener(listener: OnMediaPreparedListener?)
+    fun play()
 
-    fun setOnMediaBufferUpdateListener(listener: OnMediaBufferUpdateListener?)
+    fun pause()
 
-    fun setOnMediaSeekCompletionListener(listener: OnMediaSeekCompletionListener?)
+    fun stop()
 
-    fun setOnMediaCompletionListener(listener: OnMediaCompletionListener?)
+    fun reset()
 
-    fun setOnMediaErrorListener(listener: OnMediaErrorListener?)
+    fun release()
+
+    fun setVolume(@FloatRange(from = 0.0, to = 1.0) left: Float, @FloatRange(from = 0.0, to = 1.0) right: Float)
+
+    fun seekTo(@IntRange(from = 0) milliseconds: Long)
+
+    fun setMediaStatusListener(listener: MediaStatusListener)
+
+    //TODO: use Generics so that this can be correctly typed
+    fun handlesItem(item: IPlaylistItem) : Boolean
+
+    fun playItem(item: IPlaylistItem)
 }
