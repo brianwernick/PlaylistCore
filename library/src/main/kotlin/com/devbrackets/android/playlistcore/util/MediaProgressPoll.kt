@@ -22,13 +22,14 @@ import android.util.Log
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.ProgressListener
+import com.devbrackets.android.playlistcore.manager.PlaylistItem
 
 /**
  * A utility used to poll the progress of the currently playing media.
  * This will allows listeners to be informed of progress updates for display
  * or storage.
  */
-class MediaProgressPoll {
+class MediaProgressPoll<I : PlaylistItem> {
     companion object {
         private val TAG = "MediaProgressPoll"
     }
@@ -43,7 +44,7 @@ class MediaProgressPoll {
      */
     var progressListener: ProgressListener? = null
 
-    protected var mediaPlayerApi: MediaPlayerApi? = null
+    protected var mediaPlayerApi: MediaPlayerApi<I>? = null
 
     protected var overridePosition = false
         /**
@@ -197,7 +198,7 @@ class MediaProgressPoll {
 
      * @param mediaPlayerApi The new [MediaPlayerApi] that should be polled or null
      */
-    fun update(mediaPlayerApi: MediaPlayerApi?) {
+    fun update(mediaPlayerApi: MediaPlayerApi<I>?) {
         this.mediaPlayerApi = mediaPlayerApi
         reset()
     }

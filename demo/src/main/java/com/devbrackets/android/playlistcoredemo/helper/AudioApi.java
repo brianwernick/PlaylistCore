@@ -10,7 +10,7 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
+import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -80,12 +80,12 @@ public class AudioApi extends BaseMediaApi {
     }
 
     @Override
-    public boolean handlesItem(@NotNull IPlaylistItem item) {
+    public boolean handlesItem(@NotNull MediaItem item) {
         return item.getMediaType() == BasePlaylistManager.AUDIO;
     }
 
     @Override
-    public void playItem(@NotNull IPlaylistItem item) {
+    public void playItem(@NotNull MediaItem item) {
         try {
             prepared = false;
             bufferPercent = 0;

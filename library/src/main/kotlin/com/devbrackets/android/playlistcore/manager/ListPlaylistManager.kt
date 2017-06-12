@@ -24,7 +24,7 @@ import android.support.annotation.IntRange
  *
  * {@inheritDoc}
  */
-abstract class ListPlaylistManager<I : IPlaylistItem> : BasePlaylistManager<I> {
+abstract class ListPlaylistManager<I : PlaylistItem> : BasePlaylistManager<I> {
     protected var items: List<I>? = null
 
     constructor() : super()

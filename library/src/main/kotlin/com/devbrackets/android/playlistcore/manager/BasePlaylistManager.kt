@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock
  * used as standalone with a custom service, or in conjunction with
  * [BasePlaylistService]
  */
-abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, ProgressListener {
+abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, ProgressListener {
     companion object {
         private val TAG = "PlaylistManager"
 
@@ -51,7 +51,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
          * A flag used to represent either an Audio item or
          * support for Audio items.  This is a flag that is
          * referenced by [.allowedTypeFlag] and
-         * [IPlaylistItem.mediaType]
+         * [PlaylistItem.mediaType]
          */
         const val AUDIO = 1
 
@@ -59,7 +59,7 @@ abstract class BasePlaylistManager<I : IPlaylistItem> : PlaylistListener<I>, Pro
          * A flag used to represent either a Video item or
          * support for Video items.  This is a flag that is
          * referenced by [.allowedTypeFlag] and
-         * [IPlaylistItem.mediaType]
+         * [PlaylistItem.mediaType]
          */
         const val VIDEO = 1 shl 1
     }

@@ -1,9 +1,9 @@
 package com.devbrackets.android.playlistcore.listener
 
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem
+import com.devbrackets.android.playlistcore.manager.PlaylistItem
 
 //TODO: how does Java handle the default implementations?
-interface ServiceListener<in I : IPlaylistItem> {
+interface ServiceListener<in I : PlaylistItem> {
 
     /**
      * Called when the [.performStop] has been called.

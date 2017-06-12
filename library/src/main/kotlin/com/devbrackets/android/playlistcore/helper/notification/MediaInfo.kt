@@ -19,7 +19,7 @@ package com.devbrackets.android.playlistcore.helper.notification
 import android.app.PendingIntent
 import android.graphics.Bitmap
 import android.support.annotation.DrawableRes
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem
+import com.devbrackets.android.playlistcore.manager.PlaylistItem
 
 /**
  * An object to hold the information necessary to populate the
@@ -28,7 +28,7 @@ import com.devbrackets.android.playlistcore.manager.IPlaylistItem
  * item
  */
 class MediaInfo {
-    var playlistItem: IPlaylistItem? = null
+    var playlistItem: PlaylistItem? = null
     var largeNotificationIcon: Bitmap? = null
     var artwork: Bitmap? = null
 

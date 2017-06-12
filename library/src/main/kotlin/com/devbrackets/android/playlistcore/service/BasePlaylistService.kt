@@ -29,7 +29,7 @@ import com.devbrackets.android.playlistcore.helper.notification.DefaultPlaylistN
 import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
 import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotificationPresenter
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem
+import com.devbrackets.android.playlistcore.manager.PlaylistItem
 
 /**
  * An extension of the [PlaylistServiceCore] that adds support for handling
@@ -39,7 +39,7 @@ import com.devbrackets.android.playlistcore.manager.IPlaylistItem
  * {@inheritDoc}
  */
 @Deprecated("Merge with PlaylistServiceCore") //todo
-abstract class BasePlaylistService<I : IPlaylistItem, M : BasePlaylistManager<I>> : PlaylistServiceCore<I, M>() {
+abstract class BasePlaylistService<I : PlaylistItem, M : BasePlaylistManager<I>> : PlaylistServiceCore<I, M>() {
     protected var mediaControlsHelper: MediaControlsHelper? = null
 
     protected var currentLargeNotificationUrl: String? = null

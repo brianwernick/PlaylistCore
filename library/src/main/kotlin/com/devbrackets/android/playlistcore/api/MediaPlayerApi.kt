@@ -4,14 +4,12 @@ import android.support.annotation.FloatRange
 import android.support.annotation.IntRange
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem
+import com.devbrackets.android.playlistcore.manager.PlaylistItem
 
-interface MediaPlayerApi {
+interface MediaPlayerApi<I : PlaylistItem> {
     /**
      * Determines if media is currently playing on the
      * implementing object
-     *
-     * @return True if the media is currently playing
      */
     val isPlaying: Boolean
 
@@ -47,10 +45,9 @@ interface MediaPlayerApi {
 
     fun seekTo(@IntRange(from = 0) milliseconds: Long)
 
-    fun setMediaStatusListener(listener: MediaStatusListener)
+    fun setMediaStatusListener(listener: MediaStatusListener<I>)
 
-    //TODO: use Generics so that this can be correctly typed
-    fun handlesItem(item: IPlaylistItem) : Boolean
+    fun handlesItem(item: I) : Boolean
 
-    fun playItem(item: IPlaylistItem)
+    fun playItem(item: I)
 }

@@ -4,10 +4,11 @@ import android.media.MediaPlayer;
 
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener;
+import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
 import org.jetbrains.annotations.NotNull;
 
-public abstract class BaseMediaApi implements MediaPlayerApi,
+public abstract class BaseMediaApi implements MediaPlayerApi<MediaItem>,
         MediaPlayer.OnPreparedListener,
         MediaPlayer.OnCompletionListener,
         MediaPlayer.OnErrorListener,
@@ -17,10 +18,10 @@ public abstract class BaseMediaApi implements MediaPlayerApi,
     protected boolean prepared;
     protected int bufferPercent;
 
-    protected MediaStatusListener mediaStatusListener;
+    protected MediaStatusListener<MediaItem> mediaStatusListener;
 
     @Override
-    public void setMediaStatusListener(@NotNull MediaStatusListener listener) {
+    public void setMediaStatusListener(@NotNull MediaStatusListener<MediaItem> listener) {
         mediaStatusListener = listener;
     }
 

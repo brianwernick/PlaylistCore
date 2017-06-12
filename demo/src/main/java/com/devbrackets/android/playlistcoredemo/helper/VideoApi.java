@@ -7,7 +7,7 @@ import android.support.annotation.IntRange;
 import android.widget.VideoView;
 
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
+import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -70,12 +70,12 @@ public class VideoApi extends BaseMediaApi {
     }
 
     @Override
-    public boolean handlesItem(@NotNull IPlaylistItem item) {
+    public boolean handlesItem(@NotNull MediaItem item) {
         return item.getMediaType() == BasePlaylistManager.VIDEO;
     }
 
     @Override
-    public void playItem(@NotNull IPlaylistItem item) {
+    public void playItem(@NotNull MediaItem item) {
         prepared = false;
         bufferPercent = 0;
         videoView.setVideoURI(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));

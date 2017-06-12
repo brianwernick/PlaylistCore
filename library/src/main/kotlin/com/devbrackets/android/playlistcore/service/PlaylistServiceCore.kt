@@ -35,7 +35,7 @@ import com.devbrackets.android.playlistcore.helper.AudioFocusHelper
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.listener.ServiceListener
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem
+import com.devbrackets.android.playlistcore.manager.PlaylistItem
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
 /**
@@ -53,7 +53,7 @@ import com.devbrackets.android.playlistcore.util.MediaProgressPoll
  * to create your own [android.content.BroadcastReceiver] as outlined at
  * [http://developer.android.com/guid/topics/media/mediaplayer.html#noisyintent](http://developer.android.com/guide/topics/media/mediaplayer.html#noisyintent)
  */
-abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManager<I>> : Service(), AudioFocusHelper.AudioFocusCallback, ProgressListener {
+abstract class PlaylistServiceCore<I : PlaylistItem, out M : BasePlaylistManager<I>> : Service(), AudioFocusHelper.AudioFocusCallback, ProgressListener {
     companion object {
         private val TAG = "PlaylistServiceCore"
     }
@@ -71,12 +71,12 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManage
     protected var wifiLock: WifiManager.WifiLock? = null
     protected var audioFocusHelper: AudioFocusHelper? = null
 
-    protected var mediaProgressPoll = MediaProgressPoll()
-    protected var mediaListener = DefaultPlaylistServiceMediaStatusListener(this)
+    protected var mediaProgressPoll = MediaProgressPoll<I>()
+    protected var mediaListener = DefaultPlaylistServiceMediaStatusListener<I>(this)
 
-    protected var currentMediaPlayer: MediaPlayerApi? = null
+    protected var currentMediaPlayer: MediaPlayerApi<I>? = null
     //todo add to list
-    protected val mediaPlayers = mutableListOf<MediaPlayerApi>()
+    protected val mediaPlayers = mutableListOf<MediaPlayerApi<I>>()
 
     /**
      * Retrieves the current playback progress.
@@ -587,7 +587,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManage
 
     /**
      * Determines if the current media item is of the passed type.  This is specified
-     * with [IPlaylistItem.mediaType]
+     * with [PlaylistItem.mediaType]
      *
      * @return True if the current media item is of the same passed type
      */
@@ -621,7 +621,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManage
         }
     }
 
-    protected fun getMediaPlayerForItem(item: I) : MediaPlayerApi? {
+    protected fun getMediaPlayerForItem(item: I) : MediaPlayerApi<I>? {
         // TODO: should we prioritize the current player or ones higher in the list?
         if (currentMediaPlayer?.handlesItem(item) ?: false) {
             return currentMediaPlayer
@@ -635,7 +635,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManage
      *
      * @return True if the item playback was correctly handled
      */
-    protected fun play(mediaPlayer: MediaPlayerApi?, item: I?): Boolean {
+    protected fun play(mediaPlayer: MediaPlayerApi<I>?, item: I?): Boolean {
         if (mediaPlayer == null || item == null) {
             return false
         }
@@ -830,7 +830,7 @@ abstract class PlaylistServiceCore<I : IPlaylistItem, out M : BasePlaylistManage
         return true
     }
 
-    protected fun initializeMediaPlayer(mediaPlayer: MediaPlayerApi) {
+    protected fun initializeMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
         mediaPlayer.apply {
             stop()
             reset()

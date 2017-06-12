@@ -18,7 +18,7 @@ package com.devbrackets.android.playlistcore.manager
 
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
 
-interface IPlaylistItem {
+interface PlaylistItem {
     val id: Long
 
     val downloaded: Boolean
