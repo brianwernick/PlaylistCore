@@ -4,7 +4,6 @@ import android.support.annotation.FloatRange
 import android.support.annotation.IntRange
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
 
 interface MediaPlayerApi<I : PlaylistItem> {
     /**

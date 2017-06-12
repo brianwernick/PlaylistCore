@@ -29,7 +29,7 @@ import com.devbrackets.android.playlistcore.helper.notification.DefaultPlaylistN
 import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
 import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotificationPresenter
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
  * An extension of the [PlaylistServiceCore] that adds support for handling

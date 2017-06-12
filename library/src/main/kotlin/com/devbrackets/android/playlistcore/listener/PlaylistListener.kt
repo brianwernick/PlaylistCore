@@ -16,7 +16,7 @@
 
 package com.devbrackets.android.playlistcore.listener
 
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
 import com.devbrackets.android.playlistcore.service.PlaylistServiceCore
 

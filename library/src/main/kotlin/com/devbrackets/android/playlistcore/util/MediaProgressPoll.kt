@@ -22,7 +22,7 @@ import android.util.Log
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.ProgressListener
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
  * A utility used to poll the progress of the currently playing media.

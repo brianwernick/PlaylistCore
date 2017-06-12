@@ -1,10 +1,11 @@
-package com.devbrackets.android.playlistcore.service
+package com.devbrackets.android.playlistcore.util
 
 import android.support.annotation.IntRange
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
+import com.devbrackets.android.playlistcore.service.PlaylistServiceCore
 
 /**
  * A class to listen to the [MediaPlayerApi] events to control the

@@ -1,8 +1,7 @@
 package com.devbrackets.android.playlistcore.listener
 
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
-//TODO: how does Java handle the default implementations?
 interface ServiceListener<in I : PlaylistItem> {
 
     /**
@@ -15,6 +14,17 @@ interface ServiceListener<in I : PlaylistItem> {
     }
 
     /**
+     * Called when a media item has started playback.
+     *
+     * @param playlistItem The PlaylistItem that has started playback
+     * @param currentPosition The position the playback has started at
+     * @param duration The duration of the PlaylistItem
+     */
+    fun onMediaPlaybackStarted(playlistItem: I, currentPosition: Long, duration: Long) {
+        //Purposefully left blank
+    }
+
+    /**
      * Called when a current media item has ended playback.  This is called when we
      * are unable to play an item.
      *
@@ -23,17 +33,6 @@ interface ServiceListener<in I : PlaylistItem> {
      * @param duration The duration of the PlaylistItem
      */
     fun onMediaPlaybackEnded(playlistItem: I, currentPosition: Long, duration: Long) {
-        //Purposefully left blank
-    }
-
-    /**
-     * Called when a media item has started playback.
-     *
-     * @param playlistItem The PlaylistItem that has started playback
-     * @param currentPosition The position the playback has started at
-     * @param duration The duration of the PlaylistItem
-     */
-    fun onMediaPlaybackStarted(playlistItem: I, currentPosition: Long, duration: Long) {
         //Purposefully left blank
     }
 

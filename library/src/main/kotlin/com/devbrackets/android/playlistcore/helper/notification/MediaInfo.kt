@@ -19,7 +19,7 @@ package com.devbrackets.android.playlistcore.helper.notification
 import android.app.PendingIntent
 import android.graphics.Bitmap
 import android.support.annotation.DrawableRes
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
  * An object to hold the information necessary to populate the

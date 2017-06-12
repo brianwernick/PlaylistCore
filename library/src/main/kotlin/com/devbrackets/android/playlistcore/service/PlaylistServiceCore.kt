@@ -27,7 +27,6 @@ import android.os.IBinder
 import android.support.annotation.FloatRange
 import android.util.Log
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod
-import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
@@ -35,7 +34,8 @@ import com.devbrackets.android.playlistcore.helper.AudioFocusHelper
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.listener.ServiceListener
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.manager.PlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
+import com.devbrackets.android.playlistcore.util.DefaultPlaylistServiceMediaStatusListener
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
 /**
@@ -583,16 +583,6 @@ abstract class PlaylistServiceCore<I : PlaylistItem, out M : BasePlaylistManager
 
         requestAudioFocus()
         updateMediaControls()
-    }
-
-    /**
-     * Determines if the current media item is of the passed type.  This is specified
-     * with [PlaylistItem.mediaType]
-     *
-     * @return True if the current media item is of the same passed type
-     */
-    protected fun currentItemIsType(@SupportedMediaType type: Int): Boolean {
-        return (currentPlaylistItem?.mediaType ?: 0) and type != 0
     }
 
     /**

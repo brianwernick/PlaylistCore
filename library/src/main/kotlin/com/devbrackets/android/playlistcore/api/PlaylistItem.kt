@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.annotation
+package com.devbrackets.android.playlistcore.api
 
-import android.media.AudioManager
-import android.support.annotation.IntDef
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
 
-@IntDef(
-        AudioManager.STREAM_VOICE_CALL.toLong(),
-        AudioManager.STREAM_SYSTEM.toLong(),
-        AudioManager.STREAM_RING.toLong(),
-        AudioManager.STREAM_MUSIC.toLong(),
-        AudioManager.STREAM_ALARM.toLong(),
-        AudioManager.STREAM_NOTIFICATION.toLong(),
-        AudioManager.STREAM_DTMF.toLong()
-)
-@Retention(AnnotationRetention.SOURCE)
-annotation class AudioStreamType
+interface PlaylistItem {
+    val id: Long
+
+    val downloaded: Boolean
+
+    @SupportedMediaType
+    val mediaType: Int
+
+    val mediaUrl: String?
+
+    val downloadedMediaUri: String?
+
+    val thumbnailUrl: String?
+
+    val artworkUrl: String?
+
+    val title: String?
+
+    val album: String?
+
+    val artist: String?
+}

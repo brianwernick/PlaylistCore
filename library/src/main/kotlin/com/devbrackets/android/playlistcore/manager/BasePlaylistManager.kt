@@ -22,6 +22,7 @@ import android.app.Service
 import android.content.Intent
 import android.support.annotation.IntRange
 import android.util.Log
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.PlaylistListener

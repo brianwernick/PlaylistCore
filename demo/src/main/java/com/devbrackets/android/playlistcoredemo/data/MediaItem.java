@@ -1,7 +1,7 @@
 package com.devbrackets.android.playlistcoredemo.data;
 
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
-import com.devbrackets.android.playlistcore.manager.PlaylistItem;
+import com.devbrackets.android.playlistcore.api.PlaylistItem;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
 /**
