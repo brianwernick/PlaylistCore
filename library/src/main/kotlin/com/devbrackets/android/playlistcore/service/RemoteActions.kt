@@ -36,10 +36,7 @@ object RemoteActions {
     val ACTION_SEEK_STARTED = PREFIX + "seek_started"
     val ACTION_SEEK_ENDED = PREFIX + "seek_ended"
 
-    val ACTION_ALLOWED_TYPE_CHANGED = PREFIX + "allowed_type_changed"
-
     //Extras
     val ACTION_EXTRA_SEEK_POSITION = PREFIX + "seek_position"
-    val ACTION_EXTRA_ALLOWED_TYPE = PREFIX + "allowed_type"
     val ACTION_EXTRA_START_PAUSED = PREFIX + "start_paused"
 }

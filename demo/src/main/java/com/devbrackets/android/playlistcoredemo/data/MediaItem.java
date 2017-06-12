@@ -1,14 +1,14 @@
 package com.devbrackets.android.playlistcoredemo.data;
 
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
+import com.devbrackets.android.playlistcore.api.PlaylistItem;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
 /**
- * A custom {@link IPlaylistItem}
+ * A custom {@link PlaylistItem}
  * to hold the information pertaining to the audio and video items
  */
-public class MediaItem implements IPlaylistItem {
+public class MediaItem implements PlaylistItem {
     private Samples.Sample sample;
     boolean isAudio;
 
@@ -23,8 +23,8 @@ public class MediaItem implements IPlaylistItem {
     }
 
     @Override
-    public long getPlaylistId() {
-        return 0;
+    public boolean getDownloaded() {
+        return false;
     }
 
     @Override

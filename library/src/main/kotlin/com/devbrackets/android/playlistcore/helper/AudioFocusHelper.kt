@@ -65,13 +65,10 @@ class AudioFocusHelper
      */
     var currentAudioFocus = Focus.NONE
         protected set
-    protected var audioManager: AudioManager
+
+    protected var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     protected var callbacks: AudioFocusCallback? = null
     protected var audioFocusListener = AudioFocusListener()
-
-    init {
-        audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    }
 
     /**
      * Sets the AudioFocusCallback to inform of focus changes.

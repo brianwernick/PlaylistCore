@@ -18,13 +18,14 @@ package com.devbrackets.android.playlistcore.manager
 
 import android.app.Application
 import android.support.annotation.IntRange
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
  * An implementation of the [BasePlaylistManager] that supports Lists
  *
  * {@inheritDoc}
  */
-abstract class ListPlaylistManager<I : IPlaylistItem> : BasePlaylistManager<I> {
+abstract class ListPlaylistManager<I : PlaylistItem> : BasePlaylistManager<I> {
     protected var items: List<I>? = null
 
     constructor() : super()

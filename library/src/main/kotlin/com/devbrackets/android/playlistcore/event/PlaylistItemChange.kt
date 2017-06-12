@@ -16,9 +16,9 @@
 
 package com.devbrackets.android.playlistcore.event
 
-import com.devbrackets.android.playlistcore.manager.IPlaylistItem
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
-data class PlaylistItemChange<out T : IPlaylistItem>(
+data class PlaylistItemChange<out T : PlaylistItem>(
         val currentItem: T?,
         val hasPrevious: Boolean,
         val hasNext: Boolean

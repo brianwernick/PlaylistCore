@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.manager
+package com.devbrackets.android.playlistcore.api
 
 import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
 
-interface IPlaylistItem {
+interface PlaylistItem {
     val id: Long
 
-    val playlistId: Long
+    val downloaded: Boolean
 
     @SupportedMediaType
     val mediaType: Int

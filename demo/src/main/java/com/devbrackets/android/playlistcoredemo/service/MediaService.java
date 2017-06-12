@@ -8,7 +8,6 @@ import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
 
-import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
 import com.devbrackets.android.playlistcoredemo.App;
@@ -41,24 +40,12 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
         picasso = Picasso.with(getApplicationContext());
 
         setDefaultLargeNotificationImage(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
-    }
-
-    @Override
-    protected void performOnMediaCompletion() {
-        //Handles moving to the next playable item
-        performNext();
-        setStartPaused(false);
+        getMediaPlayers().add(new AudioApi(getApplicationContext(), new MediaPlayer()));
     }
 
     @Override
     protected int getNotificationId() {
         return NOTIFICATION_ID;
-    }
-
-    @NonNull
-    @Override
-    protected AudioPlayerApi getNewAudioPlayer() {
-        return new AudioApi(new MediaPlayer());
     }
 
     @Override
