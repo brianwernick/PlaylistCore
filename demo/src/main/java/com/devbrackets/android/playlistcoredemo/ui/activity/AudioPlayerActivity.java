@@ -17,7 +17,6 @@ import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
-import com.devbrackets.android.playlistcore.service.PlaylistServiceCore;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
@@ -158,8 +157,8 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
             onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.getHasNext(), itemChange.getHasPrevious());
         }
 
-        PlaylistServiceCore.PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
-        if (currentPlaybackState != PlaylistServiceCore.PlaybackState.STOPPED) {
+        BasePlaylistService.PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
+        if (currentPlaybackState != BasePlaylistService.PlaybackState.STOPPED) {
             onPlaybackStateChanged(currentPlaybackState);
         }
 

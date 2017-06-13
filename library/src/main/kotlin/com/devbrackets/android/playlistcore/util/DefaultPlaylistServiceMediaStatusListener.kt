@@ -5,13 +5,13 @@ import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.service.PlaylistServiceCore
+import com.devbrackets.android.playlistcore.service.BasePlaylistService
 
 /**
  * A class to listen to the [MediaPlayerApi] events to control the
- * [PlaylistServiceCore]
+ * [BasePlaylistService]
  */
-open class DefaultPlaylistServiceMediaStatusListener<I : PlaylistItem>(protected val service: PlaylistServiceCore<*, *>) : MediaStatusListener<I> {
+open class DefaultPlaylistServiceMediaStatusListener<I : PlaylistItem>(protected val service: BasePlaylistService<*, *>) : MediaStatusListener<I> {
     override fun onPrepared(mediaPlayer: MediaPlayerApi<I>) {
         service.startMediaPlayer()
     }

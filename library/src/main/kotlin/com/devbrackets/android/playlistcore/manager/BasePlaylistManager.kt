@@ -28,7 +28,6 @@ import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
-import com.devbrackets.android.playlistcore.service.PlaylistServiceCore
 import com.devbrackets.android.playlistcore.service.RemoteActions
 import java.lang.ref.WeakReference
 import java.util.*
@@ -127,7 +126,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
     @IntRange(from = INVALID_ID)
     var id = INVALID_ID
 
-    protected var service: PlaylistServiceCore<I, *>? = null
+    protected var service: BasePlaylistService<I, *>? = null
 
     protected var playlistListeners: MutableList<WeakReference<PlaylistListener<I>>> = LinkedList()
     protected var progressListeners: MutableList<WeakReference<ProgressListener>> = LinkedList()
@@ -209,7 +208,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      * @param playbackState The new media playback state
      * @return True if the event should be consumed
      */
-    override fun onPlaybackStateChanged(playbackState: PlaylistServiceCore.PlaybackState): Boolean {
+    override fun onPlaybackStateChanged(playbackState: BasePlaylistService.PlaybackState): Boolean {
         return notifyListeners(playlistListenersLock, playlistListeners) {
             it.onPlaybackStateChanged(playbackState)
         }
@@ -233,8 +232,8 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      *
      * @return The most recent PlaybackState
      */
-    val currentPlaybackState: PlaylistServiceCore.PlaybackState
-        get() = service?.currentPlaybackState ?: PlaylistServiceCore.PlaybackState.STOPPED
+    val currentPlaybackState: BasePlaylistService.PlaybackState
+        get() = service?.currentPlaybackState ?: BasePlaylistService.PlaybackState.STOPPED
 
     /**
      * Retrieves the current progress for the media playback
@@ -258,7 +257,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      *
      * @param service The AudioService to link to this manager
      */
-    fun registerService(service: PlaylistServiceCore<I, *>) {
+    fun registerService(service: BasePlaylistService<I, *>) {
         this.service = service
     }
 
