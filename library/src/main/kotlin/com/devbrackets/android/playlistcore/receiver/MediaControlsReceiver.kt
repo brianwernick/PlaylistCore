@@ -43,7 +43,7 @@ class MediaControlsReceiver : BroadcastReceiver() {
 
     /**
      * Performs the functionality to handle the [Intent.ACTION_MEDIA_BUTTON] intent
-     * action.  This will pass the appropriate value to the [com.devbrackets.android.playlistcore.service.PlaylistServiceCore]
+     * action.  This will pass the appropriate value to the [com.devbrackets.android.playlistcore.service.BasePlaylistService]
      *
      * @param context The Context the intent was received with
      * @param intent The Intent that was received
