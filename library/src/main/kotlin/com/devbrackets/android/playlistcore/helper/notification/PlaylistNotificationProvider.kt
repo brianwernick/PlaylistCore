@@ -28,6 +28,6 @@ import android.support.v4.media.session.MediaSessionCompat
  * the PlaylistService so that we won't need the BasePlaylistService and BasePlaylistService
  * to be separate anymore
  */
-interface PlaylistNotificationPresenter {
+interface PlaylistNotificationProvider {
     fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification
 }

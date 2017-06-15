@@ -138,8 +138,6 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
     protected var nextPendingIntent: PendingIntent? = null
     protected var previousPendingIntent: PendingIntent? = null
     protected var stopPendingIntent: PendingIntent? = null
-    protected var repeatPendingIntent: PendingIntent? = null
-    protected var shufflePendingIntent: PendingIntent? = null
     protected var seekStartedPendingIntent: PendingIntent? = null
 
     /**
@@ -459,26 +457,6 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
     }
 
     /**
-     * Informs the Media service that we need to repeat
-     * the current playback item. The service specified with
-     * [.getMediaServiceClass] will be informed using the action
-     * [RemoteActions.ACTION_REPEAT]
-     */
-    fun invokeRepeat() {
-        sendPendingIntent(repeatPendingIntent)
-    }
-
-    /**
-     * Informs the Media service that we need to shuffle the
-     * current playlist items. The service specified with
-     * [.getMediaServiceClass] will be informed using the action
-     * [RemoteActions.ACTION_SHUFFLE]
-     */
-    fun invokeShuffle() {
-        sendPendingIntent(shufflePendingIntent)
-    }
-
-    /**
      * Informs the Media service that we have started seeking
      * the playback.  The service specified with
      * [.getMediaServiceClass] will be informed using the action
@@ -497,9 +475,9 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      */
     fun invokeSeekEnded(@IntRange(from = 0) seekPosition: Long) {
         //Tries to start the intent
-        if (seekEndedIntent != null) {
-            seekEndedIntent!!.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition)
-            application.startService(seekEndedIntent)
+        seekEndedIntent?.let {
+            it.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition)
+            application.startService(it)
         }
     }
 
@@ -535,8 +513,6 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
         previousPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PREVIOUS)
         nextPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_NEXT)
         playPausePendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PLAY_PAUSE)
-        repeatPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_REPEAT)
-        shufflePendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_SHUFFLE)
 
         stopPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_STOP)
         seekStartedPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_SEEK_STARTED)

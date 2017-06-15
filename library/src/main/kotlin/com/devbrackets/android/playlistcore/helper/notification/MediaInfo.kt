@@ -23,7 +23,7 @@ import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
  * An object to hold the information necessary to populate the
- * [PlaylistNotificationPresenter] and [MediaSessionProvider]
+ * [PlaylistNotificationProvider] and [MediaSessionProvider]
  * with the information associated with the current playlist
  * item
  */

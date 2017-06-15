@@ -30,8 +30,6 @@ object RemoteActions {
     val ACTION_PREVIOUS = PREFIX + "previous"
     val ACTION_NEXT = PREFIX + "next"
     val ACTION_STOP = PREFIX + "stop"
-    val ACTION_REPEAT = PREFIX + "repeat"
-    val ACTION_SHUFFLE = PREFIX + "shuffle"
 
     val ACTION_SEEK_STARTED = PREFIX + "seek_started"
     val ACTION_SEEK_ENDED = PREFIX + "seek_ended"
