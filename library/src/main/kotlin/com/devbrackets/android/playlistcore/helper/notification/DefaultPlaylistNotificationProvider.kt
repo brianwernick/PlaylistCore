@@ -27,7 +27,7 @@ import android.support.v7.app.NotificationCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
-open class DefaultPlaylistNotificationPresenter(protected val context: Context) : PlaylistNotificationPresenter {
+open class DefaultPlaylistNotificationProvider(protected val context: Context) : PlaylistNotificationProvider {
 
     override fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
         return NotificationCompat.Builder(context).apply {
