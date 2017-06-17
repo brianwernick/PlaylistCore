@@ -16,14 +16,11 @@
 
 package com.devbrackets.android.playlistcore.service
 
-import android.Manifest
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.IBinder
 import android.support.annotation.FloatRange
@@ -36,6 +33,7 @@ import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.helper.AudioFocusHelper
 import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
+import com.devbrackets.android.playlistcore.helper.SafeWifiLock
 import com.devbrackets.android.playlistcore.helper.image.ImageProvider
 import com.devbrackets.android.playlistcore.helper.mediasession.DefaultMediaSessionProvider
 import com.devbrackets.android.playlistcore.helper.mediasession.MediaSessionProvider
@@ -64,6 +62,10 @@ import com.devbrackets.android.playlistcore.util.MediaProgressPoll
  * [http://developer.android.com/guid/topics/media/mediaplayer.html#noisyintent](http://developer.android.com/guide/topics/media/mediaplayer.html#noisyintent)
  *
  * TODO: separate the actual functionality from the service
+ *  The main callback events are
+ *    * Remote Actions
+ *    * service states
+ *    *
  */
 abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager<I>> : Service(), AudioFocusHelper.AudioFocusCallback, ProgressListener {
     companion object {
@@ -80,7 +82,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         ERROR          // An error occurred, we are stopped
     }
 
-    protected var wifiLock: WifiManager.WifiLock? = null
+    protected var wifiLock: SafeWifiLock? = null
     protected var audioFocusHelper: AudioFocusHelper? = null
 
     protected var mediaProgressPoll = MediaProgressPoll<I>()
@@ -379,14 +381,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         audioFocusHelper = AudioFocusHelper(applicationContext)
         audioFocusHelper?.setAudioFocusCallback(this)
 
-        //Attempts to obtain the wifi lock only if the manifest has requested the permission
-        if (packageManager.checkPermission(Manifest.permission.WAKE_LOCK, packageName) == PackageManager.PERMISSION_GRANTED) {
-            wifiLock = (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).createWifiLock(WifiManager.WIFI_MODE_FULL, "mcLock")
-            wifiLock?.setReferenceCounted(false)
-        } else {
-            Log.e(TAG, "Unable to acquire WAKE_LOCK due to missing manifest permission")
-        }
-
+        wifiLock = SafeWifiLock(applicationContext)
         playlistManager.registerService(this)
 
         notificationProvider = DefaultPlaylistNotificationProvider(applicationContext)
@@ -470,7 +465,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         setPlaybackState(PlaybackState.ERROR)
 
         stopForeground()
-        updateWiFiLock(false)
+        wifiLock?.release()
         mediaProgressPoll.stop()
 
         abandonAudioFocus()
@@ -667,7 +662,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         // If we are streaming from the internet, we want to hold a Wifi lock, which prevents
         // the Wifi radio from going to sleep while the song is playing. If, on the other hand,
         // we are NOT streaming, we want to release the lock.
-        updateWiFiLock(!(currentPlaylistItem?.downloaded ?: true))
+        wifiLock?.update(!(currentPlaylistItem?.downloaded ?: true))
         return true
     }
 
@@ -749,8 +744,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         }
 
         abandonAudioFocus()
-        updateWiFiLock(false)
-
+        wifiLock?.release()
         stopForeground(true)
 
         foregroundSetup = false
@@ -758,21 +752,6 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
 
         notificationManager.cancel(notificationId)
         mediaSessionProvider.get().release()
-    }
-
-    /**
-     * Acquires or releases the WiFi lock
-
-     * @param acquire True if the WiFi lock should be acquired, false to release
-     */
-    protected fun updateWiFiLock(acquire: Boolean) {
-        wifiLock?.let {
-            if (acquire && !it.isHeld) {
-                it.acquire()
-            } else if (!acquire && it.isHeld) {
-                it.release()
-            }
-        }
     }
 
     /**
