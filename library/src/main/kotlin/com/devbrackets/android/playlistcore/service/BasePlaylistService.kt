@@ -72,16 +72,6 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         private val TAG = "BasePlaylistService"
     }
 
-    enum class PlaybackState {
-        RETRIEVING, // the MediaRetriever is retrieving music
-        PREPARING, // Preparing / Buffering
-        PLAYING, // Active but could be paused due to loss of audio focus Needed for returning after we regain focus
-        PAUSED, // Paused but player ready
-        SEEKING, // performSeek was called, awaiting seek completion callback
-        STOPPED, // Stopped not preparing media
-        ERROR          // An error occurred, we are stopped
-    }
-
     protected var wifiLock: SafeWifiLock? = null
     protected var audioFocusHelper: AudioFocusHelper? = null
 
@@ -142,7 +132,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
      * service as Foreground when media is playing
      */
     protected open val notificationId: Int
-    get() = R.id.playlistcore_default_notification_id
+        get() = R.id.playlistcore_default_notification_id
 
     /**
      * Returns the PendingIntent to use when the playback notification is clicked.
@@ -151,43 +141,6 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
      */
     protected abstract val notificationClickPendingIntent: PendingIntent
 
-    /**
-     * Requests the service be transferred to the foreground, initializing the
-     * RemoteView and Notification helpers for playback control.
-     */
-    protected fun setupAsForeground() {
-        //Sets up the Notifications
-        mediaInfo.showNotifications = true
-        mediaInfo.notificationId = notificationId
-        mediaInfo.appIcon = imageProvider.notificationIconRes
-
-        //Starts the service as the foreground audio player
-        notificationSetup = true
-        setupForeground()
-    }
-
-    /**
-     * Sets up the service as a Foreground service only if we aren't already registered as such
-     */
-    protected fun setupForeground() {
-        if (!notificationSetup || foregroundSetup) {
-            return
-        }
-
-        foregroundSetup = true
-        startForeground(notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), javaClass))
-    }
-
-    /**
-     * If the service is registered as a foreground service then it will be unregistered
-     * as such without removing the notification
-     */
-    protected fun stopForeground() {
-        if (foregroundSetup) {
-            foregroundSetup = false
-            stopForeground(false)
-        }
-    }
 
     /**
      * Retrieves the volume level to use when audio focus has been temporarily
@@ -198,7 +151,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
      */
     @get:FloatRange(from = 0.0, to = 1.0)
     protected open val audioDuckVolume: Float
-    get() = 0.1F
+        get() = 0.1F
 
     /**
      * Links the [BasePlaylistManager] that contains the information for playback
@@ -227,6 +180,79 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
      */
     protected val isNetworkAvailable: Boolean
         get() = true
+
+
+    /**
+     * Retrieves the current item change event which represents any media item changes.
+     * This is intended as a utility method for initializing, or returning to, a media
+     * playback UI.  In order to get the changed events you will need to register for
+     * callbacks through [BasePlaylistManager.registerPlaylistListener]
+
+     * @return The current PlaylistItem Changed event
+     */
+    val currentItemChange: PlaylistItemChange<I>
+        get() {
+            val hasNext = playlistManager.isNextAvailable
+            val hasPrevious = playlistManager.isPreviousAvailable
+
+            return PlaylistItemChange(currentPlaylistItem, hasPrevious, hasNext)
+        }
+
+    /**
+     * A generic method to determine if media is currently playing.  This is
+     * used to determine the playback state for the notification.
+     *
+     * @return True if media is currently playing
+     */
+    protected val isPlaying: Boolean
+        get() = currentMediaPlayer?.isPlaying ?: false
+
+    protected val isLoading: Boolean
+        get() {
+            return currentPlaybackState == PlaybackState.RETRIEVING ||
+                    currentPlaybackState == PlaybackState.PREPARING ||
+                    currentPlaybackState == PlaybackState.SEEKING
+        }
+
+
+    /**
+     * Requests the service be transferred to the foreground, initializing the
+     * RemoteView and Notification helpers for playback control.
+     */
+    protected fun setupAsForeground() {
+        //Sets up the Notifications
+        mediaInfo.showNotifications = true
+        mediaInfo.notificationId = notificationId
+        mediaInfo.appIcon = imageProvider.notificationIconRes
+
+        //Starts the service as the foreground audio player
+        notificationSetup = true
+        setupForeground()
+    }
+
+    /**
+     * Sets up the service as a Foreground service only if we aren't already registered as such
+     */
+    protected fun setupForeground() {
+        if (!notificationSetup || foregroundSetup) {
+            return
+        }
+
+        foregroundSetup = true
+        //todo notification channel
+        startForeground(notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), javaClass))
+    }
+
+    /**
+     * If the service is registered as a foreground service then it will be unregistered
+     * as such without removing the notification
+     */
+    protected fun stopForeground() {
+        if (foregroundSetup) {
+            foregroundSetup = false
+            stopForeground(false)
+        }
+    }
 
     open fun updateMediaControls() {
         if (currentPlaylistItem == null || !notificationSetup) {
@@ -355,21 +381,6 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         return playlistManager.onProgressUpdated(mediaProgress)
     }
 
-    /**
-     * Retrieves the current item change event which represents any media item changes.
-     * This is intended as a utility method for initializing, or returning to, a media
-     * playback UI.  In order to get the changed events you will need to register for
-     * callbacks through [BasePlaylistManager.registerPlaylistListener]
-
-     * @return The current PlaylistItem Changed event
-     */
-    val currentItemChange: PlaylistItemChange<I>
-        get() {
-            val hasNext = playlistManager.isNextAvailable
-            val hasPrevious = playlistManager.isPreviousAvailable
-
-            return PlaylistItemChange(currentPlaylistItem, hasPrevious, hasNext)
-        }
 
     /**
      * Used to perform the onCreate functionality when the service is actually created.  This
@@ -388,22 +399,6 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         mediaSessionProvider = DefaultMediaSessionProvider(applicationContext, javaClass)
         mediaControlsHelper = MediaControlsHelper(applicationContext)
     }
-
-    /**
-     * A generic method to determine if media is currently playing.  This is
-     * used to determine the playback state for the notification.
-     *
-     * @return True if media is currently playing
-     */
-    protected val isPlaying: Boolean
-        get() = currentMediaPlayer?.isPlaying ?: false
-
-    protected val isLoading: Boolean
-        get() {
-            return currentPlaybackState == PlaybackState.RETRIEVING ||
-                    currentPlaybackState == PlaybackState.PREPARING ||
-                    currentPlaybackState == PlaybackState.SEEKING
-        }
 
     /**
      * Performs the functionality to pause and/or resume
