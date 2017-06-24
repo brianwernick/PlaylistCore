@@ -18,6 +18,7 @@ package com.devbrackets.android.playlistcore.listener
 
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
+import com.devbrackets.android.playlistcore.service.PlaybackState
 
 /**
  * A simple callback interface for listening to [BasePlaylistService]
@@ -37,5 +38,5 @@ interface PlaylistListener<in T : PlaylistItem> {
      *
      * @return True if the event has been handled
      */
-    fun onPlaybackStateChanged(playbackState: BasePlaylistService.PlaybackState): Boolean
+    fun onPlaybackStateChanged(playbackState: PlaybackState): Boolean
 }

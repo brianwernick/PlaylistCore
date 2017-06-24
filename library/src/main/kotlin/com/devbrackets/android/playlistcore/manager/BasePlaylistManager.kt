@@ -28,6 +28,7 @@ import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
+import com.devbrackets.android.playlistcore.service.PlaybackState
 import com.devbrackets.android.playlistcore.service.RemoteActions
 import java.lang.ref.WeakReference
 import java.util.*
@@ -206,7 +207,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      * @param playbackState The new media playback state
      * @return True if the event should be consumed
      */
-    override fun onPlaybackStateChanged(playbackState: BasePlaylistService.PlaybackState): Boolean {
+    override fun onPlaybackStateChanged(playbackState: PlaybackState): Boolean {
         return notifyListeners(playlistListenersLock, playlistListeners) {
             it.onPlaybackStateChanged(playbackState)
         }
@@ -230,8 +231,8 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      *
      * @return The most recent PlaybackState
      */
-    val currentPlaybackState: BasePlaylistService.PlaybackState
-        get() = service?.currentPlaybackState ?: BasePlaylistService.PlaybackState.STOPPED
+    val currentPlaybackState: PlaybackState
+        get() = service?.currentPlaybackState ?: PlaybackState.STOPPED
 
     /**
      * Retrieves the current progress for the media playback
