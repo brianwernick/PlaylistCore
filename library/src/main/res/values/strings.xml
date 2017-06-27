@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playlistcore_default_notification_channel_name">Media</string>
+    <string name="playlistcore_default_notification_channel_description">Audio &amp; Video playback controls</string>
+</resources>

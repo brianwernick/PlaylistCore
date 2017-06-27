@@ -16,9 +16,8 @@
 
 package com.devbrackets.android.playlistcore.helper.notification
 
-import android.app.Notification
-import android.app.PendingIntent
-import android.app.Service
+import android.annotation.TargetApi
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -28,6 +27,13 @@ import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
 open class DefaultPlaylistNotificationProvider(protected val context: Context) : PlaylistNotificationProvider {
+    companion object {
+        const val CHANNEL_ID = "PlaylistCoreMediaNotificationChannel"
+    }
+
+    protected val notificationManager: NotificationManager by lazy {
+        context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    }
 
     override fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
         return NotificationCompat.Builder(context).apply {
@@ -53,9 +59,12 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
             //TODO: handle loading state
 
             setActions(this, info, serviceClass)
-
-            //TODO: O notification channels
             setStyle(buildMediaStyle(mediaSession, serviceClass))
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                buildNotificationChannel()
+                setChannelId(CHANNEL_ID)
+            }
         }.build()
     }
 
@@ -77,6 +86,30 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
             setShowCancelButton(true)
             setCancelButtonIntent(createPendingIntent(serviceClass, RemoteActions.ACTION_STOP))
         }
+    }
+
+    /**
+     * Builds the notification channel using the default name and description (English Only)
+     * if the channel hasn't already been created
+     */
+    @TargetApi(Build.VERSION_CODES.O)
+    protected open fun buildNotificationChannel() {
+        if (notificationManager.getNotificationChannel(CHANNEL_ID) == null) {
+            val name = context.resources.getString(R.string.playlistcore_default_notification_channel_name)
+            val description = context.resources.getString(R.string.playlistcore_default_notification_channel_description)
+            buildNotificationChannel(name, description)
+        }
+    }
+
+    /**
+     * Builds the notification channel using the specified name and description
+     */
+    @TargetApi(Build.VERSION_CODES.O)
+    protected open fun buildNotificationChannel(name: CharSequence, description: String) {
+        val channel = NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_LOW)
+        channel.description = description
+        channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        notificationManager.createNotificationChannel(channel)
     }
 
     /**

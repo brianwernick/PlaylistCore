@@ -396,7 +396,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         playlistManager.registerService(this)
 
         notificationProvider = DefaultPlaylistNotificationProvider(applicationContext)
-        mediaSessionProvider = DefaultMediaSessionProvider(applicationContext, javaClass)
+        mediaSessionProvider = DefaultMediaSessionProvider(applicationContext, javaClass) //todo we need to set the activeState while we are playing and when we stop playing
         mediaControlsHelper = MediaControlsHelper(applicationContext)
     }
 

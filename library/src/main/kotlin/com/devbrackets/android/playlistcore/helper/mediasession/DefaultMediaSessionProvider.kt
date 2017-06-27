@@ -93,7 +93,7 @@ open class DefaultMediaSessionProvider(val context: Context, val serviceClass: C
         try {
             pi.send()
         } catch (e: Exception) {
-            Log.d("DefaultMediaSessionProvider", "Error sending media controls pending intent", e)
+            Log.d("DefaultMediaSessionPro", "Error sending media controls pending intent", e)
         }
     }
 }
