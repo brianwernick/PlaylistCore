@@ -27,7 +27,7 @@ import com.devbrackets.android.playlistcore.helper.notification.NotificationMedi
  * A class to help simplify playback control and artwork display for
  * remote views such as Android Wear, Bluetooth devices, Lock Screens, etc.
  */
-class MediaControlsHelper
+open class MediaControlsHelper
 /**
  * Creates a new MediaControlsHelper object
  *
@@ -68,7 +68,8 @@ class MediaControlsHelper
 
     @PlaybackStateCompat.State
     protected fun getPlaybackState(isPlaying: Boolean): Int {
-        return if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        //todo We should be handling all the appropriate states instead of just these 2
+        return if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_CONNECTING
     }
 
     /**
