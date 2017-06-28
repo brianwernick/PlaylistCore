@@ -26,6 +26,15 @@ import android.support.v7.app.NotificationCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
+/**
+ * A default implementation for the [PlaylistNotificationProvider] that will correctly
+ * handle both normal and large notifications, remote action registration, categories,
+ * channels, etc.
+ *
+ * *Note* The default channel this provides only supports an English name and description
+ * so it is recommended that you extend this class and override [buildNotificationChannel]
+ * to provide your own custom name and description.
+ */
 open class DefaultPlaylistNotificationProvider(protected val context: Context) : PlaylistNotificationProvider {
     companion object {
         const val CHANNEL_ID = "PlaylistCoreMediaNotificationChannel"
