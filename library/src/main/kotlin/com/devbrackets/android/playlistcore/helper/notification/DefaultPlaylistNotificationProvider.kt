@@ -44,6 +44,9 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
         context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
 
+    protected open val clickPendingIntent: PendingIntent?
+        get() = null
+
     override fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
         return NotificationCompat.Builder(context).apply {
             setSmallIcon(info.appIcon)
@@ -52,7 +55,7 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
             setContentTitle(info.title)
             setContentText("${info.album} - ${info.artist}") //todo only if both are not empty
 
-            setContentIntent(info.pendingIntent)
+            setContentIntent(clickPendingIntent)
             setDeleteIntent(createPendingIntent(serviceClass, RemoteActions.ACTION_STOP))
 
             val allowSwipe = !(info.mediaState.isPlaying)

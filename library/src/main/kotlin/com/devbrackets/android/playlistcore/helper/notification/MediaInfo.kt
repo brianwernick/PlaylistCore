@@ -32,13 +32,8 @@ class MediaInfo {
     var largeNotificationIcon: Bitmap? = null
     var artwork: Bitmap? = null
 
-    @DrawableRes
     var appIcon: Int = 0
     var notificationId: Int = 0
-
-    var showNotifications: Boolean = false
-
-    var pendingIntent: PendingIntent? = null
 
     var mediaState: NotificationMediaState = NotificationMediaState()
 
@@ -53,6 +48,5 @@ class MediaInfo {
 
         largeNotificationIcon = null
         artwork = null
-        pendingIntent = null
     }
 }
