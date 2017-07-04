@@ -1,4 +1,4 @@
-package com.devbrackets.android.playlistcore.service
+package com.devbrackets.android.playlistcore.listener
 
 import android.app.Notification
 

@@ -24,6 +24,8 @@ import android.os.IBinder
 import android.util.Log
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod
 import com.devbrackets.android.playlistcore.api.PlaylistItem
+import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
+import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 
 /**
@@ -83,10 +85,10 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
     }
 
     override fun onTaskRemoved(rootIntent: Intent) {
-        super.onTaskRemoved(rootIntent)
-
-        //TODO: is this correct or is this causing us to stop the service when the app is killed?
-        onDestroy()
+        // Only destroy when paused/stopped, otherwise we want to keep the service active
+        if (!inForeground) {
+            onDestroy()
+        }
     }
 
     /**

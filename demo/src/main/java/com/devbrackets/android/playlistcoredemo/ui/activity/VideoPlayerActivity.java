@@ -50,7 +50,7 @@ public class VideoPlayerActivity extends Activity {
     protected void init() {
         setupPlaylistManager();
 
-        videoView = (VideoView) findViewById(R.id.video_play_activity_video_view);
+        videoView = findViewById(R.id.video_play_activity_video_view);
 
 //        playlistManager.setVideoPlayer(new VideoApi(videoView)); //todo add to the mediaPlayers list in the service... should we have a Manager function to do this?
         playlistManager.play(0, false);

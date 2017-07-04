@@ -21,7 +21,6 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
         void onImageUpdated();
     }
 
-    //TODO Use Glide
     @NotNull
     private Picasso picasso;
     @NonNull

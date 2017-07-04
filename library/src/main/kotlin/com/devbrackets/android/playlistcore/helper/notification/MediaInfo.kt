@@ -27,7 +27,7 @@ import com.devbrackets.android.playlistcore.api.PlaylistItem
  * with the information associated with the current playlist
  * item
  */
-class MediaInfo {
+open class MediaInfo {
     var playlistItem: PlaylistItem? = null
     var largeNotificationIcon: Bitmap? = null
     var artwork: Bitmap? = null
@@ -41,7 +41,7 @@ class MediaInfo {
     val album: String get() = playlistItem?.album.orEmpty()
     val artist: String get() = playlistItem?.artist.orEmpty()
 
-    fun clean() {
+    fun clear() {
         appIcon = 0
         notificationId = 0
         playlistItem = null

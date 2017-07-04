@@ -1,4 +1,4 @@
-package com.devbrackets.android.playlistcore.service
+package com.devbrackets.android.playlistcore.helper.playlist
 
 import android.app.NotificationManager
 import android.app.Service
@@ -21,6 +21,8 @@ import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotifica
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
+import com.devbrackets.android.playlistcore.service.PlaybackState
+import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
 //TODO: follow the builder pattern (for java inter-op) instead of having a public constructor with all the fixins
@@ -28,7 +30,7 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         protected val context: Context,
         protected val serviceClass: Class<out Service>,
         protected val playlistManager: M,
-        protected val imageProvider: ImageProvider<I>, //TODO: should we just build this in? Maybe an optional dep?,,,,
+        protected val imageProvider: ImageProvider<I>,
         protected val notificationProvider: PlaylistNotificationProvider = DefaultPlaylistNotificationProvider(context),
         protected val mediaSessionProvider: MediaSessionProvider = DefaultMediaSessionProvider(context, serviceClass),
         protected val mediaControlsHelper: MediaControlsHelper = MediaControlsHelper(context),
@@ -97,6 +99,8 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         relaxResources(true)
         playlistManager.playlistHandler = null
         audioFocusHelper.setAudioFocusCallback(null)
+
+        mediaInfo.clear()
     }
 
     override fun play() {
@@ -167,8 +171,6 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         performSeek(positionMillis)
     }
 
-
-
     override fun onPrepared(mediaPlayer: MediaPlayerApi<I>) {
         startMediaPlayer()
     }
@@ -207,9 +209,6 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         abandonAudioFocus()
         return false
     }
-
-
-
 
     override fun onAudioFocusGained(): Boolean {
         if (currentMediaPlayer?.handlesOwnAudioFocus ?: false) {
@@ -255,23 +254,9 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         return playlistManager.onProgressUpdated(mediaProgress)
     }
 
-
-
-
-
-
-
-
-
-
-
-
     protected open fun setupForeground() {
         serviceCallbacks.runAsForeground(notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass))
     }
-
-
-
 
     /**
      * Performs the functionality to seek the current media item
@@ -291,33 +276,6 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
             setPlaybackState(PlaybackState.SEEKING)
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     protected open fun initializeMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
         mediaPlayer.apply {
@@ -387,18 +345,6 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         mediaSessionProvider.get().release()
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * Requests the audio focus
      */
@@ -413,21 +359,9 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         return currentMediaPlayer?.handlesOwnAudioFocus ?: false || audioFocusHelper.abandonFocus()
     }
 
-
-
-
-
-
-
-
-
-
-
-
     override fun startItemPlayback(positionMillis: Long, startPaused: Boolean) {
         this.seekToPosition = positionMillis
         this.startPaused = startPaused
-
 
         playlistManager.serviceListener?.onMediaPlaybackEnded()
         getNextPlayableItem()
@@ -523,20 +457,6 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * Iterates through the playList, starting with the current item, until we reach an item we can play.
      * Normally this will be the current item, however if they don't have network then
@@ -559,7 +479,6 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         return currentPlaylistItem
     }
 
-    //todo this method screams inheritance...
     protected open fun isPlayable(item: I): Boolean {
         return getMediaPlayerForItem(item) != null
     }

@@ -30,7 +30,7 @@ import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.listener.ServiceListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
 import com.devbrackets.android.playlistcore.service.PlaybackState
-import com.devbrackets.android.playlistcore.service.PlaylistHandler
+import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
 import com.devbrackets.android.playlistcore.service.RemoteActions
 import java.lang.ref.WeakReference
 import java.util.*
