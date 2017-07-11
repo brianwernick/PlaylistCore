@@ -16,8 +16,7 @@ import com.devbrackets.android.playlistcore.event.MediaProgress;
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.service.BasePlaylistService;
-import com.devbrackets.android.playlistcore.service.PlaylistServiceCore;
+import com.devbrackets.android.playlistcore.service.PlaybackState;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
@@ -106,7 +105,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     }
 
     @Override
-    public boolean onPlaybackStateChanged(@NonNull BasePlaylistService.PlaybackState playbackState) {
+    public boolean onPlaybackStateChanged(@NonNull PlaybackState playbackState) {
         switch (playbackState) {
             case STOPPED:
                 finish();
@@ -155,11 +154,11 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private void updateCurrentPlaybackInformation() {
         PlaylistItemChange<MediaItem> itemChange = playlistManager.getCurrentItemChange();
         if (itemChange != null) {
-            onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.hasNext(), itemChange.hasPrevious());
+            onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.getHasNext(), itemChange.getHasPrevious());
         }
 
-        PlaylistServiceCore.PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
-        if (currentPlaybackState != PlaylistServiceCore.PlaybackState.STOPPED) {
+        PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
+        if (currentPlaybackState != PlaybackState.STOPPED) {
             onPlaybackStateChanged(currentPlaybackState);
         }
 

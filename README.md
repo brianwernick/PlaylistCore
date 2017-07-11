@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     //...
-    compile 'com.devbrackets.android:playlistcore:1.1.3'
+    compile 'com.devbrackets.android:playlistcore:2.0.0'
 }
 ```
 
@@ -35,7 +35,7 @@ Due to the length an example would be, please see the Demo app
 License
 -------
 
-    Copyright 2017 Brian Wernick
+    Copyright 2016-2017 Brian Wernick
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,10 +52,12 @@ License
 
 Attribution
 -----------
+* Uses [Kotlin][Kotlin] licensed under [Apache 2.0][Apache 2.0]
 * Uses [Material Design icons][Design Icons] licensed under [Creative Commons 4.0][CC 4.0]
 * Uses [AppCompat-v7](http://developer.android.com/tools/support-library/features.html#v7-appcompat) licensed under [Apache 2.0][Apache 2.0]
 
 
+ [Kotlin]: https://kotlinlang.org/
  [Design Icons]: https://github.com/google/material-design-icons
  [CC 4.0]: http://creativecommons.org/licenses/by/4.0/
  [JCenter]: https://bintray.com/brianwernick/maven/PlaylistCore/view#files

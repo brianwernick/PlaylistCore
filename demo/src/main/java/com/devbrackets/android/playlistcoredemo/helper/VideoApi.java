@@ -4,12 +4,14 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
 import android.widget.VideoView;
 
-import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
+import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
-public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
+import org.jetbrains.annotations.NotNull;
+
+public class VideoApi extends BaseMediaApi {
     private VideoView videoView;
 
     public VideoApi(VideoView videoView) {
@@ -61,11 +63,22 @@ public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
         videoView.seekTo((int)milliseconds);
     }
 
+
     @Override
-    public void setDataSource(@NonNull Uri uri) {
+    public boolean getHandlesOwnAudioFocus() {
+        return false;
+    }
+
+    @Override
+    public boolean handlesItem(@NotNull MediaItem item) {
+        return item.getMediaType() == BasePlaylistManager.VIDEO;
+    }
+
+    @Override
+    public void playItem(@NotNull MediaItem item) {
         prepared = false;
         bufferPercent = 0;
-        videoView.setVideoURI(uri);
+        videoView.setVideoURI(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
     }
 
     @Override
