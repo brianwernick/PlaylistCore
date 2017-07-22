@@ -42,11 +42,11 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
             }
         });
 
-        return new DefaultPlaylistHandler<MediaItem, PlaylistManager>(
+        return new DefaultPlaylistHandler.Builder<>(
                 getApplicationContext(),
                 getClass(),
                 getPlaylistManager(),
                 imageProvider
-        );
+        ).build();
     }
 }

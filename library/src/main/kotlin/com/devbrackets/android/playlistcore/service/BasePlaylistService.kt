@@ -69,7 +69,9 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
     val serviceContinuationMethod: Int
         get() = Service.START_NOT_STICKY
 
-    protected lateinit var playlistHandler: PlaylistHandler<I>
+    protected val playlistHandler: PlaylistHandler<I> by lazy {
+        newPlaylistHandler()
+    }
 
     abstract fun newPlaylistHandler(): PlaylistHandler<I>
 
@@ -80,7 +82,6 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
     override fun onCreate() {
         super.onCreate()
 
-        playlistHandler = newPlaylistHandler()
         playlistHandler.setup(this)
     }
 

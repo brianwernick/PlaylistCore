@@ -25,16 +25,15 @@ import com.devbrackets.android.playlistcore.service.PlaybackState
 import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
-//TODO: follow the builder pattern (for java inter-op) instead of having a public constructor with all the fixins
-open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I>> @JvmOverloads constructor(
+open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<I>> protected constructor(
         protected val context: Context,
         protected val serviceClass: Class<out Service>,
         protected val playlistManager: M,
         protected val imageProvider: ImageProvider<I>,
-        protected val notificationProvider: PlaylistNotificationProvider = DefaultPlaylistNotificationProvider(context),
-        protected val mediaSessionProvider: MediaSessionProvider = DefaultMediaSessionProvider(context, serviceClass),
-        protected val mediaControlsHelper: MediaControlsHelper = MediaControlsHelper(context),
-        protected val audioFocusHelper: AudioFocusHelper = AudioFocusHelper(context)
+        protected val notificationProvider: PlaylistNotificationProvider,
+        protected val mediaSessionProvider: MediaSessionProvider,
+        protected val mediaControlsHelper: MediaControlsHelper,
+        protected val audioFocusHelper: AudioFocusHelper
 ) : PlaylistHandler<I>(), AudioFocusHelper.AudioFocusCallback, ProgressListener, MediaStatusListener<I> {
 
     companion object {
@@ -75,7 +74,7 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
                     currentPlaybackState == PlaybackState.SEEKING
         }
 
-    var currentPlaylistItem : I? = null
+    var currentPlaylistItem: I? = null
 
     protected var pausedForSeek = false
     protected var playingBeforeSeek = false
@@ -513,4 +512,26 @@ open class DefaultPlaylistHandler<I: PlaylistItem, out M : BasePlaylistManager<I
         playlistManager.onPlaybackStateChanged(state)
     }
 
+    open class Builder<I : PlaylistItem, out M : BasePlaylistManager<I>>(
+            protected val context: Context,
+            protected val serviceClass: Class<out Service>,
+            protected val playlistManager: M,
+            protected val imageProvider: ImageProvider<I>
+    ) {
+        var notificationProvider: PlaylistNotificationProvider? = null
+        var mediaSessionProvider: MediaSessionProvider? = null
+        var mediaControlsHelper: MediaControlsHelper? = null
+        var audioFocusHelper: AudioFocusHelper? = null
+
+        fun build(): DefaultPlaylistHandler<I, M> {
+            return DefaultPlaylistHandler(context,
+                    serviceClass,
+                    playlistManager,
+                    imageProvider,
+                    notificationProvider ?: DefaultPlaylistNotificationProvider(context),
+                    mediaSessionProvider ?: DefaultMediaSessionProvider(context, serviceClass),
+                    mediaControlsHelper ?: MediaControlsHelper(context),
+                    audioFocusHelper ?: AudioFocusHelper(context))
+        }
+    }
 }
