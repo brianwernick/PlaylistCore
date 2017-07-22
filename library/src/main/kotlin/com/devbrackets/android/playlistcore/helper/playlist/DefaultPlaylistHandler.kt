@@ -34,7 +34,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         protected val mediaSessionProvider: MediaSessionProvider,
         protected val mediaControlsHelper: MediaControlsHelper,
         protected val audioFocusHelper: AudioFocusHelper
-) : PlaylistHandler<I>(), AudioFocusHelper.AudioFocusCallback, ProgressListener, MediaStatusListener<I> {
+) : PlaylistHandler<I>(playlistManager.mediaPlayers), AudioFocusHelper.AudioFocusCallback, ProgressListener, MediaStatusListener<I> {
 
     companion object {
         const val TAG = "DefaultPlaylistHandler"
@@ -366,7 +366,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         getNextPlayableItem()
 
         val item = currentPlaylistItem
-        currentMediaPlayer = item?.let { getMediaPlayerForItem(it) }
+        currentMediaPlayer = item?.let { getMediaPlayerForItem(it) } //todo have we stopped the last item playback?
 
         mediaItemChanged(item)
         if (play(currentMediaPlayer, item)) {

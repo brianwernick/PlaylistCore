@@ -23,7 +23,7 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
         super.onCreate();
 
         // Adds the audio player implementation, otherwise there's nothing to play media with
-        getPlaylistHandler().getMediaPlayers().add(new AudioApi(getApplicationContext(), new MediaPlayer()));
+        getPlaylistManager().getMediaPlayers().add(new AudioApi(getApplicationContext(), new MediaPlayer()));
     }
 
     @NonNull

@@ -8,9 +8,7 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.service.PlaybackState
 import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 
-abstract class PlaylistHandler<I: PlaylistItem> {
-
-    val mediaPlayers = mutableListOf<MediaPlayerApi<I>>()
+abstract class PlaylistHandler<I: PlaylistItem>(val mediaPlayers: List<MediaPlayerApi<I>>) {
 
     /**
      * Retrieves the current item change event which represents any media item changes.

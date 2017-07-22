@@ -22,6 +22,7 @@ import android.app.Service
 import android.content.Intent
 import android.support.annotation.IntRange
 import android.util.Log
+import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
@@ -131,6 +132,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
 
     var playlistHandler: PlaylistHandler<I>? = null
     var serviceListener: ServiceListener<I>? = null //todo this should probably be a list
+    val mediaPlayers = mutableListOf<MediaPlayerApi<I>>()
 
     protected var playlistListeners: MutableList<WeakReference<PlaylistListener<I>>> = LinkedList()
     protected var progressListeners: MutableList<WeakReference<ProgressListener>> = LinkedList()

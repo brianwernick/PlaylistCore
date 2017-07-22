@@ -129,14 +129,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
             return serviceContinuationMethod
         }
 
-        if (RemoteActions.ACTION_START_SERVICE == intent.action) {
-            val seekToPosition = intent.getLongExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, -1)
-            val startPaused = intent.getBooleanExtra(RemoteActions.ACTION_EXTRA_START_PAUSED, false)
-            playlistHandler.startItemPlayback(seekToPosition, startPaused)
-        } else {
-            handleRemoteAction(intent.action, intent.extras)
-        }
-
+        handleRemoteAction(intent.action, intent.extras)
         return serviceContinuationMethod
     }
 
@@ -154,6 +147,11 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
         }
 
         when (action) {
+            RemoteActions.ACTION_START_SERVICE -> {
+                val seekToPosition = extras?.getLong(RemoteActions.ACTION_EXTRA_SEEK_POSITION, -1) ?: -1
+                val startPaused = extras?.getBoolean(RemoteActions.ACTION_EXTRA_START_PAUSED, false) ?: false
+                playlistHandler.startItemPlayback(seekToPosition, startPaused)
+            }
             RemoteActions.ACTION_PLAY_PAUSE -> playlistHandler.togglePlayPause()
             RemoteActions.ACTION_NEXT -> playlistHandler.next()
             RemoteActions.ACTION_PREVIOUS -> playlistHandler.previous()
