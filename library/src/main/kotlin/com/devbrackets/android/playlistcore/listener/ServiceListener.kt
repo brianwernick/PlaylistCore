@@ -2,6 +2,7 @@ package com.devbrackets.android.playlistcore.listener
 
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 
+//TODO rename
 interface ServiceListener<in I : PlaylistItem> {
 
     /**

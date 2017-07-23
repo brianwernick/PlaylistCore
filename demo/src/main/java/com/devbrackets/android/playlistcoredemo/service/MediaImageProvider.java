@@ -7,7 +7,6 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.helper.image.ImageProvider;
-import com.devbrackets.android.playlistcore.service.BasePlaylistService;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.squareup.picasso.Picasso;
@@ -18,11 +17,14 @@ import org.jetbrains.annotations.Nullable;
 
 
 public class MediaImageProvider implements ImageProvider<MediaItem> {
-    //Picasso is an image loading library (NOTE: google now recommends using glide for image loading)
+    interface OnImageUpdatedListener {
+        void onImageUpdated();
+    }
+
     @NotNull
     private Picasso picasso;
     @NonNull
-    private BasePlaylistService<?, ?> service;
+    private OnImageUpdatedListener listener;
 
     @NonNull
     private NotificationImageTarget notificationImageTarget = new NotificationImageTarget();
@@ -37,9 +39,9 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
     @Nullable
     private Bitmap artworkImage;
 
-    public MediaImageProvider(@NonNull Context context, @NonNull BasePlaylistService<?, ?> service) {
+    public MediaImageProvider(@NonNull Context context, @NonNull OnImageUpdatedListener listener) {
         picasso = Picasso.with(context);
-        this.service = service;
+        this.listener = listener;
 
         defaultNotificationImage = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
     }
@@ -82,13 +84,13 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
             notificationImage = bitmap;
-            service.updateMediaControls();
+            listener.onImageUpdated();
         }
 
         @Override
         public void onBitmapFailed(Drawable errorDrawable) {
             notificationImage = null;
-            service.updateMediaControls();
+            listener.onImageUpdated();
         }
 
         @Override
@@ -107,13 +109,13 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
             artworkImage = bitmap;
-            service.updateMediaControls();
+            listener.onImageUpdated();
         }
 
         @Override
         public void onBitmapFailed(Drawable errorDrawable) {
             artworkImage = null;
-            service.updateMediaControls();
+            listener.onImageUpdated();
         }
 
         @Override

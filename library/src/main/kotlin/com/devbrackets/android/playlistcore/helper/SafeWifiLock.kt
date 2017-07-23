@@ -36,7 +36,6 @@ open class SafeWifiLock(context: Context) {
         }
     }
 
-
     /**
      * Acquires or releases the WiFi lock
      *

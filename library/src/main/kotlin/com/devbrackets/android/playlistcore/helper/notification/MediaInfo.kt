@@ -27,18 +27,13 @@ import com.devbrackets.android.playlistcore.api.PlaylistItem
  * with the information associated with the current playlist
  * item
  */
-class MediaInfo {
+open class MediaInfo {
     var playlistItem: PlaylistItem? = null
     var largeNotificationIcon: Bitmap? = null
     var artwork: Bitmap? = null
 
-    @DrawableRes
     var appIcon: Int = 0
     var notificationId: Int = 0
-
-    var showNotifications: Boolean = false
-
-    var pendingIntent: PendingIntent? = null
 
     var mediaState: NotificationMediaState = NotificationMediaState()
 
@@ -46,13 +41,12 @@ class MediaInfo {
     val album: String get() = playlistItem?.album.orEmpty()
     val artist: String get() = playlistItem?.artist.orEmpty()
 
-    fun clean() {
+    fun clear() {
         appIcon = 0
         notificationId = 0
         playlistItem = null
 
         largeNotificationIcon = null
         artwork = null
-        pendingIntent = null
     }
 }

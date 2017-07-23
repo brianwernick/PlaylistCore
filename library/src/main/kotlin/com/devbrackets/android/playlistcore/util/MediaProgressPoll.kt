@@ -29,7 +29,7 @@ import com.devbrackets.android.playlistcore.api.PlaylistItem
  * This will allows listeners to be informed of progress updates for display
  * or storage.
  */
-class MediaProgressPoll<I : PlaylistItem> {
+open class MediaProgressPoll<I : PlaylistItem> {
     companion object {
         private val TAG = "MediaProgressPoll"
     }

@@ -22,13 +22,16 @@ import android.app.Service
 import android.content.Intent
 import android.support.annotation.IntRange
 import android.util.Log
+import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
+import com.devbrackets.android.playlistcore.listener.ServiceListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
 import com.devbrackets.android.playlistcore.service.PlaybackState
+import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
 import com.devbrackets.android.playlistcore.service.RemoteActions
 import java.lang.ref.WeakReference
 import java.util.*
@@ -127,7 +130,9 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
     @IntRange(from = INVALID_ID)
     var id = INVALID_ID
 
-    protected var service: BasePlaylistService<I, *>? = null
+    var playlistHandler: PlaylistHandler<I>? = null
+    var serviceListener: ServiceListener<I>? = null //todo this should probably be a list
+    val mediaPlayers = mutableListOf<MediaPlayerApi<I>>()
 
     protected var playlistListeners: MutableList<WeakReference<PlaylistListener<I>>> = LinkedList()
     protected var progressListeners: MutableList<WeakReference<ProgressListener>> = LinkedList()
@@ -232,7 +237,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      * @return The most recent PlaybackState
      */
     val currentPlaybackState: PlaybackState
-        get() = service?.currentPlaybackState ?: PlaybackState.STOPPED
+        get() = playlistHandler?.currentPlaybackState ?: PlaybackState.STOPPED
 
     /**
      * Retrieves the current progress for the media playback
@@ -240,7 +245,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      * @return The most recent progress event
      */
     val currentProgress: MediaProgress?
-        get() = service?.currentMediaProgress
+        get() = playlistHandler?.currentMediaProgress
 
     /**
      * Retrieves the most recent [PlaylistItemChange]
@@ -248,24 +253,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
      * @return The most recent Item Changed information
      */
     val currentItemChange: PlaylistItemChange<I>?
-        get() = service?.currentItemChange
-
-    /**
-     * Links the [BasePlaylistService] so that we can correctly manage the
-     * [PlaylistListener]
-     *
-     * @param service The AudioService to link to this manager
-     */
-    fun registerService(service: BasePlaylistService<I, *>) {
-        this.service = service
-    }
-
-    /**
-     * UnLinks the [BasePlaylistService] from this manager. (see [.registerService]
-     */
-    fun unRegisterService() {
-        service = null
-    }
+        get() = playlistHandler?.currentItemChange
 
     /**
      * Registers the listener to this service.  These callbacks will only be
