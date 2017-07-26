@@ -2,16 +2,30 @@ package com.devbrackets.android.playlistcore.helper.audiofocus
 
 import android.content.Context
 import android.media.AudioManager
+import com.devbrackets.android.playlistcore.api.PlaylistItem
+import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
 
-class DefaultAudioFocusProvider(context: Context) : AudioFocusProvider, AudioManager.OnAudioFocusChangeListener {
+//TODO update to handle the Android O focus changes
+open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : AudioFocusProvider<I>, AudioManager.OnAudioFocusChangeListener {
     companion object {
         const val AUDIOFOCUS_NONE = 0
     }
 
-    private var currentAudioFocus = AUDIOFOCUS_NONE
+    protected var pausedForFocusLoss = false
+    protected var currentAudioFocus = AUDIOFOCUS_NONE
+    protected var handler: PlaylistHandler<I>? = null
+
     protected var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
+    override fun setPlaylistHandler(playlistHandler: PlaylistHandler<I>) {
+        handler = playlistHandler
+    }
+
     override fun requestFocus(): Boolean {
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus ?: true) {
+            return false
+        }
+
         if (currentAudioFocus == AudioManager.AUDIOFOCUS_GAIN) {
             return true
         }
@@ -21,6 +35,10 @@ class DefaultAudioFocusProvider(context: Context) : AudioFocusProvider, AudioMan
     }
 
     override fun abandonFocus(): Boolean {
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus ?: true) {
+            return false
+        }
+
         if (currentAudioFocus == AUDIOFOCUS_NONE) {
             return true
         }
@@ -34,23 +52,51 @@ class DefaultAudioFocusProvider(context: Context) : AudioFocusProvider, AudioMan
     }
 
     override fun onAudioFocusChange(focusChange: Int) {
+        if (currentAudioFocus == focusChange) {
+            return
+        }
+
         currentAudioFocus = focusChange
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus ?: true) {
+            return
+        }
 
         when (focusChange) {
-            AudioManager.AUDIOFOCUS_GAIN -> {
-//                postAudioFocusGained()
-            }
+            AudioManager.AUDIOFOCUS_GAIN -> onFocusGained()
+            AudioManager.AUDIOFOCUS_LOSS -> onFocusLoss()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> onFocusLossTransient()
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> onFocusLossTransientCanDuck()
+        }
+    }
 
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                //todo
+    open fun onFocusGained() {
+        handler?.currentMediaPlayer?.let {
+            if (pausedForFocusLoss && !it.isPlaying) {
+                pausedForFocusLoss = false
+                handler?.play()
+            } else {
+                it.setVolume(1.0f, 1.0f)
             }
+        }
+    }
 
-            AudioManager.AUDIOFOCUS_LOSS -> {
-//                postAudioFocusLost(false)
+    open fun onFocusLoss() {
+        handler?.currentMediaPlayer?.let {
+            if (it.isPlaying) {
+                pausedForFocusLoss = true
+                handler?.pause()
             }
+        }
+    }
 
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-//                postAudioFocusLost(true)
+    open fun onFocusLossTransient() {
+        onFocusLoss()
+    }
+
+    open fun onFocusLossTransientCanDuck() {
+        handler?.currentMediaPlayer?.let {
+            if (it.isPlaying) {
+                it.setVolume(0.1f, 0.1f)
             }
         }
     }
