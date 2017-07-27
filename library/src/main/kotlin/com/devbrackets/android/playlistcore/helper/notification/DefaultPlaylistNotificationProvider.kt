@@ -21,8 +21,9 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.support.v4.app.NotificationCompat
+import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
-import android.support.v7.app.NotificationCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
@@ -48,7 +49,11 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
         get() = null
 
     override fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification {
-        return NotificationCompat.Builder(context).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            buildNotificationChannel()
+        }
+
+        return NotificationCompat.Builder(context, CHANNEL_ID).apply {
             setSmallIcon(info.appIcon)
             setLargeIcon(info.largeNotificationIcon)
 
@@ -72,11 +77,6 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
 
             setActions(this, info, serviceClass)
             setStyle(buildMediaStyle(mediaSession, serviceClass))
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                buildNotificationChannel()
-                setChannelId(CHANNEL_ID)
-            }
         }.build()
     }
 
@@ -85,14 +85,14 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
         val playPauseIconRes = if (!playing) R.drawable.playlistcore_notification_play else R.drawable.playlistcore_notification_pause
 
         //todo enable/disable states
-        //TODO: larger Play/Pause icon size
+        //TODO: larger Play/Pause icon size, smaller next previous (see play music)
         builder.addAction(R.drawable.playlistcore_notification_previous, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PREVIOUS))
         builder.addAction(playPauseIconRes, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PLAY_PAUSE))
         builder.addAction(R.drawable.playlistcore_notification_next, "", createPendingIntent(serviceClass, RemoteActions.ACTION_NEXT))
     }
 
-    protected open fun buildMediaStyle(mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : NotificationCompat.MediaStyle {
-        return NotificationCompat.MediaStyle().apply {
+    protected open fun buildMediaStyle(mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : MediaStyle {
+        return MediaStyle().apply {
             setMediaSession(mediaSession.sessionToken)
             setShowActionsInCompactView(0, 1, 2) // previous, play/pause, next
             setShowCancelButton(true)

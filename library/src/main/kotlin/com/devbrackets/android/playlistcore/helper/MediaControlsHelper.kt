@@ -26,6 +26,7 @@ import com.devbrackets.android.playlistcore.helper.notification.NotificationMedi
 /**
  * A class to help simplify playback control and artwork display for
  * remote views such as Android Wear, Bluetooth devices, Lock Screens, etc.
+ * TODO: This should be changed to a delegated provider like the notification, etc.
  */
 open class MediaControlsHelper
 /**

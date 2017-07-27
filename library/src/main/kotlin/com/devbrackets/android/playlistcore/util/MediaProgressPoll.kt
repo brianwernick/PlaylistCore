@@ -18,11 +18,10 @@ package com.devbrackets.android.playlistcore.util
 
 import android.support.annotation.IntRange
 import android.util.Log
-
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.listener.ProgressListener
-import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
  * A utility used to poll the progress of the currently playing media.
@@ -132,7 +131,7 @@ open class MediaProgressPoll<I : PlaylistItem> {
      */
     val bufferPercentage: Int
         @IntRange(from = 0, to = MediaProgress.MAX_BUFFER_PERCENT.toLong())
-        get() = if (mediaPlayerApi != null) mediaPlayerApi!!.bufferedPercent else 0
+        get() = mediaPlayerApi?.bufferedPercent ?: 0
 
     init {
         pollRepeater.setRepeatListener(OnRepeat())
