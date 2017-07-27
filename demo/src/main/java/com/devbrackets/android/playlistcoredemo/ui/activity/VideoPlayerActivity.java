@@ -2,8 +2,8 @@ package com.devbrackets.android.playlistcoredemo.ui.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.VideoView;
 
+import com.devbrackets.android.exomedia.ui.widget.VideoView;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;

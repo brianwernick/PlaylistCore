@@ -1,11 +1,10 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
-import android.widget.VideoView;
 
+import com.devbrackets.android.exomedia.ui.widget.VideoView;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
@@ -20,6 +19,8 @@ public class VideoApi extends BaseMediaApi {
         videoView.setOnErrorListener(this);
         videoView.setOnPreparedListener(this);
         videoView.setOnCompletionListener(this);
+        videoView.setOnSeekCompletionListener(this);
+        videoView.setOnBufferUpdateListener(this);
     }
 
     @Override
@@ -55,7 +56,7 @@ public class VideoApi extends BaseMediaApi {
 
     @Override
     public void setVolume(@FloatRange(from = 0.0, to = 1.0) float left, @FloatRange(from = 0.0, to = 1.0) float right) {
-        //Not supported by the VideoView
+        videoView.setVolume((left + right) / 2);
     }
 
     @Override
@@ -94,14 +95,5 @@ public class VideoApi extends BaseMediaApi {
     @Override
     public int getBufferedPercent() {
         return bufferPercent;
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-        super.onPrepared(mp);
-
-        //Registers the rest of the listeners we need the MediaPlayer for
-        mp.setOnSeekCompleteListener(this);
-        mp.setOnBufferingUpdateListener(this);
     }
 }

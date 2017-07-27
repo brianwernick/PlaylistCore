@@ -1,16 +1,14 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
 import android.content.Context;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.PowerManager;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
+import com.devbrackets.android.exomedia.AudioPlayer;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
@@ -18,29 +16,19 @@ import org.jetbrains.annotations.NotNull;
 
 public class AudioApi extends BaseMediaApi {
     @NonNull
-    private Context context;
-    @NonNull
-    private MediaPlayer audioPlayer;
+    private AudioPlayer audioPlayer;
 
-    public AudioApi(@NonNull Context context, @NonNull MediaPlayer audioPlayer) {
-        this.context = context.getApplicationContext();
-        this.audioPlayer = audioPlayer;
+    public AudioApi(@NonNull Context context) {
+        this.audioPlayer = new AudioPlayer(context.getApplicationContext());
 
         audioPlayer.setOnErrorListener(this);
         audioPlayer.setOnPreparedListener(this);
         audioPlayer.setOnCompletionListener(this);
-        audioPlayer.setOnSeekCompleteListener(this);
-        audioPlayer.setOnBufferingUpdateListener(this);
+        audioPlayer.setOnSeekCompletionListener(this);
+        audioPlayer.setOnBufferUpdateListener(this);
 
         audioPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioPlayer.setAudioAttributes(new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build());
-        } else {
-            audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        }
+        audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
 
     @Override
@@ -60,7 +48,7 @@ public class AudioApi extends BaseMediaApi {
 
     @Override
     public void stop() {
-        audioPlayer.stop();
+        audioPlayer.stopPlayback();
     }
 
     @Override
@@ -98,7 +86,7 @@ public class AudioApi extends BaseMediaApi {
         try {
             prepared = false;
             bufferPercent = 0;
-            audioPlayer.setDataSource(context, Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
+            audioPlayer.setDataSource(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
             audioPlayer.prepareAsync();
         } catch (Exception e) {
             //Purposefully left blank
