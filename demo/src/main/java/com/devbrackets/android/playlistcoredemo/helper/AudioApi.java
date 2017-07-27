@@ -1,9 +1,11 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.PowerManager;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
@@ -31,7 +33,14 @@ public class AudioApi extends BaseMediaApi {
         audioPlayer.setOnBufferingUpdateListener(this);
 
         audioPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
-        audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build());
+        } else {
+            audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        }
     }
 
     @Override

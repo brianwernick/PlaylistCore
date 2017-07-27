@@ -9,9 +9,10 @@ import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
-import com.devbrackets.android.playlistcore.helper.AudioFocusHelper
 import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
 import com.devbrackets.android.playlistcore.helper.SafeWifiLock
+import com.devbrackets.android.playlistcore.helper.audiofocus.AudioFocusProvider
+import com.devbrackets.android.playlistcore.helper.audiofocus.DefaultAudioFocusProvider
 import com.devbrackets.android.playlistcore.helper.image.ImageProvider
 import com.devbrackets.android.playlistcore.helper.mediasession.DefaultMediaSessionProvider
 import com.devbrackets.android.playlistcore.helper.mediasession.MediaSessionProvider
@@ -20,9 +21,9 @@ import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
 import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotificationProvider
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
+import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.service.PlaybackState
-import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 
 open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<I>> protected constructor(
@@ -33,8 +34,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         protected val notificationProvider: PlaylistNotificationProvider,
         protected val mediaSessionProvider: MediaSessionProvider,
         protected val mediaControlsHelper: MediaControlsHelper,
-        protected val audioFocusHelper: AudioFocusHelper
-) : PlaylistHandler<I>(playlistManager.mediaPlayers), AudioFocusHelper.AudioFocusCallback, ProgressListener, MediaStatusListener<I> {
+        protected val audioFocusProvider: AudioFocusProvider<I>
+) : PlaylistHandler<I>(playlistManager.mediaPlayers), ProgressListener, MediaStatusListener<I> {
 
     companion object {
         const val TAG = "DefaultPlaylistHandler"
@@ -45,8 +46,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     protected val wifiLock = SafeWifiLock(context)
 
     protected var mediaProgressPoll = MediaProgressPoll<I>()
-
-    protected var currentMediaPlayer: MediaPlayerApi<I>? = null
 
     protected val notificationManager: NotificationManager by lazy {
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -78,17 +77,18 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
     protected var pausedForSeek = false
     protected var playingBeforeSeek = false
-    protected var pausedForFocusLoss = false
 
     protected var startPaused = false
     protected var seekToPosition: Long = -1
+
+    init {
+        audioFocusProvider.setPlaylistHandler(this)
+    }
 
     override fun setup(serviceCallbacks: ServiceCallbacks) {
         this.serviceCallbacks = serviceCallbacks
 
         mediaProgressPoll.progressListener = this
-        audioFocusHelper.setAudioFocusCallback(this)
-
         playlistManager.playlistHandler = this
     }
 
@@ -97,7 +97,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
         relaxResources(true)
         playlistManager.playlistHandler = null
-        audioFocusHelper.setAudioFocusCallback(null)
 
         mediaInfo.clear()
     }
@@ -111,7 +110,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         setPlaybackState(PlaybackState.PLAYING)
         setupForeground()
 
-        requestAudioFocus()
+        audioFocusProvider.requestFocus()
         updateMediaControls()
     }
 
@@ -124,7 +123,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         setPlaybackState(PlaybackState.PAUSED)
         serviceCallbacks.endForeground(false)
 
-        abandonAudioFocus()
+        audioFocusProvider.abandonFocus()
         updateMediaControls()
     }
 
@@ -171,7 +170,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun onPrepared(mediaPlayer: MediaPlayerApi<I>) {
-        startMediaPlayer()
+        startMediaPlayer(mediaPlayer)
     }
 
     override fun onBufferingUpdate(mediaPlayer: MediaPlayerApi<I>, percent: Int) {
@@ -205,43 +204,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         wifiLock.release()
         mediaProgressPoll.stop()
 
-        abandonAudioFocus()
+        audioFocusProvider.abandonFocus()
         return false
-    }
-
-    override fun onAudioFocusGained(): Boolean {
-        if (currentMediaPlayer?.handlesOwnAudioFocus ?: false) {
-            return false
-        }
-
-        //Returns the audio to the previous playback state and volume
-        if (!isPlaying && pausedForFocusLoss) {
-            pausedForFocusLoss = false
-            play()
-        } else {
-            currentMediaPlayer?.setVolume(1.0f, 1.0f) //reset the audio volume
-        }
-
-        return true
-    }
-
-    // TODO: we need to account for media player changes during playback
-    override fun onAudioFocusLost(canDuckAudio: Boolean): Boolean {
-        if (currentMediaPlayer?.handlesOwnAudioFocus ?: false) {
-            return false
-        }
-
-        //Either pauses or reduces the volume of the audio in playback
-        if (!canDuckAudio) {
-            if (isPlaying) {
-                pausedForFocusLoss = true
-                pause()
-            }
-        } else {
-            currentMediaPlayer?.setVolume(0.1f, 0.1f)
-        }
-
-        return true
     }
 
     /**
@@ -336,26 +300,12 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
             playlistManager.currentPosition = Integer.MAX_VALUE
         }
 
-        abandonAudioFocus()
+        audioFocusProvider.abandonFocus()
         wifiLock.release()
         serviceCallbacks.endForeground(true)
 
         notificationManager.cancel(notificationId)
         mediaSessionProvider.get().release()
-    }
-
-    /**
-     * Requests the audio focus
-     */
-    protected open fun requestAudioFocus(): Boolean {
-        return currentMediaPlayer?.handlesOwnAudioFocus ?: false || audioFocusHelper.requestFocus()
-    }
-
-    /**
-     * Requests the audio focus to be abandoned
-     */
-    protected open fun abandonAudioFocus(): Boolean {
-        return currentMediaPlayer?.handlesOwnAudioFocus ?: false || audioFocusHelper.abandonFocus()
     }
 
     override fun startItemPlayback(positionMillis: Long, startPaused: Boolean) {
@@ -365,12 +315,13 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         playlistManager.serviceListener?.onMediaPlaybackEnded()
         getNextPlayableItem()
 
-        val item = currentPlaylistItem
-        currentMediaPlayer = item?.let { getMediaPlayerForItem(it) } //todo have we stopped the last item playback?
+        currentPlaylistItem.let {
+            updateCurrentMediaPlayer(it)
+            mediaItemChanged(it)
 
-        mediaItemChanged(item)
-        if (play(currentMediaPlayer, item)) {
-            return
+            if (play(currentMediaPlayer, it)) {
+                return
+            }
         }
 
         //If the playback wasn't handled, attempt to seek to the next playable item, otherwise stop the service
@@ -379,6 +330,16 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         } else {
             stop()
         }
+    }
+
+    protected open fun updateCurrentMediaPlayer(item: I?) {
+        val newMediaPlayer = item?.let { getMediaPlayerForItem(it) }
+        if (newMediaPlayer != currentMediaPlayer) {
+            //todo should we post when we change media players?
+            currentMediaPlayer?.stop()
+        }
+
+        currentMediaPlayer = newMediaPlayer
     }
 
     protected open fun getMediaPlayerForItem(item: I): MediaPlayerApi<I>? {
@@ -397,7 +358,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         }
 
         initializeMediaPlayer(mediaPlayer)
-        requestAudioFocus()
+        audioFocusProvider.requestFocus()
 
         mediaPlayer.playItem(item)
 
@@ -418,25 +379,25 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      * mediaPlayerApi paused or set it to a low volume, depending on what is allowed by the
      * current focus settings.
      */
-    open fun startMediaPlayer() {
+    open fun startMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
         //TODO the audio focus functionality here can (and should be) handled by the normal path
-        if (!(currentMediaPlayer?.handlesOwnAudioFocus ?: true)) {
-            if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
-                // If we don't have audio focus and can't duck we have to pause, even if state is playing
-                // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
-                if (isPlaying) {
-                    pausedForFocusLoss = true
-                    pause()
-                    playlistManager.serviceListener?.onMediaPlaybackEnded(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
-                }
-
-                return
-            } else if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_CAN_DUCK) {
-                currentMediaPlayer?.setVolume(0.1f, 0.1f)
-            } else {
-                currentMediaPlayer?.setVolume(1.0f, 1.0f)
-            }
-        }
+//        if (!(currentMediaPlayer?.handlesOwnAudioFocus ?: true)) {
+//            if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
+//                // If we don't have audio focus and can't duck we have to pause, even if state is playing
+//                // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
+//                if (isPlaying) {
+//                    pausedForFocusLoss = true
+//                    pause()
+//                    playlistManager.serviceListener?.onMediaPlaybackEnded(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
+//                }
+//
+//                return
+//            } else if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_CAN_DUCK) {
+//                currentMediaPlayer?.setVolume(0.1f, 0.1f)
+//            } else {
+//                currentMediaPlayer?.setVolume(1.0f, 1.0f)
+//            }
+//        }
 
         //Seek to the correct position
         val seekRequested = seekToPosition > 0
@@ -445,12 +406,12 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
             seekToPosition = -1
         }
 
-        //Start the playback only if requested, otherwise upate the state to paused
+        //Start the playback only if requested, otherwise update the state to paused
         mediaProgressPoll.start()
-        if (!isPlaying && !startPaused) {
+        if (!mediaPlayer.isPlaying && !startPaused) {
             pausedForSeek = seekRequested
             play()
-            playlistManager.serviceListener?.onMediaPlaybackStarted(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
+            playlistManager.serviceListener?.onMediaPlaybackStarted(currentPlaylistItem!!, mediaPlayer.currentPosition, mediaPlayer.duration)
         } else {
             setPlaybackState(PlaybackState.PAUSED)
         }
@@ -521,7 +482,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         var notificationProvider: PlaylistNotificationProvider? = null
         var mediaSessionProvider: MediaSessionProvider? = null
         var mediaControlsHelper: MediaControlsHelper? = null
-        var audioFocusHelper: AudioFocusHelper? = null
+        var audioFocusProvider: AudioFocusProvider<I>? = null
 
         fun build(): DefaultPlaylistHandler<I, M> {
             return DefaultPlaylistHandler(context,
@@ -531,7 +492,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
                     notificationProvider ?: DefaultPlaylistNotificationProvider(context),
                     mediaSessionProvider ?: DefaultMediaSessionProvider(context, serviceClass),
                     mediaControlsHelper ?: MediaControlsHelper(context),
-                    audioFocusHelper ?: AudioFocusHelper(context))
+                    audioFocusProvider ?: DefaultAudioFocusProvider<I>(context))
         }
     }
 }

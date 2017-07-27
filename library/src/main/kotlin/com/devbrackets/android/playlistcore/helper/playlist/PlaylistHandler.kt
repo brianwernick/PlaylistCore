@@ -32,6 +32,8 @@ abstract class PlaylistHandler<I: PlaylistItem>(val mediaPlayers: List<MediaPlay
     var currentPlaybackState = PlaybackState.PREPARING
         protected set
 
+    var currentMediaPlayer: MediaPlayerApi<I>? = null
+
     abstract fun setup(serviceCallbacks: ServiceCallbacks)
     abstract fun tearDown()
 
