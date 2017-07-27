@@ -4,8 +4,8 @@ import android.content.Context
 import android.media.AudioManager
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
+import com.devbrackets.android.playlistcore.util.AudioManagerCompat
 
-//TODO update to handle the Android O focus changes
 open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : AudioFocusProvider<I>, AudioManager.OnAudioFocusChangeListener {
     companion object {
         const val AUDIOFOCUS_NONE = 0
@@ -15,7 +15,7 @@ open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : Audio
     protected var currentAudioFocus = AUDIOFOCUS_NONE
     protected var handler: PlaylistHandler<I>? = null
 
-    protected var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    protected var audioManager = AudioManagerCompat(context)
 
     override fun setPlaylistHandler(playlistHandler: PlaylistHandler<I>) {
         handler = playlistHandler

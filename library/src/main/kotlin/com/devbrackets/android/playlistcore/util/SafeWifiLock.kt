@@ -1,4 +1,4 @@
-package com.devbrackets.android.playlistcore.helper
+package com.devbrackets.android.playlistcore.util
 
 import android.Manifest
 import android.content.Context

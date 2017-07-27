@@ -10,7 +10,6 @@ import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
 import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
-import com.devbrackets.android.playlistcore.helper.SafeWifiLock
 import com.devbrackets.android.playlistcore.helper.audiofocus.AudioFocusProvider
 import com.devbrackets.android.playlistcore.helper.audiofocus.DefaultAudioFocusProvider
 import com.devbrackets.android.playlistcore.helper.image.ImageProvider
@@ -25,6 +24,7 @@ import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.service.PlaybackState
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
+import com.devbrackets.android.playlistcore.util.SafeWifiLock
 
 open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<I>> protected constructor(
         protected val context: Context,
