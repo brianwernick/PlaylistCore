@@ -23,7 +23,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.KeyEvent
-import com.devbrackets.android.playlistcore.helper.mediasession.DefaultMediaSessionProvider
+import com.devbrackets.android.playlistcore.components.mediasession.DefaultMediaSessionProvider
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
 /**

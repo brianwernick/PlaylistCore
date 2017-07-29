@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper.notification
+package com.devbrackets.android.playlistcore.data
 
-open class NotificationMediaState {
-    var isPlaying: Boolean = false
-    var isLoading: Boolean = false
-    var isPreviousEnabled: Boolean = false
-    var isNextEnabled: Boolean = false
+import com.devbrackets.android.playlistcore.api.PlaylistItem
 
-    open fun reset() {
-        isPlaying = false
-        isLoading = false
-        isPreviousEnabled = false
-        isNextEnabled = false
-    }
-}
+data class PlaylistItemChange<out T : PlaylistItem>(
+        val currentItem: T?,
+        val hasPrevious: Boolean,
+        val hasNext: Boolean
+)

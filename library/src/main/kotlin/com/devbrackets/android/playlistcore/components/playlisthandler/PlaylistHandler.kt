@@ -1,11 +1,11 @@
-package com.devbrackets.android.playlistcore.helper.playlist
+package com.devbrackets.android.playlistcore.components.playlisthandler
 
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.event.MediaProgress
-import com.devbrackets.android.playlistcore.event.PlaylistItemChange
+import com.devbrackets.android.playlistcore.data.MediaProgress
+import com.devbrackets.android.playlistcore.data.PlaylistItemChange
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.service.PlaybackState
+import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 
 abstract class PlaylistHandler<I: PlaylistItem>(val mediaPlayers: List<MediaPlayerApi<I>>) {

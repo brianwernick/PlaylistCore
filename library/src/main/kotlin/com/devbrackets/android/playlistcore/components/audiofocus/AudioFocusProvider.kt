@@ -1,7 +1,7 @@
-package com.devbrackets.android.playlistcore.helper.audiofocus
+package com.devbrackets.android.playlistcore.components.audiofocus
 
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
+import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
 
 interface AudioFocusProvider<I: PlaylistItem> {
     fun setPlaylistHandler(playlistHandler: PlaylistHandler<I>)

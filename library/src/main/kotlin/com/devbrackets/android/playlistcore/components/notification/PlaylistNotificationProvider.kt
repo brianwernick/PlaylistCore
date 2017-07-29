@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper.notification
+package com.devbrackets.android.playlistcore.components.notification
 
 import android.app.Notification
 import android.app.Service
 import android.support.v4.media.session.MediaSessionCompat
+import com.devbrackets.android.playlistcore.data.MediaInfo
 
 /**
  * Handles the creation and presentation of the Media notification

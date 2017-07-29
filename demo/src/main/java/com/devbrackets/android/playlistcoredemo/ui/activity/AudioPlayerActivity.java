@@ -12,11 +12,11 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.devbrackets.android.playlistcore.event.MediaProgress;
-import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
+import com.devbrackets.android.playlistcore.data.MediaProgress;
+import com.devbrackets.android.playlistcore.data.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.service.PlaybackState;
+import com.devbrackets.android.playlistcore.data.PlaybackState;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;

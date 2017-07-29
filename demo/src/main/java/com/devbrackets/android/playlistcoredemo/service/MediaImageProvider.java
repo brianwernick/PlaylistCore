@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 
-import com.devbrackets.android.playlistcore.helper.image.ImageProvider;
+import com.devbrackets.android.playlistcore.components.image.ImageProvider;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.squareup.picasso.Picasso;

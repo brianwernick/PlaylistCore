@@ -1,10 +1,9 @@
-package com.devbrackets.android.playlistcore.helper.mediacontrols
+package com.devbrackets.android.playlistcore.components.mediacontrols
 
 import android.content.Context
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
-import com.devbrackets.android.playlistcore.helper.notification.NotificationMediaState
+import com.devbrackets.android.playlistcore.data.MediaInfo
 
 open class DefaultMediaControlsProvider(protected val context: Context) : MediaControlsProvider {
     protected var enabled = true
@@ -44,7 +43,7 @@ open class DefaultMediaControlsProvider(protected val context: Context) : MediaC
      * @return The available playback options
      */
     @PlaybackStateCompat.Actions
-    protected open fun getPlaybackOptions(mediaState: NotificationMediaState): Long {
+    protected open fun getPlaybackOptions(mediaState: MediaInfo.MediaState): Long {
         var availableActions = PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_PLAY_PAUSE
 
         if (mediaState.isNextEnabled) {

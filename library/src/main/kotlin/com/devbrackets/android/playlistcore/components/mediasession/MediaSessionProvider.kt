@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper.mediasession
+package com.devbrackets.android.playlistcore.components.mediasession
 
 import android.support.v4.media.session.MediaSessionCompat
-import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
+import com.devbrackets.android.playlistcore.data.MediaInfo
 
 interface MediaSessionProvider {
     fun get(): MediaSessionCompat

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.event
+package com.devbrackets.android.playlistcore.data
 
 /**
  * An event to be used to inform listeners of media (e.g. audio, video) progress

@@ -1,12 +1,10 @@
 package com.devbrackets.android.playlistcoredemo.service;
 
-import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
 
-import com.devbrackets.android.playlistcore.helper.image.ImageProvider;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
-import com.devbrackets.android.playlistcore.helper.playlist.DefaultPlaylistHandler;
-import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler;
+import com.devbrackets.android.playlistcore.components.playlisthandler.DefaultPlaylistHandler;
+import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.helper.AudioApi;

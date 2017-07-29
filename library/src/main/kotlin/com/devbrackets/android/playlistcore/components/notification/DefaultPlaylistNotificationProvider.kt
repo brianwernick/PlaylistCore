@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper.notification
+package com.devbrackets.android.playlistcore.components.notification
 
 import android.annotation.TargetApi
 import android.app.*
@@ -25,6 +25,7 @@ import android.support.v4.app.NotificationCompat
 import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
 import com.devbrackets.android.playlistcore.R
+import com.devbrackets.android.playlistcore.data.MediaInfo
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
 /**

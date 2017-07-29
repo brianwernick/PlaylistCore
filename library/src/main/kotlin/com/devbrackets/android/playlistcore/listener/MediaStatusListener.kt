@@ -2,7 +2,7 @@ package com.devbrackets.android.playlistcore.listener
 
 import android.support.annotation.IntRange
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
-import com.devbrackets.android.playlistcore.event.MediaProgress
+import com.devbrackets.android.playlistcore.data.MediaProgress
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**

@@ -1,9 +1,9 @@
-package com.devbrackets.android.playlistcore.helper.audiofocus
+package com.devbrackets.android.playlistcore.components.audiofocus
 
 import android.content.Context
 import android.media.AudioManager
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.helper.playlist.PlaylistHandler
+import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
 import com.devbrackets.android.playlistcore.util.AudioManagerCompat
 
 open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : AudioFocusProvider<I>, AudioManager.OnAudioFocusChangeListener {

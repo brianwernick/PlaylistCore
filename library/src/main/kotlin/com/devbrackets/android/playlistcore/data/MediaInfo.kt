@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.helper.notification
+package com.devbrackets.android.playlistcore.data
 
-import android.app.PendingIntent
 import android.graphics.Bitmap
-import android.support.annotation.DrawableRes
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
@@ -35,7 +33,7 @@ open class MediaInfo {
     var appIcon: Int = 0
     var notificationId: Int = 0
 
-    var mediaState: NotificationMediaState = NotificationMediaState()
+    var mediaState: MediaState = MediaState()
 
     val title: String get() = playlistItem?.title.orEmpty()
     val album: String get() = playlistItem?.album.orEmpty()
@@ -48,5 +46,19 @@ open class MediaInfo {
 
         largeNotificationIcon = null
         artwork = null
+    }
+
+    open class MediaState {
+        var isPlaying: Boolean = false
+        var isLoading: Boolean = false
+        var isPreviousEnabled: Boolean = false
+        var isNextEnabled: Boolean = false
+
+        open fun reset() {
+            isPlaying = false
+            isLoading = false
+            isPreviousEnabled = false
+            isNextEnabled = false
+        }
     }
 }

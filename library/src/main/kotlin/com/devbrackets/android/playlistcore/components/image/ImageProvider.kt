@@ -1,4 +1,4 @@
-package com.devbrackets.android.playlistcore.helper.image
+package com.devbrackets.android.playlistcore.components.image
 
 import android.graphics.Bitmap
 import android.support.annotation.DrawableRes

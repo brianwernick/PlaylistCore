@@ -20,7 +20,7 @@ import android.support.annotation.IntRange
 import android.util.Log
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.event.MediaProgress
+import com.devbrackets.android.playlistcore.data.MediaProgress
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 
 /**

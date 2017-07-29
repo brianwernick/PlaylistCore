@@ -1,4 +1,4 @@
-package com.devbrackets.android.playlistcore.helper.mediasession
+package com.devbrackets.android.playlistcore.components.mediasession
 
 import android.app.PendingIntent
 import android.app.Service
@@ -9,7 +9,7 @@ import android.graphics.BitmapFactory
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
-import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
+import com.devbrackets.android.playlistcore.data.MediaInfo
 import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver
 import com.devbrackets.android.playlistcore.service.RemoteActions
 

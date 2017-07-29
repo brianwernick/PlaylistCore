@@ -1,4 +1,4 @@
-package com.devbrackets.android.playlistcore.helper.playlist
+package com.devbrackets.android.playlistcore.components.playlisthandler
 
 import android.app.NotificationManager
 import android.app.Service
@@ -7,23 +7,23 @@ import android.util.Log
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.event.MediaProgress
-import com.devbrackets.android.playlistcore.event.PlaylistItemChange
-import com.devbrackets.android.playlistcore.helper.audiofocus.AudioFocusProvider
-import com.devbrackets.android.playlistcore.helper.audiofocus.DefaultAudioFocusProvider
-import com.devbrackets.android.playlistcore.helper.image.ImageProvider
-import com.devbrackets.android.playlistcore.helper.mediacontrols.DefaultMediaControlsProvider
-import com.devbrackets.android.playlistcore.helper.mediacontrols.MediaControlsProvider
-import com.devbrackets.android.playlistcore.helper.mediasession.DefaultMediaSessionProvider
-import com.devbrackets.android.playlistcore.helper.mediasession.MediaSessionProvider
-import com.devbrackets.android.playlistcore.helper.notification.DefaultPlaylistNotificationProvider
-import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
-import com.devbrackets.android.playlistcore.helper.notification.PlaylistNotificationProvider
+import com.devbrackets.android.playlistcore.data.MediaProgress
+import com.devbrackets.android.playlistcore.data.PlaylistItemChange
+import com.devbrackets.android.playlistcore.components.audiofocus.AudioFocusProvider
+import com.devbrackets.android.playlistcore.components.audiofocus.DefaultAudioFocusProvider
+import com.devbrackets.android.playlistcore.components.image.ImageProvider
+import com.devbrackets.android.playlistcore.components.mediacontrols.DefaultMediaControlsProvider
+import com.devbrackets.android.playlistcore.components.mediacontrols.MediaControlsProvider
+import com.devbrackets.android.playlistcore.components.mediasession.DefaultMediaSessionProvider
+import com.devbrackets.android.playlistcore.components.mediasession.MediaSessionProvider
+import com.devbrackets.android.playlistcore.components.notification.DefaultPlaylistNotificationProvider
+import com.devbrackets.android.playlistcore.data.MediaInfo
+import com.devbrackets.android.playlistcore.components.notification.PlaylistNotificationProvider
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.service.PlaybackState
+import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 import com.devbrackets.android.playlistcore.util.SafeWifiLock
 
