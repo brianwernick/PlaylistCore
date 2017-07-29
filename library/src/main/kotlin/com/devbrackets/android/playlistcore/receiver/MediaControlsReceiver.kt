@@ -23,14 +23,14 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.KeyEvent
-import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
+import com.devbrackets.android.playlistcore.helper.mediasession.DefaultMediaSessionProvider
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
 /**
  * A Receiver to handle remote controls from devices
  * such as Bluetooth and Android Wear
  */
-class MediaControlsReceiver : BroadcastReceiver() {
+open class MediaControlsReceiver : BroadcastReceiver() {
     companion object {
         private val TAG = "MediaControlsReceiver"
     }
@@ -48,8 +48,8 @@ class MediaControlsReceiver : BroadcastReceiver() {
      * @param context The Context the intent was received with
      * @param intent The Intent that was received
      */
-    private fun handleMediaButtonIntent(context: Context, intent: Intent) {
-        val mediaServiceClass = getServiceClass(intent, MediaControlsHelper.RECEIVER_EXTRA_CLASS)
+    protected open fun handleMediaButtonIntent(context: Context, intent: Intent) {
+        val mediaServiceClass = getServiceClass(intent, DefaultMediaSessionProvider.RECEIVER_EXTRA_CLASS)
         val event = intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
 
         if (mediaServiceClass != null && event != null && event.action == KeyEvent.ACTION_UP) {
@@ -64,7 +64,7 @@ class MediaControlsReceiver : BroadcastReceiver() {
      * @param mediaServiceClass The service class to inform of the event
      * @param keyEvent The KeyEvent associated with the button click
      */
-    private fun handleKeyEvent(context: Context, mediaServiceClass: Class<out Service>, keyEvent: KeyEvent) {
+    protected open fun handleKeyEvent(context: Context, mediaServiceClass: Class<out Service>, keyEvent: KeyEvent) {
         when (keyEvent.keyCode) {
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> sendPendingIntent(createPendingIntent(context, RemoteActions.ACTION_PLAY_PAUSE, mediaServiceClass))
             KeyEvent.KEYCODE_MEDIA_NEXT -> sendPendingIntent(createPendingIntent(context, RemoteActions.ACTION_NEXT, mediaServiceClass))
@@ -79,7 +79,7 @@ class MediaControlsReceiver : BroadcastReceiver() {
      * @param key The key to retrieve the class with
      * @return The stored class or null
      */
-    private fun getServiceClass(intent: Intent, key: String): Class<out Service>? {
+    protected open fun getServiceClass(intent: Intent, key: String): Class<out Service>? {
         var serviceClass: Class<out Service>? = null
         val className = intent.getStringExtra(key)
         if (className != null) {
@@ -102,7 +102,7 @@ class MediaControlsReceiver : BroadcastReceiver() {
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
-    private fun createPendingIntent(context: Context, action: String, serviceClass: Class<out Service>): PendingIntent {
+    protected open fun createPendingIntent(context: Context, action: String, serviceClass: Class<out Service>): PendingIntent {
         val intent = Intent(context, serviceClass)
         intent.action = action
 
@@ -114,7 +114,7 @@ class MediaControlsReceiver : BroadcastReceiver() {
      *
      * @param pi The pending intent to send
      */
-    private fun sendPendingIntent(pi: PendingIntent) {
+    protected open fun sendPendingIntent(pi: PendingIntent) {
         try {
             pi.send()
         } catch (e: Exception) {

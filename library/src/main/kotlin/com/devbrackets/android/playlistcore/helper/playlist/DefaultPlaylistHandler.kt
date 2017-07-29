@@ -9,10 +9,11 @@ import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.event.MediaProgress
 import com.devbrackets.android.playlistcore.event.PlaylistItemChange
-import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
 import com.devbrackets.android.playlistcore.helper.audiofocus.AudioFocusProvider
 import com.devbrackets.android.playlistcore.helper.audiofocus.DefaultAudioFocusProvider
 import com.devbrackets.android.playlistcore.helper.image.ImageProvider
+import com.devbrackets.android.playlistcore.helper.mediacontrols.DefaultMediaControlsProvider
+import com.devbrackets.android.playlistcore.helper.mediacontrols.MediaControlsProvider
 import com.devbrackets.android.playlistcore.helper.mediasession.DefaultMediaSessionProvider
 import com.devbrackets.android.playlistcore.helper.mediasession.MediaSessionProvider
 import com.devbrackets.android.playlistcore.helper.notification.DefaultPlaylistNotificationProvider
@@ -33,7 +34,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         protected val imageProvider: ImageProvider<I>,
         protected val notificationProvider: PlaylistNotificationProvider,
         protected val mediaSessionProvider: MediaSessionProvider,
-        protected val mediaControlsHelper: MediaControlsHelper,
+        protected val mediaControlsProvider: MediaControlsProvider,
         protected val audioFocusProvider: AudioFocusProvider<I>
 ) : PlaylistHandler<I>(playlistManager.mediaPlayers), ProgressListener, MediaStatusListener<I> {
 
@@ -275,7 +276,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
         updateMediaInfo()
         mediaSessionProvider.update(mediaInfo)
-        mediaControlsHelper.update(mediaInfo, mediaSessionProvider.get())
+        mediaControlsProvider.update(mediaInfo, mediaSessionProvider.get())
 
         // Updates the notification
         notificationManager.notify(mediaInfo.notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass))
@@ -481,7 +482,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     ) {
         var notificationProvider: PlaylistNotificationProvider? = null
         var mediaSessionProvider: MediaSessionProvider? = null
-        var mediaControlsHelper: MediaControlsHelper? = null
+        var mediaControlsProvider: MediaControlsProvider? = null
         var audioFocusProvider: AudioFocusProvider<I>? = null
 
         fun build(): DefaultPlaylistHandler<I, M> {
@@ -491,7 +492,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
                     imageProvider,
                     notificationProvider ?: DefaultPlaylistNotificationProvider(context),
                     mediaSessionProvider ?: DefaultMediaSessionProvider(context, serviceClass),
-                    mediaControlsHelper ?: MediaControlsHelper(context),
+                    mediaControlsProvider ?: DefaultMediaControlsProvider(context),
                     audioFocusProvider ?: DefaultAudioFocusProvider<I>(context))
         }
     }

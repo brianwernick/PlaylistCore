@@ -9,19 +9,23 @@ import android.graphics.BitmapFactory
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
-import com.devbrackets.android.playlistcore.helper.MediaControlsHelper
 import com.devbrackets.android.playlistcore.helper.notification.MediaInfo
 import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver
 import com.devbrackets.android.playlistcore.service.RemoteActions
 
 open class DefaultMediaSessionProvider(val context: Context, val serviceClass: Class<out Service>) : MediaSessionCompat.Callback(), MediaSessionProvider {
+    companion object {
+        val SESSION_TAG = "DefaultMediaSessionProvider.Session"
+        val RECEIVER_EXTRA_CLASS = "com.devbrackets.android.playlistcore.RECEIVER_EXTRA_CLASS"
+    }
+
     protected var playPausePendingIntent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass)
     protected var nextPendingIntent = createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass)
     protected var previousPendingIntent = createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass)
 
     protected val mediaSession: MediaSessionCompat by lazy {
         val componentName = ComponentName(context, MediaControlsReceiver::class.java.name)
-        MediaSessionCompat(context, MediaControlsHelper.SESSION_TAG, componentName, getMediaButtonReceiverPendingIntent(componentName))
+        MediaSessionCompat(context, SESSION_TAG, componentName, getMediaButtonReceiverPendingIntent(componentName))
     }
 
     override fun get(): MediaSessionCompat {
@@ -85,7 +89,7 @@ open class DefaultMediaSessionProvider(val context: Context, val serviceClass: C
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.component = componentName
 
-        mediaButtonIntent.putExtra(MediaControlsHelper.RECEIVER_EXTRA_CLASS, serviceClass.name)
+        mediaButtonIntent.putExtra(RECEIVER_EXTRA_CLASS, serviceClass.name)
         return PendingIntent.getBroadcast(context, 0, mediaButtonIntent, PendingIntent.FLAG_CANCEL_CURRENT)
     }
 

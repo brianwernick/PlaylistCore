@@ -31,6 +31,7 @@ android {
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
     }
 
+
     lintOptions {
         abortOnError false
     }
