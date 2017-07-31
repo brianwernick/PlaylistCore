@@ -4,14 +4,18 @@ import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
 
+import com.devbrackets.android.exomedia.ui.widget.VideoControls;
 import com.devbrackets.android.exomedia.ui.widget.VideoView;
+import com.devbrackets.android.playlistcore.data.PlaybackState;
+import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class VideoApi extends BaseMediaApi {
-    private VideoView videoView;
+public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem> {
+    public VideoView videoView;
 
     public VideoApi(VideoView videoView) {
         this.videoView = videoView;
@@ -45,8 +49,7 @@ public class VideoApi extends BaseMediaApi {
 
     @Override
     public void reset() {
-        videoView.stopPlayback();
-        videoView.setVideoURI(null);
+        videoView.reset();
     }
 
     @Override
@@ -95,5 +98,31 @@ public class VideoApi extends BaseMediaApi {
     @Override
     public int getBufferedPercent() {
         return bufferPercent;
+    }
+
+    /*
+     * PlaylistListener methods used for keeping the VideoControls provided
+     * by the ExoMedia VideoView up-to-date with the current playback state
+     */
+    @Override
+    public boolean onPlaylistItemChanged(@Nullable MediaItem currentItem, boolean hasNext, boolean hasPrevious) {
+        VideoControls videoControls = videoView.getVideoControls();
+        if (videoControls != null && currentItem != null) {
+            // Updates the VideoControls display text
+            videoControls.setTitle(currentItem.getTitle());
+            videoControls.setSubTitle(currentItem.getAlbum());
+            videoControls.setDescription(currentItem.getArtist());
+
+            // Updates the VideoControls button visibilities
+            videoControls.setPreviousButtonEnabled(hasPrevious);
+            videoControls.setNextButtonEnabled(hasNext);
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onPlaybackStateChanged(@NotNull PlaybackState playbackState) {
+        return false;
     }
 }

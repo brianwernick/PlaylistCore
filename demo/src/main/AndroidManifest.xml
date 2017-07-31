@@ -26,11 +26,7 @@
             android:label="@string/title_activity_video_player">
         </activity>
         <activity
-            android:name=".ui.activity.VideoSelectionActivity"
-            android:label="@string/title_activity_video_player">
-        </activity>
-        <activity
-            android:name=".ui.activity.AudioSelectionActivity"
+            android:name=".ui.activity.MediaSelectionActivity"
             android:label="@string/title_activity_audio_player">
         </activity>
         <activity

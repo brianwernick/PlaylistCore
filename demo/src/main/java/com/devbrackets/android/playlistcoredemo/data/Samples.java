@@ -32,9 +32,9 @@ public class Samples {
          */
         videoSamples = new ArrayList<>();
         videoSamples.add(new Sample("Big Buck Bunny", "http://www.sample-videos.com/video/mp4/480/big_buck_bunny_480p_10mb.mp4"));
-        videoSamples.add(new Sample("Sintel", "https://ia700401.us.archive.org/13/items/Sintel/sintel-2048-surround_512kb.mp4"));
+        videoSamples.add(new Sample("Sintel", "https://bitdash-a.akamaihd.net/content/sintel/sintel.mpd"));
         videoSamples.add(new Sample("Popeye for President", "https://archive.org/download/Popeye_forPresident/Popeye_forPresident_512kb.mp4"));
-        videoSamples.add(new Sample("Elephants Dream", "https://ia700406.us.archive.org/31/items/ElephantsDream/ed_1024_512kb.mp4"));
+        videoSamples.add(new Sample("Caminandes: Llama Drama", "http://amssamples.streaming.mediaservices.windows.net/634cd01c-6822-4630-8444-8dd6279f94c6/CaminandesLlamaDrama4K.ism/manifest"));
     }
 
     @NonNull

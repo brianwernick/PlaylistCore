@@ -3,14 +3,15 @@ package com.devbrackets.android.playlistcoredemo.service;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.devbrackets.android.playlistcore.components.image.ImageProvider;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +23,7 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
     }
 
     @NotNull
-    private Picasso picasso;
+    private RequestManager glide;
     @NonNull
     private OnImageUpdatedListener listener;
 
@@ -40,7 +41,7 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
     private Bitmap artworkImage;
 
     public MediaImageProvider(@NonNull Context context, @NonNull OnImageUpdatedListener listener) {
-        picasso = Picasso.with(context);
+        glide = Glide.with(context.getApplicationContext());
         this.listener = listener;
 
         defaultNotificationImage = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
@@ -70,57 +71,35 @@ public class MediaImageProvider implements ImageProvider<MediaItem> {
 
     @Override
     public void updateImages(@NotNull MediaItem playlistItem) {
-        picasso.load(playlistItem.getThumbnailUrl()).into(notificationImageTarget);
-        picasso.load(playlistItem.getArtworkUrl()).into(remoteViewImageTarget);
+        glide.load(playlistItem.getThumbnailUrl()).asBitmap().into(notificationImageTarget);
+        glide.load(playlistItem.getArtworkUrl()).asBitmap().into(remoteViewImageTarget);
     }
 
     /**
      * A class used to listen to the loading of the large notification images and perform
      * the correct functionality to update the notification once it is loaded.
-     *
-     * <b>NOTE:</b> This is a Picasso Image loader class
+     * <p>
+     * <b>NOTE:</b> This is a Glide Image loader class
      */
-    private class NotificationImageTarget implements Target {
+    private class NotificationImageTarget extends SimpleTarget<Bitmap> {
         @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            notificationImage = bitmap;
+        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+            notificationImage = resource;
             listener.onImageUpdated();
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
-            notificationImage = null;
-            listener.onImageUpdated();
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-            //Purposefully left blank
         }
     }
 
     /**
-     * A class used to listen to the loading of the large remote view images and perform
+     * A class used to listen to the loading of the large lock screen images and perform
      * the correct functionality to update the artwork once it is loaded.
-     *
-     * <b>NOTE:</b> This is a Picasso Image loader class
+     * <p>
+     * <b>NOTE:</b> This is a Glide Image loader class
      */
-    private class RemoteViewImageTarget implements Target {
+    private class RemoteViewImageTarget extends SimpleTarget<Bitmap> {
         @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            artworkImage = bitmap;
+        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+            artworkImage = resource;
             listener.onImageUpdated();
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
-            artworkImage = null;
-            listener.onImageUpdated();
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-            //Purposefully left blank
         }
     }
 }

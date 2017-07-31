@@ -20,6 +20,7 @@ public class VideoPlayerActivity extends Activity {
     public static final int PLAYLIST_ID = 6; //Arbitrary, for the example (different from audio)
 
     protected VideoView videoView;
+    protected VideoApi videoApi;
     protected PlaylistManager playlistManager;
 
     protected int selectedIndex;
@@ -36,6 +37,7 @@ public class VideoPlayerActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        playlistManager.removeVideoApi(videoApi);
         playlistManager.invokeStop();
     }
 
@@ -52,8 +54,10 @@ public class VideoPlayerActivity extends Activity {
         setupPlaylistManager();
 
         videoView = findViewById(R.id.video_play_activity_video_view);
+        videoView.setHandleAudioFocus(false);
 
-        playlistManager.getMediaPlayers().add(new VideoApi(videoView));
+        videoApi = new VideoApi(videoView);
+        playlistManager.addVideoApi(videoApi);
         playlistManager.play(0, false);
     }
 

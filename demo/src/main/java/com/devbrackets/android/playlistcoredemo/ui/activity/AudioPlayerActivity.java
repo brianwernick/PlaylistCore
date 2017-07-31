@@ -12,6 +12,8 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.devbrackets.android.playlistcore.data.MediaProgress;
 import com.devbrackets.android.playlistcore.data.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
@@ -22,7 +24,6 @@ import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.data.Samples;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
-import com.squareup.picasso.Picasso;
 
 import java.util.Formatter;
 import java.util.LinkedList;
@@ -59,7 +60,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private PlaylistManager playlistManager;
     private int selectedPosition = 0;
 
-    private Picasso picasso;
+    private RequestManager glide;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,7 +99,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
 
         //Loads the new image
         if (currentItem != null) {
-            picasso.load(currentItem.getArtworkUrl()).into(artworkView);
+            glide.load(currentItem.getArtworkUrl()).into(artworkView);
         }
 
         return true;
@@ -185,7 +186,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         retrieveViews();
         setupListeners();
 
-        picasso = Picasso.with(getApplicationContext());
+        glide = Glide.with(this);
 
         boolean generatedPlaylist = setupPlaylistManager();
         startPlayback(generatedPlaylist);
@@ -279,17 +280,17 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
      * xml layout file.
      */
     private void retrieveViews() {
-        loadingBar = (ProgressBar)findViewById(R.id.audio_player_loading);
-        artworkView = (ImageView)findViewById(R.id.audio_player_image);
+        loadingBar = findViewById(R.id.audio_player_loading);
+        artworkView = findViewById(R.id.audio_player_image);
 
-        currentPositionView = (TextView)findViewById(R.id.audio_player_position);
-        durationView = (TextView)findViewById(R.id.audio_player_duration);
+        currentPositionView = findViewById(R.id.audio_player_position);
+        durationView = findViewById(R.id.audio_player_duration);
 
-        seekBar = (SeekBar)findViewById(R.id.audio_player_seek);
+        seekBar = findViewById(R.id.audio_player_seek);
 
-        previousButton = (ImageButton)findViewById(R.id.audio_player_previous);
-        playPauseButton = (ImageButton)findViewById(R.id.audio_player_play_pause);
-        nextButton = (ImageButton)findViewById(R.id.audio_player_next);
+        previousButton = findViewById(R.id.audio_player_previous);
+        playPauseButton = findViewById(R.id.audio_player_play_pause);
+        nextButton = findViewById(R.id.audio_player_next);
     }
 
     /**
