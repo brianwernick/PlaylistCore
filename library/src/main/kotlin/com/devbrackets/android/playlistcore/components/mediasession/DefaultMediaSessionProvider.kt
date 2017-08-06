@@ -10,8 +10,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.util.Log
 import com.devbrackets.android.playlistcore.data.MediaInfo
-import com.devbrackets.android.playlistcore.receiver.MediaControlsReceiver
-import com.devbrackets.android.playlistcore.service.RemoteActions
+import com.devbrackets.android.playlistcore.data.RemoteActions
 
 open class DefaultMediaSessionProvider(val context: Context, val serviceClass: Class<out Service>) : MediaSessionCompat.Callback(), MediaSessionProvider {
     companion object {
@@ -24,7 +23,7 @@ open class DefaultMediaSessionProvider(val context: Context, val serviceClass: C
     protected var previousPendingIntent = createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass)
 
     protected val mediaSession: MediaSessionCompat by lazy {
-        val componentName = ComponentName(context, MediaControlsReceiver::class.java.name)
+        val componentName = ComponentName(context, DefaultMediaSessionControlsReceiver::class.java.name)
         MediaSessionCompat(context, SESSION_TAG, componentName, getMediaButtonReceiverPendingIntent(componentName))
     }
 

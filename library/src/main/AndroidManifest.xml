@@ -6,7 +6,7 @@
     <uses-sdk/>
     <application>
         <receiver
-            android:name=".receiver.MediaControlsReceiver"
+            android:name=".components.mediasession.DefaultMediaSessionControlsReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>

@@ -26,7 +26,7 @@ import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.data.MediaInfo
-import com.devbrackets.android.playlistcore.service.RemoteActions
+import com.devbrackets.android.playlistcore.data.RemoteActions
 
 /**
  * A default implementation for the [PlaylistNotificationProvider] that will correctly

@@ -32,7 +32,7 @@ import com.devbrackets.android.playlistcore.listener.ServiceListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
 import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
-import com.devbrackets.android.playlistcore.service.RemoteActions
+import com.devbrackets.android.playlistcore.data.RemoteActions
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.locks.ReentrantLock

@@ -25,6 +25,7 @@ import android.util.Log
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
+import com.devbrackets.android.playlistcore.data.RemoteActions
 import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 

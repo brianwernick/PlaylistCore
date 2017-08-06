@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.devbrackets.android.playlistcore.receiver
+package com.devbrackets.android.playlistcore.components.mediasession
 
 import android.app.PendingIntent
 import android.app.Service
@@ -23,16 +23,15 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.KeyEvent
-import com.devbrackets.android.playlistcore.components.mediasession.DefaultMediaSessionProvider
-import com.devbrackets.android.playlistcore.service.RemoteActions
+import com.devbrackets.android.playlistcore.data.RemoteActions
 
 /**
  * A Receiver to handle remote controls from devices
  * such as Bluetooth and Android Wear
  */
-open class MediaControlsReceiver : BroadcastReceiver() {
+open class DefaultMediaSessionControlsReceiver : BroadcastReceiver() {
     companion object {
-        private val TAG = "MediaControlsReceiver"
+        private val TAG = "DefaultControlsReceiver"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -79,20 +78,16 @@ open class MediaControlsReceiver : BroadcastReceiver() {
      * @param key The key to retrieve the class with
      * @return The stored class or null
      */
+    @Suppress("UNCHECKED_CAST")
     protected open fun getServiceClass(intent: Intent, key: String): Class<out Service>? {
-        var serviceClass: Class<out Service>? = null
-        val className = intent.getStringExtra(key)
-        if (className != null) {
+        return intent.getStringExtra(key)?.let {
             try {
-                @Suppress("UNCHECKED_CAST")
-                serviceClass = Class.forName(className) as Class<out Service>
+                Class.forName(it) as Class<out Service>
             } catch (e: Exception) {
-                //todo log
-                //Purposefully left blank
+                Log.e(TAG, "Unable to determine service from extras", e)
+                null
             }
         }
-
-        return serviceClass
     }
 
     /**
