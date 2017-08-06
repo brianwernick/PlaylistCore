@@ -1,13 +1,11 @@
 package com.devbrackets.android.playlistcoredemo.manager;
 
 import android.app.Application;
-import android.app.Service;
 import android.support.annotation.NonNull;
 
 import com.devbrackets.android.exomedia.listener.VideoControlsButtonListener;
 import com.devbrackets.android.exomedia.ui.widget.VideoControls;
 import com.devbrackets.android.playlistcore.manager.ListPlaylistManager;
-import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.helper.VideoApi;
 import com.devbrackets.android.playlistcoredemo.service.MediaService;
@@ -19,16 +17,8 @@ import com.devbrackets.android.playlistcoredemo.service.MediaService;
  */
 public class PlaylistManager extends ListPlaylistManager<MediaItem> {
 
-    @NonNull
-    @Override
-    protected Application getApplication() {
-        return App.getApplication();
-    }
-
-    @NonNull
-    @Override
-    protected Class<? extends Service> getMediaServiceClass() {
-        return MediaService.class;
+    public PlaylistManager(Application application) {
+        super(application, MediaService.class);
     }
 
     /**

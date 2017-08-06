@@ -28,7 +28,7 @@ import com.devbrackets.android.playlistcore.data.MediaProgress
 import com.devbrackets.android.playlistcore.data.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
-import com.devbrackets.android.playlistcore.listener.ServiceListener
+import com.devbrackets.android.playlistcore.listener.PlaybackStatusListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
 import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
@@ -44,7 +44,8 @@ import java.util.concurrent.locks.ReentrantLock
  * used as standalone with a custom service, or in conjunction with
  * [BasePlaylistService]
  */
-abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, ProgressListener {
+abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: Application, protected val mediaServiceClass: Class<out Service>) :
+        PlaylistListener<I>, ProgressListener {
     companion object {
         private val TAG = "PlaylistManager"
 
@@ -110,28 +111,15 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
 
     @IntRange(from = INVALID_POSITION.toLong())
     var currentPosition = INVALID_POSITION
-        /**
-         * Retrieves the current item position
-         *
-         * @return The current items position or [.INVALID_POSITION]
-         */
-        get
-        /**
-         * Sets the current playback position.  This should only be used when jumping
-         * down the current playback list, if you are only changing one see [.next] or
-         * [.previous].
-         *
-         * @param position The position to become the current playback position.
-         */
         set(value) {
-            field =  Math.min(Math.min(value, itemCount -1), itemCount)
+            field = Math.min(Math.max(INVALID_POSITION, value), itemCount -1)
         }
 
     @IntRange(from = INVALID_ID)
     var id = INVALID_ID
 
     var playlistHandler: PlaylistHandler<I>? = null
-    var serviceListener: ServiceListener<I>? = null //todo this should probably be a list
+    var playbackStatusListener: PlaybackStatusListener<I>? = null //todo this should probably be a list
     val mediaPlayers = mutableListOf<MediaPlayerApi<I>>()
 
     protected var playlistListeners: MutableList<WeakReference<PlaylistListener<I>>> = LinkedList()
@@ -146,39 +134,7 @@ abstract class BasePlaylistManager<I : PlaylistItem> : PlaylistListener<I>, Prog
     protected var stopPendingIntent: PendingIntent? = null
     protected var seekStartedPendingIntent: PendingIntent? = null
 
-    /**
-     * Retrieves the application to use when starting and communicating with the
-     * PlaylistService specified with [.getMediaServiceClass].
-     *
-     * @return The Application to use when starting and controlling the PlaylistService
-     */
-    protected abstract val application: Application
-
-    /**
-     * Retrieves the class that represents the PlaylistService.  This is used when communicating
-     * with the service to perform the playback controls.
-     *
-     * @return The class for the Service to control.  This should extend [BasePlaylistService]
-     */
-    protected abstract val mediaServiceClass: Class<out Service>
-
-    /**
-     * A basic constructor that will retrieve the application
-     * via [.getApplication].
-     */
-    constructor() {
-        constructControlIntents(mediaServiceClass, application)
-    }
-
-    /**
-     * A constructor that will use the specified application to initialize
-     * the PlaylistManager.  This should only be used in instances that
-     * [.getApplication] will not be prepared at this point.  This
-     * can happen when using Dependence Injection frameworks such as Dagger.
-     *
-     * @param application The application to use to initialize the PlaylistManager
-     */
-    constructor(application: Application) {
+    init {
         constructControlIntents(mediaServiceClass, application)
     }
 

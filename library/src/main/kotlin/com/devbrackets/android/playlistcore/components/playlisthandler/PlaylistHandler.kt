@@ -49,4 +49,12 @@ abstract class PlaylistHandler<I: PlaylistItem>(val mediaPlayers: List<MediaPlay
 
     abstract fun startItemPlayback(positionMillis: Long, startPaused: Boolean)
     abstract fun updateMediaControls()
+
+    /**
+     * Informs the handler that we need to verify that the [currentMediaPlayer]
+     * is the highest priority one for the current item. This can be used to handle
+     * changing media players between local and remote (e.g. Chromecast) by adding and
+     * removing a [MediaPlayerApi]
+     */
+    abstract fun refreshCurrentMediaPlayer()
 }

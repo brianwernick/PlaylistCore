@@ -139,7 +139,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     override fun stop() {
         setPlaybackState(PlaybackState.STOPPED)
         currentPlaylistItem?.let {
-            playlistManager.serviceListener?.onMediaStopped(it)
+            playlistManager.playbackStatusListener?.onItemPlaybackEnded(it)
         }
 
         // let go of all resources
@@ -282,6 +282,10 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         notificationManager.notify(mediaInfo.notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass))
     }
 
+    override fun refreshCurrentMediaPlayer() {
+        //TODO: we want a way to restart playback of the current item at the same timestamp (i.e refresh the mediaPlayer)
+    }
+
     /**
      * Releases resources used by the service for playback. This includes the "foreground service"
      * status and notification, the wake locks, and the audioPlayer if requested
@@ -313,8 +317,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         this.seekToPosition = positionMillis
         this.startPaused = startPaused
 
-        playlistManager.serviceListener?.onMediaPlaybackEnded()
-        getNextPlayableItem()
+        playlistManager.playbackStatusListener?.onItemPlaybackEnded(currentPlaylistItem)
+        currentPlaylistItem = getNextPlayableItem()
 
         currentPlaylistItem.let {
             updateCurrentMediaPlayer(it)
@@ -386,7 +390,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 //                if (isPlaying) {
 //                    pausedForFocusLoss = true
 //                    pause()
-//                    playlistManager.serviceListener?.onMediaPlaybackEnded(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
+//                    playlistManager.playbackStatusListener?.onMediaPlaybackEnded(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
 //                }
 //
 //                return
@@ -409,7 +413,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         if (!mediaPlayer.isPlaying && !startPaused) {
             pausedForSeek = seekRequested
             play()
-            playlistManager.serviceListener?.onMediaPlaybackStarted(currentPlaylistItem!!, mediaPlayer.currentPosition, mediaPlayer.duration)
+            playlistManager.playbackStatusListener?.onMediaPlaybackStarted(currentPlaylistItem!!, mediaPlayer.currentPosition, mediaPlayer.duration)
         } else {
             setPlaybackState(PlaybackState.PAUSED)
         }
@@ -421,24 +425,15 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      * it will be the next downloaded item.
      */
     protected open fun getNextPlayableItem(): I? {
-        currentPlaylistItem = playlistManager.currentItem
-        currentPlaylistItem ?: return null
-
         // TODO: if we can't play an item should we inform the listener as to why exactly? or just say "eh, we can't play `this` item"
-        var item = currentPlaylistItem
-        while (item != null && !isPlayable(item)) {
+        var item = playlistManager.currentItem
+        while (item != null && getMediaPlayerForItem(item) == null) {
             item = playlistManager.next()
         }
 
-        //If we are unable to get a next playable item, post a network error
-        item ?: playlistManager.serviceListener?.onNoNonNetworkItemsAvailable()
-        currentPlaylistItem = item
-
-        return currentPlaylistItem
-    }
-
-    protected open fun isPlayable(item: I): Boolean {
-        return getMediaPlayerForItem(item) != null
+        //If we are unable to get a next playable item, inform the listener we are at the end of the playlist
+        item ?: playlistManager.playbackStatusListener?.onPlaylistEnded()
+        return item
     }
 
     /**
