@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <drawable name="playlistcore_notification_close">@drawable/playlistcore_ic_clear_black</drawable>
     <drawable name="playlistcore_notification_previous">@drawable/playlistcore_ic_skip_previous_black</drawable>
     <drawable name="playlistcore_notification_next">@drawable/playlistcore_ic_skip_next_black</drawable>
     <drawable name="playlistcore_notification_play">@drawable/playlistcore_ic_play_arrow_black</drawable>

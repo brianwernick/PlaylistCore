@@ -58,8 +58,13 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
             setSmallIcon(info.appIcon)
             setLargeIcon(info.largeNotificationIcon)
 
+            var contentText = info.album
+            if (info.artist.isNotBlank()) {
+                contentText += if (contentText.isNotBlank()) " - " + info.artist else info.artist
+            }
+
             setContentTitle(info.title)
-            setContentText("${info.album} - ${info.artist}") //todo only if both are not empty
+            setContentText(contentText)
 
             setContentIntent(clickPendingIntent)
             setDeleteIntent(createPendingIntent(serviceClass, RemoteActions.ACTION_STOP))

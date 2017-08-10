@@ -211,7 +211,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
      * @param isPlaying True if the audio item is currently playing
      */
     private void updatePlayPauseImage(boolean isPlaying) {
-        int resId = isPlaying ? R.drawable.playlistcore_ic_pause_black : R.drawable.playlistcore_ic_play_arrow_black;
+        int resId = isPlaying ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_black_24dp;
         playPauseButton.setImageResource(resId);
     }
 
