@@ -87,13 +87,15 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
     }
 
     protected open fun setActions(builder: NotificationCompat.Builder, info: MediaInfo, serviceClass: Class<out Service>) {
-        val playing = info.mediaState.isPlaying
-        val playPauseIconRes = if (!playing) R.drawable.playlistcore_notification_play else R.drawable.playlistcore_notification_pause
+        //todo action title text
+        var actionIcon = if (info.mediaState.isPreviousEnabled) R.drawable.playlistcore_notification_previous else R.drawable.playlistcore_notification_previous_disabled
+        builder.addAction(actionIcon, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PREVIOUS))
 
-        //todo enable/disable states
-        builder.addAction(R.drawable.playlistcore_notification_previous, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PREVIOUS))
-        builder.addAction(playPauseIconRes, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PLAY_PAUSE))
-        builder.addAction(R.drawable.playlistcore_notification_next, "", createPendingIntent(serviceClass, RemoteActions.ACTION_NEXT))
+        actionIcon = if (info.mediaState.isPlaying) R.drawable.playlistcore_notification_pause else R.drawable.playlistcore_notification_play
+        builder.addAction(actionIcon, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PLAY_PAUSE))
+
+        actionIcon = if (info.mediaState.isNextEnabled) R.drawable.playlistcore_notification_next else R.drawable.playlistcore_notification_next_disabled
+        builder.addAction(actionIcon, "", createPendingIntent(serviceClass, RemoteActions.ACTION_NEXT))
     }
 
     protected open fun buildMediaStyle(mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : MediaStyle {
