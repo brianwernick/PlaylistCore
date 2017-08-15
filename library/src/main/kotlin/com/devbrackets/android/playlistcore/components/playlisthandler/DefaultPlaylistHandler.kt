@@ -35,11 +35,17 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         protected val notificationProvider: PlaylistNotificationProvider,
         protected val mediaSessionProvider: MediaSessionProvider,
         protected val mediaControlsProvider: MediaControlsProvider,
-        protected val audioFocusProvider: AudioFocusProvider<I>
+        protected val audioFocusProvider: AudioFocusProvider<I>,
+        var listener: Listener<I>?
 ) : PlaylistHandler<I>(playlistManager.mediaPlayers), ProgressListener, MediaStatusListener<I> {
 
     companion object {
         const val TAG = "DefaultPlaylistHandler"
+    }
+
+    interface Listener<I : PlaylistItem> {
+        fun onMediaPlayerChanged(oldPlayer: MediaPlayerApi<I>?, newPlayer: MediaPlayerApi<I>?)
+        fun onItemSkipped(item: I)
     }
 
     protected val mediaInfo = MediaInfo()
@@ -110,7 +116,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         setPlaybackState(PlaybackState.PLAYING)
 
         audioFocusProvider.requestFocus()
-        updateMediaControls()
     }
 
     override fun pause(transient: Boolean) {
@@ -268,7 +273,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun updateMediaControls() {
-        //TODO: if the current item is null we should dismiss the notification (controls)
         if (currentPlaylistItem == null) {
             return
         }
@@ -347,7 +351,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     protected open fun updateCurrentMediaPlayer(item: I?) {
         val newMediaPlayer = item?.let { getMediaPlayerForItem(it) }
         if (newMediaPlayer != currentMediaPlayer) {
-            //todo should we post when we change media players?
+            listener?.onMediaPlayerChanged(currentMediaPlayer, newMediaPlayer)
             currentMediaPlayer?.stop()
         }
 
@@ -374,8 +378,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
         mediaPlayer.playItem(item)
 
-        setPlaybackState(PlaybackState.PREPARING)
         setupForeground()
+        setPlaybackState(PlaybackState.PREPARING)
 
         wifiLock.update(!(currentPlaylistItem?.downloaded ?: true))
         return true
@@ -432,9 +436,9 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      * it will be the next downloaded item.
      */
     protected open fun getNextPlayableItem(): I? {
-        // TODO: if we can't play an item should we inform the listener as to why exactly? or just say "eh, we can't play `this` item"
         var item = playlistManager.currentItem
         while (item != null && getMediaPlayerForItem(item) == null) {
+            listener?.onItemSkipped(item)
             item = playlistManager.next()
         }
 
@@ -473,7 +477,9 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         playlistManager.onPlaybackStateChanged(state)
 
         // Makes sure the Media Controls are up-to-date
-        updateMediaControls()
+        if (state != PlaybackState.STOPPED && state != PlaybackState.ERROR) {
+            updateMediaControls()
+        }
     }
 
     open class Builder<I : PlaylistItem, out M : BasePlaylistManager<I>>(
@@ -486,6 +492,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         var mediaSessionProvider: MediaSessionProvider? = null
         var mediaControlsProvider: MediaControlsProvider? = null
         var audioFocusProvider: AudioFocusProvider<I>? = null
+        var listener: Listener<I>? = null
 
         fun build(): DefaultPlaylistHandler<I, M> {
             return DefaultPlaylistHandler(context,
@@ -495,7 +502,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
                     notificationProvider ?: DefaultPlaylistNotificationProvider(context),
                     mediaSessionProvider ?: DefaultMediaSessionProvider(context, serviceClass),
                     mediaControlsProvider ?: DefaultMediaControlsProvider(context),
-                    audioFocusProvider ?: DefaultAudioFocusProvider<I>(context))
+                    audioFocusProvider ?: DefaultAudioFocusProvider<I>(context),
+                    listener)
         }
     }
 }

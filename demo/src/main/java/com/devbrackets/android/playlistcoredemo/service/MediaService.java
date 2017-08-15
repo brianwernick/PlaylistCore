@@ -10,8 +10,6 @@ import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.helper.AudioApi;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
-import org.jetbrains.annotations.NotNull;
-
 /**
  * A simple service that extends {@link BasePlaylistService} in order to provide
  * the application specific information required.
@@ -31,7 +29,7 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
         return App.getPlaylistManager();
     }
 
-    @NotNull
+    @NonNull
     @Override
     public PlaylistHandler<MediaItem> newPlaylistHandler() {
         MediaImageProvider imageProvider = new MediaImageProvider(getApplicationContext(), new MediaImageProvider.OnImageUpdatedListener() {
