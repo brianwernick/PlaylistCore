@@ -5,7 +5,6 @@ import android.support.annotation.IntRange
 import com.devbrackets.android.playlistcore.data.MediaProgress
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 
-//TODO: maybe just call this a MediaPlayer and ignore the overlap with the Android mediaPlayer class?
 interface MediaPlayerApi<I : PlaylistItem> {
     /**
      * Determines if media is currently playing on the

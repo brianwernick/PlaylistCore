@@ -24,10 +24,6 @@ import com.devbrackets.android.playlistcore.data.MediaInfo
 /**
  * Handles the creation and presentation of the Media notification
  * for the Playlist.
- *
- * TODO: This should end up taking place of the notification helper and be delegated by
- * the PlaylistService so that we won't need the BasePlaylistService and BasePlaylistService
- * to be separate anymore
  */
 interface PlaylistNotificationProvider {
     fun buildNotification(info: MediaInfo, mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : Notification

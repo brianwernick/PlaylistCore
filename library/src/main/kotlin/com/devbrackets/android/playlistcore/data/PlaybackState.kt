@@ -15,7 +15,6 @@ enum class PlaybackState {
 
     /**
      * Media is currently being played.
-     * TODO: is this still true -> but could be paused due to loss of audio focus Needed for returning after we regain focus
      */
     PLAYING,
 

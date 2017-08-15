@@ -42,7 +42,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         const val TAG = "DefaultPlaylistHandler"
     }
 
-
     protected val mediaInfo = MediaInfo()
     protected val wifiLock = SafeWifiLock(context)
 
@@ -281,7 +280,15 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun refreshCurrentMediaPlayer() {
-        //TODO: we want a way to restart playback of the current item at the same timestamp (i.e refresh the mediaPlayer)
+        currentPlaylistItem.let {
+            seekToPosition = currentMediaPlayer?.currentPosition ?: seekToPosition
+            startPaused = !isPlaying
+
+            updateCurrentMediaPlayer(it)
+            if (play(currentMediaPlayer, it)) {
+                return
+            }
+        }
     }
 
     /**
