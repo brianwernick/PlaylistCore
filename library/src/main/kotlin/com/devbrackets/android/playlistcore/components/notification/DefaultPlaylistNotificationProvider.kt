@@ -79,23 +79,33 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
                 setVisibility(Notification.VISIBILITY_PUBLIC)
             }
 
-            //TODO: handle loading state
-
             setActions(this, info, serviceClass)
             setStyle(buildMediaStyle(mediaSession, serviceClass))
         }.build()
     }
 
     protected open fun setActions(builder: NotificationCompat.Builder, info: MediaInfo, serviceClass: Class<out Service>) {
-        //todo action title text
-        var actionIcon = if (info.mediaState.isPreviousEnabled) R.drawable.playlistcore_notification_previous else R.drawable.playlistcore_notification_previous_disabled
-        builder.addAction(actionIcon, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PREVIOUS))
+        with(info.mediaState) {
+            // Previous
+            var actionIcon = if (isPreviousEnabled) R.drawable.playlistcore_notification_previous else R.drawable.playlistcore_notification_previous_disabled
+            var title = context.resources.getString(R.string.playlistcore_default_notification_previous)
+            builder.addAction(actionIcon, title, createPendingIntent(serviceClass, RemoteActions.ACTION_PREVIOUS))
 
-        actionIcon = if (info.mediaState.isPlaying) R.drawable.playlistcore_notification_pause else R.drawable.playlistcore_notification_play
-        builder.addAction(actionIcon, "", createPendingIntent(serviceClass, RemoteActions.ACTION_PLAY_PAUSE))
+            // Play/Pause
+            actionIcon = if (isPlaying) {
+                title = context.resources.getString(R.string.playlistcore_default_notification_pause)
+                if (isLoading) R.drawable.playlistcore_notification_pause_disabled else R.drawable.playlistcore_notification_pause
+            } else {
+                title = context.resources.getString(R.string.playlistcore_default_notification_play)
+                if (isLoading) R.drawable.playlistcore_notification_play_disabled else R.drawable.playlistcore_notification_play
+            }
+            builder.addAction(actionIcon, title, createPendingIntent(serviceClass, RemoteActions.ACTION_PLAY_PAUSE))
 
-        actionIcon = if (info.mediaState.isNextEnabled) R.drawable.playlistcore_notification_next else R.drawable.playlistcore_notification_next_disabled
-        builder.addAction(actionIcon, "", createPendingIntent(serviceClass, RemoteActions.ACTION_NEXT))
+            // Next
+            actionIcon = if (isNextEnabled) R.drawable.playlistcore_notification_next else R.drawable.playlistcore_notification_next_disabled
+            title = context.resources.getString(R.string.playlistcore_default_notification_next)
+            builder.addAction(actionIcon, title, createPendingIntent(serviceClass, RemoteActions.ACTION_NEXT))
+        }
     }
 
     protected open fun buildMediaStyle(mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : MediaStyle {

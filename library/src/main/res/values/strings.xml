@@ -2,4 +2,9 @@
 <resources>
     <string name="playlistcore_default_notification_channel_name">Media</string>
     <string name="playlistcore_default_notification_channel_description">Audio &amp; Video playback controls</string>
+
+    <string name="playlistcore_default_notification_play">Play</string>
+    <string name="playlistcore_default_notification_pause">Pause</string>
+    <string name="playlistcore_default_notification_next">Next</string>
+    <string name="playlistcore_default_notification_previous">Previous</string>
 </resources>

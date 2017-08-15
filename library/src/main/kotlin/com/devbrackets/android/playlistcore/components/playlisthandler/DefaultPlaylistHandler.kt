@@ -7,8 +7,6 @@ import android.util.Log
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
-import com.devbrackets.android.playlistcore.data.MediaProgress
-import com.devbrackets.android.playlistcore.data.PlaylistItemChange
 import com.devbrackets.android.playlistcore.components.audiofocus.AudioFocusProvider
 import com.devbrackets.android.playlistcore.components.audiofocus.DefaultAudioFocusProvider
 import com.devbrackets.android.playlistcore.components.image.ImageProvider
@@ -17,13 +15,15 @@ import com.devbrackets.android.playlistcore.components.mediacontrols.MediaContro
 import com.devbrackets.android.playlistcore.components.mediasession.DefaultMediaSessionProvider
 import com.devbrackets.android.playlistcore.components.mediasession.MediaSessionProvider
 import com.devbrackets.android.playlistcore.components.notification.DefaultPlaylistNotificationProvider
-import com.devbrackets.android.playlistcore.data.MediaInfo
 import com.devbrackets.android.playlistcore.components.notification.PlaylistNotificationProvider
+import com.devbrackets.android.playlistcore.data.MediaInfo
+import com.devbrackets.android.playlistcore.data.MediaProgress
+import com.devbrackets.android.playlistcore.data.PlaybackState
+import com.devbrackets.android.playlistcore.data.PlaylistItemChange
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
 import com.devbrackets.android.playlistcore.listener.ServiceCallbacks
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
-import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 import com.devbrackets.android.playlistcore.util.SafeWifiLock
 
@@ -109,7 +109,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
         mediaProgressPoll.start()
         setPlaybackState(PlaybackState.PLAYING)
-        setupForeground()
 
         audioFocusProvider.requestFocus()
         updateMediaControls()
@@ -125,7 +124,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         serviceCallbacks.endForeground(false)
 
         audioFocusProvider.abandonFocus()
-        updateMediaControls()
     }
 
     override fun togglePlayPause() {
@@ -464,6 +462,9 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     protected open fun setPlaybackState(state: PlaybackState) {
         currentPlaybackState = state
         playlistManager.onPlaybackStateChanged(state)
+
+        // Makes sure the Media Controls are up-to-date
+        updateMediaControls()
     }
 
     open class Builder<I : PlaylistItem, out M : BasePlaylistManager<I>>(
