@@ -84,13 +84,18 @@ open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : Audio
         handler?.currentMediaPlayer?.let {
             if (it.isPlaying) {
                 pausedForFocusLoss = true
-                handler?.pause()
+                handler?.pause(false)
             }
         }
     }
 
     open fun onFocusLossTransient() {
-        onFocusLoss()
+        handler?.currentMediaPlayer?.let {
+            if (it.isPlaying) {
+                pausedForFocusLoss = true
+                handler?.pause(true)
+            }
+        }
     }
 
     open fun onFocusLossTransientCanDuck() {

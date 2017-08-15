@@ -113,7 +113,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         updateMediaControls()
     }
 
-    override fun pause() {
+    override fun pause(transient: Boolean) {
         if (isPlaying) {
             currentMediaPlayer?.pause()
         }
@@ -122,12 +122,14 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         setPlaybackState(PlaybackState.PAUSED)
         serviceCallbacks.endForeground(false)
 
-        audioFocusProvider.abandonFocus()
+        if (!transient) {
+            audioFocusProvider.abandonFocus()
+        }
     }
 
     override fun togglePlayPause() {
         if (isPlaying) {
-            pause()
+            pause(false)
         } else {
             play()
         }
@@ -159,7 +161,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     override fun startSeek() {
         if (isPlaying) {
             pausedForSeek = true
-            pause()
+            pause(true)
         }
     }
 
@@ -185,7 +187,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
             pausedForSeek = false
             playingBeforeSeek = false
         } else {
-            pause()
+            pause(false)
         }
     }
 
@@ -295,12 +297,12 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      * Releases resources used by the service for playback. This includes the "foreground service"
      * status and notification, the wake locks, and the audioPlayer if requested
      *
-     * @param releaseAudioPlayer True if the audioPlayer should be released
+     * @param releaseMediaPlayer `true` if the [currentMediaPlayer] should be released
      */
-    protected open fun relaxResources(releaseAudioPlayer: Boolean) {
+    protected open fun relaxResources(releaseMediaPlayer: Boolean) {
         mediaProgressPoll.release()
 
-        if (releaseAudioPlayer) {
+        if (releaseMediaPlayer) {
             currentMediaPlayer?.let {
                 it.reset()
                 it.release()
