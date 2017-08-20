@@ -101,7 +101,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     override fun tearDown() {
         setPlaybackState(PlaybackState.STOPPED)
 
-        relaxResources(true)
+        relaxResources()
         playlistManager.playlistHandler = null
 
         mediaInfo.clear()
@@ -141,13 +141,15 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun stop() {
+        currentMediaPlayer?.stop()
+
         setPlaybackState(PlaybackState.STOPPED)
         currentPlaylistItem?.let {
             playlistManager.playbackStatusListener?.onItemPlaybackEnded(it)
         }
 
         // let go of all resources
-        relaxResources(true)
+        relaxResources()
 
         playlistManager.reset()
         serviceCallbacks.stop()
@@ -300,21 +302,10 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     /**
      * Releases resources used by the service for playback. This includes the "foreground service"
      * status and notification, the wake locks, and the audioPlayer if requested
-     *
-     * @param releaseMediaPlayer `true` if the [currentMediaPlayer] should be released
      */
-    protected open fun relaxResources(releaseMediaPlayer: Boolean) {
+    protected open fun relaxResources() {
         mediaProgressPoll.release()
-
-        if (releaseMediaPlayer) {
-            currentMediaPlayer?.let {
-                it.reset()
-                it.release()
-                currentMediaPlayer = null
-            }
-
-            playlistManager.currentPosition = Integer.MAX_VALUE
-        }
+        currentMediaPlayer == null
 
         audioFocusProvider.abandonFocus()
         wifiLock.release()
