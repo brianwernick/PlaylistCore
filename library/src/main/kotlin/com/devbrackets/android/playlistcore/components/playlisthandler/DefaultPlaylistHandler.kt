@@ -69,10 +69,10 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     /**
      * Determines if media is currently playing
      */
-    protected val isPlaying: Boolean
+    protected open val isPlaying: Boolean
         get() = currentMediaPlayer?.isPlaying ?: false
 
-    protected val isLoading: Boolean
+    protected open val isLoading: Boolean
         get() {
             return currentPlaybackState == PlaybackState.RETRIEVING ||
                     currentPlaybackState == PlaybackState.PREPARING ||
@@ -383,7 +383,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      * mediaPlayerApi paused or set it to a low volume, depending on what is allowed by the
      * current focus settings.
      */
-    open fun startMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
+    protected open fun startMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
         //TODO the audio focus functionality here can (and should be) handled by the normal path
 //        if (!(currentMediaPlayer?.handlesOwnAudioFocus ?: true)) {
 //            if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {

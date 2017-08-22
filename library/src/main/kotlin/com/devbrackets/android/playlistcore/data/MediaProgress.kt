@@ -38,8 +38,8 @@ class MediaProgress(position: Long, bufferPercent: Int, duration: Long) {
     }
 
     var position: Long = 0
-    get() = Math.max(0, field)
-    set
+        get() = Math.max(0, field)
+        set
 
     var duration: Long = 0
         set(duration) {

@@ -77,7 +77,7 @@ open class DefaultMediaSessionProvider(val context: Context, val serviceClass: C
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
-    protected fun createPendingIntent(action: String, serviceClass: Class<out Service>): PendingIntent {
+    protected open fun createPendingIntent(action: String, serviceClass: Class<out Service>): PendingIntent {
         val intent = Intent(context, serviceClass)
         intent.action = action
 

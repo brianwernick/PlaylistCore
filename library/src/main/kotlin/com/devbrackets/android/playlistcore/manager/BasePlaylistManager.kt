@@ -74,7 +74,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return True if there is an item after the current one
      */
-    val isNextAvailable: Boolean
+    open val isNextAvailable: Boolean
         get() = currentPosition + 1 < itemCount
 
     /**
@@ -82,7 +82,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return True if there is an item before the current one
      */
-    val isPreviousAvailable: Boolean
+    open val isPreviousAvailable: Boolean
         get() = currentPosition > 0
 
     /**
@@ -92,7 +92,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return The current Item or null
      */
-    val currentItem: I?
+    open val currentItem: I?
         get() {
             if (currentPosition != INVALID_POSITION && currentPosition < itemCount) {
                 return getItem(currentPosition)
@@ -141,7 +141,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
     /**
      * Resets the current positions and ids
      */
-    fun reset() {
+    open fun reset() {
         id = INVALID_ID
         currentPosition = INVALID_POSITION
     }
@@ -192,7 +192,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return The most recent PlaybackState
      */
-    val currentPlaybackState: PlaybackState
+    open val currentPlaybackState: PlaybackState
         get() = playlistHandler?.currentPlaybackState ?: PlaybackState.STOPPED
 
     /**
@@ -200,7 +200,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return The most recent progress event
      */
-    val currentProgress: MediaProgress?
+    open val currentProgress: MediaProgress?
         get() = playlistHandler?.currentMediaProgress
 
     /**
@@ -208,7 +208,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return The most recent Item Changed information
      */
-    val currentItemChange: PlaylistItemChange<I>?
+    open val currentItemChange: PlaylistItemChange<I>?
         get() = playlistHandler?.currentItemChange
 
     /**
@@ -217,7 +217,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
      * @param listener The listener to register
      */
-    fun registerPlaylistListener(listener: PlaylistListener<I>) {
+    open fun registerPlaylistListener(listener: PlaylistListener<I>) {
         playlistListenersLock.lock()
         playlistListeners.add(WeakReference(listener))
         playlistListenersLock.unlock()
@@ -229,7 +229,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
      * @param listener The listener to remove
      */
-    fun unRegisterPlaylistListener(listener: PlaylistListener<*>) {
+    open fun unRegisterPlaylistListener(listener: PlaylistListener<*>) {
         playlistListenersLock.lock()
         val iterator = playlistListeners.iterator()
 
@@ -248,7 +248,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @param listener The listener to notify of progress updates
      */
-    fun registerProgressListener(listener: ProgressListener) {
+    open fun registerProgressListener(listener: ProgressListener) {
         progressListenersLock.lock()
         progressListeners.add(WeakReference(listener))
         progressListenersLock.unlock()
@@ -260,7 +260,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @param listener The listener to unregister
      */
-    fun unRegisterProgressListener(listener: ProgressListener) {
+    open fun unRegisterProgressListener(listener: ProgressListener) {
         progressListenersLock.lock()
         val iterator = progressListeners.iterator()
 
@@ -282,7 +282,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * @param seekPosition The position to start the current items playback at (milliseconds)
      * @param startPaused True if the media item should not start playing when it has been prepared
      */
-    fun play(@IntRange(from = 0) seekPosition: Long, startPaused: Boolean) {
+    open fun play(@IntRange(from = 0) seekPosition: Long, startPaused: Boolean) {
         currentItem ?: return
 
         //Starts the playlist service
@@ -301,7 +301,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @param itemId The items id to use for finding the new position
      */
-    fun setCurrentItem(@IntRange(from = 0) itemId: Long) {
+    open fun setCurrentItem(@IntRange(from = 0) itemId: Long) {
         currentPosition = getPositionForItem(itemId)
     }
 
@@ -322,7 +322,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * *
      * @return True if the current item matches the passed item
      */
-    fun isPlayingItem(item: I?): Boolean {
+    open fun isPlayingItem(item: I?): Boolean {
         val workingCurrentItem = currentItem
 
         return item != null && workingCurrentItem != null && item.id == workingCurrentItem.id
@@ -344,7 +344,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return The next Item or null
      */
-    fun next(): I? {
+    open fun next(): I? {
         currentPosition =  Math.min(currentPosition + 1, itemCount)
         return currentItem
     }
@@ -356,7 +356,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      *
      * @return The previous Item or null
      */
-    fun previous(): I? {
+    open fun previous(): I? {
         currentPosition = Math.max(0, currentPosition -1)
         return currentItem
     }
@@ -367,7 +367,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * [.getMediaServiceClass]} will be informed using the action
      * [RemoteActions.ACTION_PLAY_PAUSE]
      */
-    fun invokePausePlay() {
+    open fun invokePausePlay() {
         sendPendingIntent(playPausePendingIntent)
     }
 
@@ -377,7 +377,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * [.getMediaServiceClass] will be informed using the action
      * [RemoteActions.ACTION_NEXT]
      */
-    fun invokeNext() {
+    open fun invokeNext() {
         sendPendingIntent(nextPendingIntent)
     }
 
@@ -387,7 +387,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * [.getMediaServiceClass] will be informed using the action
      * [RemoteActions.ACTION_PREVIOUS]
      */
-    fun invokePrevious() {
+    open fun invokePrevious() {
         sendPendingIntent(previousPendingIntent)
     }
 
@@ -397,7 +397,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * [.getMediaServiceClass] will be informed using the action
      * [RemoteActions.ACTION_STOP]
      */
-    fun invokeStop() {
+    open fun invokeStop() {
         sendPendingIntent(stopPendingIntent)
     }
 
@@ -407,7 +407,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * [.getMediaServiceClass] will be informed using the action
      * [RemoteActions.ACTION_SEEK_STARTED]
      */
-    fun invokeSeekStarted() {
+    open fun invokeSeekStarted() {
         sendPendingIntent(seekStartedPendingIntent)
     }
 
@@ -418,7 +418,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * [RemoteActions.ACTION_SEEK_ENDED] and have an intent extra with the
      * key [RemoteActions.ACTION_EXTRA_SEEK_POSITION] (long)
      */
-    fun invokeSeekEnded(@IntRange(from = 0) seekPosition: Long) {
+    open fun invokeSeekEnded(@IntRange(from = 0) seekPosition: Long) {
         //Tries to start the intent
         seekEndedIntent?.let {
             it.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition)
@@ -454,7 +454,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * *
      * @param application The application to use when constructing the intents used to inform the playlist service of invocations
      */
-    protected fun constructControlIntents(mediaServiceClass: Class<out Service>, application: Application) {
+    protected open fun constructControlIntents(mediaServiceClass: Class<out Service>, application: Application) {
         previousPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PREVIOUS)
         nextPendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_NEXT)
         playPausePendingIntent = createPendingIntent(application, mediaServiceClass, RemoteActions.ACTION_PLAY_PAUSE)
@@ -475,7 +475,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * @param action The action to use
      * @return The resulting PendingIntent
      */
-    protected fun createPendingIntent(application: Application, serviceClass: Class<out Service>, action: String): PendingIntent {
+    protected open fun createPendingIntent(application: Application, serviceClass: Class<out Service>, action: String): PendingIntent {
         val intent = Intent(application, serviceClass)
         intent.action = action
 
@@ -487,7 +487,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
      * @param pi The pending intent to send
      */
-    protected fun sendPendingIntent(pi: PendingIntent?) {
+    protected open fun sendPendingIntent(pi: PendingIntent?) {
         try {
             pi?.send()
         } catch (e: Exception) {

@@ -67,7 +67,7 @@ abstract class BasePlaylistService<I : PlaylistItem, out M : BasePlaylistManager
      * one of the [.START_CONTINUATION_MASK] values
      */
     @ServiceContinuationMethod
-    val serviceContinuationMethod: Int
+    protected open val serviceContinuationMethod: Int
         get() = Service.START_NOT_STICKY
 
     protected val playlistHandler: PlaylistHandler<I> by lazy {
