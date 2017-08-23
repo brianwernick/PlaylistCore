@@ -1,45 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+    android:layout_height="match_parent">
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/audio_player_controls_container">
+    <ImageView
+        android:id="@+id/audio_player_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toTopOf="@+id/audio_player_controls_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription"/>
 
-        <ImageView
-            android:id="@+id/audio_player_image"
+    <ProgressBar
+        android:id="@+id/audio_player_loading"
+        style="?android:progressBarStyleLarge"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        app:layout_constraintBottom_toBottomOf="@+id/audio_player_image"
+        app:layout_constraintEnd_toEndOf="@+id/audio_player_image"
+        app:layout_constraintStart_toStartOf="@+id/audio_player_image"
+        app:layout_constraintTop_toTopOf="@+id/audio_player_image"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/exomedia_default_controls_text_background"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/title_text_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:ignore="ContentDescription"/>
-
-        <ProgressBar
-            android:id="@+id/audio_player_loading"
-            style="?android:progressBarStyleLarge"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"/>
-    </RelativeLayout>
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="The Media Title"/>
+
+        <TextView
+            android:id="@+id/subtitle_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            tools:text="The Album"/>
+
+        <TextView
+            android:id="@+id/description_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            tools:text="The Description"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="@drawable/drop_shadow_inverse"
+        app:layout_constraintBottom_toTopOf="@+id/audio_player_controls_container"/>
 
     <LinearLayout
         android:id="@+id/audio_player_controls_container"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:elevation="4dp"
         android:orientation="vertical"
-        android:paddingTop="10dp"
-        android:translationZ="2dp"
-        tools:background="@color/background_material_light">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
 
             <TextView
                 android:id="@+id/audio_player_position"
@@ -47,6 +89,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_marginLeft="10dp"
+                android:fontFamily="monospace"
                 android:textColor="@android:color/black"
                 tools:ignore="RtlHardcoded"
                 tools:text="00:00"/>
@@ -57,6 +100,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="10dp"
+                android:fontFamily="monospace"
                 android:textColor="@android:color/black"
                 tools:ignore="RelativeOverlap,RtlHardcoded"
                 tools:text="00:00"/>
@@ -127,4 +171,4 @@
 
         </LinearLayout>
     </LinearLayout>
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>

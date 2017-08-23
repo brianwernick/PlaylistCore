@@ -53,6 +53,10 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private boolean shouldSetDuration;
     private boolean userInteracting;
 
+    private TextView titleTextView;
+    private TextView subtitleTextView;
+    private TextView descriptionTextView;
+
     private ImageButton previousButton;
     private ImageButton playPauseButton;
     private ImageButton nextButton;
@@ -101,6 +105,11 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         if (currentItem != null) {
             glide.load(currentItem.getArtworkUrl()).into(artworkView);
         }
+
+        // Updates the title, subtitle, and description
+        titleTextView.setText(currentItem != null ? currentItem.getTitle() : "");
+        subtitleTextView.setText(currentItem != null ? currentItem.getAlbum() : "");
+        descriptionTextView.setText(currentItem != null ? currentItem.getArtist() : "");
 
         return true;
     }
@@ -287,6 +296,10 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         durationView = findViewById(R.id.audio_player_duration);
 
         seekBar = findViewById(R.id.audio_player_seek);
+
+        titleTextView = findViewById(R.id.title_text_view);
+        subtitleTextView = findViewById(R.id.subtitle_text_view);
+        descriptionTextView = findViewById(R.id.description_text_view);
 
         previousButton = findViewById(R.id.audio_player_previous);
         playPauseButton = findViewById(R.id.audio_player_play_pause);
