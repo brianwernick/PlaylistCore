@@ -8,6 +8,7 @@ import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistH
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.helper.AudioApi;
+import com.devbrackets.android.playlistcoredemo.helper.cast.CastMediaPlayer;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
 
 /**
@@ -20,6 +21,7 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
         super.onCreate();
 
         // Adds the audio player implementation, otherwise there's nothing to play media with
+        getPlaylistManager().getMediaPlayers().add(new CastMediaPlayer(getApplicationContext()));
         getPlaylistManager().getMediaPlayers().add(new AudioApi(getApplicationContext()));
     }
 

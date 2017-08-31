@@ -7,11 +7,17 @@ import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 
 interface MediaPlayerApi<I : PlaylistItem> {
     /**
-     * Determines if media is currently playing on the
-     * implementing object
+     * Determines if media is currently playing on this implementation of the
+     * [MediaPlayerApi]
      */
     val isPlaying: Boolean
 
+    /**
+     * `true` if the [MediaPlayerApi] handles or doesn't require audio focus. If this
+     * is `false` then the [com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler]
+     * or [com.devbrackets.android.playlistcore.components.audiofocus.AudioFocusProvider] should handle
+     * acquiring and monitoring the audio focus.
+     */
     val handlesOwnAudioFocus: Boolean
 
     @get:IntRange(from = 0)
@@ -46,7 +52,7 @@ interface MediaPlayerApi<I : PlaylistItem> {
 
     fun setMediaStatusListener(listener: MediaStatusListener<I>)
 
-    fun handlesItem(item: I) : Boolean
+    fun handlesItem(item: I): Boolean
 
     fun playItem(item: I)
 }

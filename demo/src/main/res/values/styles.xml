@@ -6,4 +6,10 @@
         <item name="colorAccent">#FF009688</item>
     </style>
 
+    <style name="AppTheme.NoToolbar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#FF4DB6AC</item>
+        <item name="colorPrimaryDark">#FF009688</item>
+        <item name="colorAccent">#FF009688</item>
+    </style>
+
 </resources>

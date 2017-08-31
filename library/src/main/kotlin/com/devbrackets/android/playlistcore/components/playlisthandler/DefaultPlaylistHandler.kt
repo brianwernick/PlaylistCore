@@ -205,6 +205,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun onError(mediaPlayer: MediaPlayerApi<I>): Boolean {
+        //todo: if this is a remote client should we fall back to a local one?
+        // todo If this is some odd issue with a particular item (e.g. 404) should we just move on to the next item?
         setPlaybackState(PlaybackState.ERROR)
 
         serviceCallbacks.endForeground(true)
