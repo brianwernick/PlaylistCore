@@ -22,18 +22,18 @@ import com.google.android.gms.cast.framework.SessionManagerListener;
 import com.google.android.gms.cast.framework.media.RemoteMediaClient;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.images.WebImage;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A Simple implementation of the {@link MediaPlayerApi} that handles Chromecast
+ * todo; reconnecting has issues...
  */
 public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
-    private enum ConnectionStatus {
-        NOT_CONNECTED,
-        CONNECTING,
-        CONNECTED
+    public interface OnConnectionChangeListener {
+        void onCastMediaPlayerConnectionChange(@NonNull CastMediaPlayer player, @NonNull RemoteConnectionState state);
     }
 
     private static final String TAG = "CastMediaPlayer";
@@ -50,44 +50,38 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
     @NonNull
     private final SessionManagerListener<Session> sessionManagerListener = new CastSessionManagerListener();
+    @NonNull
+    private final OnConnectionChangeListener stateListener;
 
-    @Nullable
-    private CastSession castSession;
     @Nullable
     private SessionManager sessionManager;
     @Nullable
     private MediaStatusListener<MediaItem> mediaStatusListener;
 
     @NonNull
-    private ConnectionStatus connectionStatus = ConnectionStatus.NOT_CONNECTED;
+    private RemoteConnectionState remoteConnectionState = RemoteConnectionState.NOT_CONNECTED;
 
-    public CastMediaPlayer(@NonNull Context context) {
+    public CastMediaPlayer(@NonNull Context context, @NonNull OnConnectionChangeListener listener) {
+        stateListener = listener;
+
         sessionManager = CastContext.getSharedInstance(context).getSessionManager();
-
-        castSession = sessionManager.getCurrentCastSession();
         sessionManager.addSessionManagerListener(sessionManagerListener);
 
         // Makes sure the connection state is accurate
         Session session = sessionManager.getCurrentSession();
         if (session != null) {
             if (session.isConnecting()) {
-                connectionStatus = ConnectionStatus.CONNECTING;
+                updateState(RemoteConnectionState.CONNECTING);
             } else if (session.isConnected()) {
-                connectionStatus = ConnectionStatus.CONNECTED;
+                updateState(RemoteConnectionState.CONNECTED);
             }
         }
     }
 
     @Override
     public boolean isPlaying() {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
-            return remoteMediaClient.isPlaying();
-        }
-
-        return false;
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        return remoteMediaClient != null && remoteMediaClient.isPlaying();
     }
 
     @Override
@@ -98,10 +92,8 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
     @Override
     public long getCurrentPosition() {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             return remoteMediaClient.getApproximateStreamPosition();
         }
 
@@ -110,10 +102,8 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
     @Override
     public long getDuration() {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             return remoteMediaClient.getStreamDuration();
         }
 
@@ -127,37 +117,31 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
     @Override
     public void play() {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             remoteMediaClient.play();
         }
     }
 
     @Override
     public void pause() {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             remoteMediaClient.pause();
         }
     }
 
     @Override
     public void stop() {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             remoteMediaClient.stop();
         }
     }
 
     @Override
     public void reset() {
-        //todo reset
+        // Purposefully left blank
     }
 
     @Override
@@ -165,26 +149,20 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
         if (sessionManager != null) {
             sessionManager.removeSessionManagerListener(sessionManagerListener);
         }
-
-        castSession = null;
     }
 
     @Override
     public void setVolume(float left, float right) {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             remoteMediaClient.setStreamVolume((left + right) / 2);
         }
     }
 
     @Override
     public void seekTo(long milliseconds) {
-        castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             remoteMediaClient.seek(milliseconds).setResultCallback(new ResultCallback<RemoteMediaClient.MediaChannelResult>() {
                 @Override
                 public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
@@ -203,7 +181,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
     @Override
     public boolean handlesItem(@NonNull MediaItem item) {
-        return connectionStatus == ConnectionStatus.CONNECTED || connectionStatus == ConnectionStatus.CONNECTING;
+        return remoteConnectionState == RemoteConnectionState.CONNECTED;// || remoteConnectionState == RemoteConnectionState.CONNECTING;
     }
 
     @Override
@@ -212,6 +190,11 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
         String mimeType = getMimeFromExtension(mediaExtension);
 
         MediaMetadata mediaMetadata = new MediaMetadata(item.getMediaType() == BasePlaylistManager.VIDEO ? MediaMetadata.MEDIA_TYPE_MOVIE : MediaMetadata.MEDIA_TYPE_MUSIC_TRACK);
+        mediaMetadata.putString(MediaMetadata.KEY_TITLE, item.getTitle());
+        mediaMetadata.putString(MediaMetadata.KEY_ALBUM_TITLE, item.getAlbum());
+        mediaMetadata.putString(MediaMetadata.KEY_ALBUM_ARTIST, item.getArtist());
+        mediaMetadata.putString(MediaMetadata.KEY_ARTIST, item.getArtist());
+        mediaMetadata.addImage(new WebImage(Uri.parse(item.getArtworkUrl())));
 
         MediaInfo mediaInfo = new MediaInfo.Builder(item.getMediaUrl())
                 .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
@@ -219,12 +202,9 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
                 .setMetadata(mediaMetadata)
                 .build();
 
-        if (castSession == null || castSession.isSuspended()) {
-            castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
-        }
 
-        if (castSession != null) {
-            RemoteMediaClient remoteMediaClient = castSession.getRemoteMediaClient();
+        RemoteMediaClient remoteMediaClient = getMediaClient();
+        if (remoteMediaClient != null) {
             remoteMediaClient.load(mediaInfo, false, 0).setResultCallback(new ResultCallback<RemoteMediaClient.MediaChannelResult>() {
                 @Override
                 public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
@@ -249,31 +229,39 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
         return extensionToMimeMap.get(extension);
     }
 
+    @Nullable
+    private RemoteMediaClient getMediaClient() {
+        CastSession castSession = sessionManager != null ? sessionManager.getCurrentCastSession() : null;
+        if (castSession != null) {
+            return castSession.getRemoteMediaClient();
+        }
 
-    /**
-     * TODO:
-     * 1. The listener is informed of the connection/disconnection
-     * 2. When a session is resumed we need to make sure this media player is the active one
-     * 3.
-     */
+        return null;
+    }
+
+    private void updateState(@NonNull RemoteConnectionState state) {
+        remoteConnectionState = state;
+        stateListener.onCastMediaPlayerConnectionChange(this, state);
+    }
+
     private class CastSessionManagerListener implements SessionManagerListener<Session> {
         @Override
         public void onSessionStarting(Session session) {
-            connectionStatus = ConnectionStatus.CONNECTING;
+            updateState(RemoteConnectionState.CONNECTING);
             Log.d(TAG, "Cast session starting for session " + session.getSessionId());
         }
 
         @Override
         public void onSessionStarted(Session session, String sessionId) {
-            connectionStatus = ConnectionStatus.CONNECTED;
+            updateState(RemoteConnectionState.CONNECTED);
             Log.d(TAG, "Cast session started for session " + session.getSessionId());
         }
 
         @Override
         public void onSessionStartFailed(Session session, int error) {
-            connectionStatus = ConnectionStatus.NOT_CONNECTED;
+            updateState(RemoteConnectionState.NOT_CONNECTED);
             if (mediaStatusListener != null) {
-                mediaStatusListener.onError(CastMediaPlayer.this); //todo hmmm, should we include an error with this?
+                mediaStatusListener.onError(CastMediaPlayer.this);
             }
 
             Log.d(TAG, "Cast session failed to start for session " + session.getSessionId() + " with the error " + error);
@@ -286,25 +274,25 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
         @Override
         public void onSessionEnded(Session session, int error) {
-            connectionStatus = ConnectionStatus.NOT_CONNECTED;
+            updateState(RemoteConnectionState.NOT_CONNECTED);
             Log.d(TAG, "Cast session ended for session " + session.getSessionId() + " with the error " + error);
         }
 
         @Override
         public void onSessionResuming(Session session, String sessionId) {
-            connectionStatus = ConnectionStatus.CONNECTING;
+            updateState(RemoteConnectionState.CONNECTING);
             Log.d(TAG, "Cast session resuming for session " + sessionId);
         }
 
         @Override
         public void onSessionResumed(Session session, boolean wasSuspended) {
-            connectionStatus = ConnectionStatus.CONNECTED;
+            updateState(RemoteConnectionState.CONNECTED);
             Log.d(TAG, "Cast session resumed for session " + session.getSessionId() + "; wasSuspended=" + wasSuspended);
         }
 
         @Override
         public void onSessionResumeFailed(Session session, int error) {
-            connectionStatus = ConnectionStatus.NOT_CONNECTED;
+            updateState(RemoteConnectionState.NOT_CONNECTED);
             if (mediaStatusListener != null) {
                 mediaStatusListener.onPrepared(CastMediaPlayer.this);
             }
@@ -314,7 +302,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
         @Override
         public void onSessionSuspended(Session session, int reason) {
-            connectionStatus = ConnectionStatus.NOT_CONNECTED;
+            updateState(RemoteConnectionState.NOT_CONNECTED);
             String causeText;
 
             switch (reason) {

@@ -7,6 +7,16 @@ import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 
 interface MediaPlayerApi<I : PlaylistItem> {
     /**
+     * The connection state of the [MediaPlayerApi] when it represents
+     * a remote player such as a Chromecast
+     */
+    enum class RemoteConnectionState {
+        NOT_CONNECTED,
+        CONNECTING,
+        CONNECTED
+    }
+
+    /**
      * Determines if media is currently playing on this implementation of the
      * [MediaPlayerApi]
      */

@@ -27,6 +27,7 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 import com.devbrackets.android.playlistcore.util.SafeWifiLock
 
+@Suppress("MemberVisibilityCanPrivate")
 open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<I>> protected constructor(
         protected val context: Context,
         protected val serviceClass: Class<out Service>,
@@ -290,13 +291,49 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun refreshCurrentMediaPlayer() {
+        refreshCurrentMediaPlayer(currentMediaPlayer?.currentPosition ?: seekToPosition, !isPlaying)
+    }
+
+    protected open fun refreshCurrentMediaPlayer(seekPosition: Long, startPaused: Boolean) {
         currentPlaylistItem.let {
-            seekToPosition = currentMediaPlayer?.currentPosition ?: seekToPosition
-            startPaused = !isPlaying
+            seekToPosition = seekPosition
+            this.startPaused = startPaused
 
             updateCurrentMediaPlayer(it)
             if (play(currentMediaPlayer, it)) {
                 return
+            }
+        }
+    }
+
+    override fun onRemoteMediaPlayerConnectionChange(mediaPlayer: MediaPlayerApi<I>, state: MediaPlayerApi.RemoteConnectionState) {
+        // If the mediaPlayer that changed state is of lower priority than the current one we ignore the change
+        currentMediaPlayer?.let {
+            if (mediaPlayers.indexOf(it) < mediaPlayers.indexOf(mediaPlayer)) {
+                Log.d(TAG, "Ignoring remote connection state change for $mediaPlayer because it is of lower priority than the current MediaPlayer")
+                return
+            }
+        }
+
+        when (state) {
+            MediaPlayerApi.RemoteConnectionState.CONNECTING -> {
+                if (mediaPlayer != currentMediaPlayer) {
+                    val resumePlayback = isPlaying
+                    pause(true)
+                    seekToPosition = currentMediaPlayer?.currentPosition ?: seekToPosition
+                    startPaused = !resumePlayback
+                }
+                return
+            }
+            MediaPlayerApi.RemoteConnectionState.CONNECTED -> {
+                if (mediaPlayer != currentMediaPlayer) {
+                    refreshCurrentMediaPlayer(currentMediaProgress.position, startPaused)
+                }
+            }
+            MediaPlayerApi.RemoteConnectionState.NOT_CONNECTED -> {
+                if (mediaPlayer == currentMediaPlayer) {
+                    refreshCurrentMediaPlayer(currentMediaProgress.position, startPaused)
+                }
             }
         }
     }
@@ -307,7 +344,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      */
     protected open fun relaxResources() {
         mediaProgressPoll.release()
-        currentMediaPlayer == null
+        currentMediaPlayer = null
 
         audioFocusProvider.abandonFocus()
         wifiLock.release()

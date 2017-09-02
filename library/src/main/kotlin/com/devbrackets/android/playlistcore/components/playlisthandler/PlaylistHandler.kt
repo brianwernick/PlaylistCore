@@ -94,4 +94,11 @@ abstract class PlaylistHandler<I: PlaylistItem>(val mediaPlayers: List<MediaPlay
      * removing a [MediaPlayerApi]
      */
     abstract fun refreshCurrentMediaPlayer()
+
+    /**
+     * Informs the handler that the connection state of a remote media player
+     * has changed. This should handle swapping between remote and local players
+     * on connection and disconnections.
+     */
+    abstract fun onRemoteMediaPlayerConnectionChange(mediaPlayer: MediaPlayerApi<I>, state: MediaPlayerApi.RemoteConnectionState)
 }
