@@ -30,6 +30,7 @@ import java.util.Map;
 /**
  * A Simple implementation of the {@link MediaPlayerApi} that handles Chromecast
  * todo; reconnecting has issues...
+ * todo: notification play/pause state is wrong with this player
  */
 public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     public interface OnConnectionChangeListener {
