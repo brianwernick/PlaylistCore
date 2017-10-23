@@ -63,6 +63,16 @@
             tools:text="The Description"/>
     </LinearLayout>
 
+    <android.support.v7.app.MediaRouteButton
+        android:id="@+id/media_route_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:theme="@style/Theme.MediaRouter"
+        android:mediaRouteTypes="user"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
     <View
         android:layout_width="match_parent"
         android:layout_height="3dp"

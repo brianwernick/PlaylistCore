@@ -2,7 +2,11 @@ apply plugin: 'com.android.application'
 
 dependencies {
     compile project(':library')
-    compile 'com.android.support:appcompat-v7:26.0.1'
+
+    def supportLibVersion = "26.1.0"
+    compile "com.android.support:appcompat-v7:$supportLibVersion"
+    compile "com.android.support:mediarouter-v7:$supportLibVersion"
+    compile 'com.google.android.gms:play-services-cast-framework:11.4.2'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
 
     // Media playback (video and audio) library using ExoPlayer
@@ -14,7 +18,7 @@ dependencies {
 
 android {
     compileSdkVersion 26
-    buildToolsVersion '26.0.1'
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "com.devbrackets.android.playlistcoredemo"

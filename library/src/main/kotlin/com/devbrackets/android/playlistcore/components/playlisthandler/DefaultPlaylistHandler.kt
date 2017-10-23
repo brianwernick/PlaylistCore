@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2016 - 2017 Brian Wernick
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.devbrackets.android.playlistcore.components.playlisthandler
 
 import android.app.NotificationManager
@@ -27,6 +43,7 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll
 import com.devbrackets.android.playlistcore.util.SafeWifiLock
 
+@Suppress("MemberVisibilityCanPrivate")
 open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<I>> protected constructor(
         protected val context: Context,
         protected val serviceClass: Class<out Service>,
@@ -115,6 +132,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         mediaProgressPoll.start()
         setPlaybackState(PlaybackState.PLAYING)
 
+        setupForeground()
         audioFocusProvider.requestFocus()
     }
 
@@ -205,6 +223,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun onError(mediaPlayer: MediaPlayerApi<I>): Boolean {
+        //todo: if this is a remote client should we fall back to a local one?
+        // todo If this is some odd issue with a particular item (e.g. 404) should we just move on to the next item?
         setPlaybackState(PlaybackState.ERROR)
 
         serviceCallbacks.endForeground(true)
@@ -249,7 +269,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
     protected open fun initializeMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
         mediaPlayer.apply {
-            stop()
             reset()
             setMediaStatusListener(this@DefaultPlaylistHandler)
         }
@@ -288,13 +307,47 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun refreshCurrentMediaPlayer() {
+        refreshCurrentMediaPlayer(currentMediaPlayer?.currentPosition ?: seekToPosition, !isPlaying)
+    }
+
+    protected open fun refreshCurrentMediaPlayer(seekPosition: Long, startPaused: Boolean) {
         currentPlaylistItem.let {
-            seekToPosition = currentMediaPlayer?.currentPosition ?: seekToPosition
-            startPaused = !isPlaying
+            seekToPosition = seekPosition
+            this.startPaused = startPaused
 
             updateCurrentMediaPlayer(it)
-            if (play(currentMediaPlayer, it)) {
+            play(currentMediaPlayer, it)
+        }
+    }
+
+    override fun onRemoteMediaPlayerConnectionChange(mediaPlayer: MediaPlayerApi<I>, state: MediaPlayerApi.RemoteConnectionState) {
+        // If the mediaPlayer that changed state is of lower priority than the current one we ignore the change
+        currentMediaPlayer?.let {
+            if (mediaPlayers.indexOf(it) < mediaPlayers.indexOf(mediaPlayer)) {
+                Log.d(TAG, "Ignoring remote connection state change for $mediaPlayer because it is of lower priority than the current MediaPlayer")
                 return
+            }
+        }
+
+        when (state) {
+            MediaPlayerApi.RemoteConnectionState.CONNECTING -> {
+                if (mediaPlayer != currentMediaPlayer) {
+                    val resumePlayback = isPlaying
+                    pause(true)
+                    seekToPosition = currentMediaPlayer?.currentPosition ?: seekToPosition
+                    startPaused = !resumePlayback
+                }
+                return
+            }
+            MediaPlayerApi.RemoteConnectionState.CONNECTED -> {
+                if (mediaPlayer != currentMediaPlayer) {
+                    refreshCurrentMediaPlayer(currentMediaProgress.position, startPaused)
+                }
+            }
+            MediaPlayerApi.RemoteConnectionState.NOT_CONNECTED -> {
+                if (mediaPlayer == currentMediaPlayer) {
+                    refreshCurrentMediaPlayer(currentMediaProgress.position, startPaused)
+                }
             }
         }
     }
@@ -305,7 +358,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      */
     protected open fun relaxResources() {
         mediaProgressPoll.release()
-        currentMediaPlayer == null
+        currentMediaPlayer = null
 
         audioFocusProvider.abandonFocus()
         wifiLock.release()

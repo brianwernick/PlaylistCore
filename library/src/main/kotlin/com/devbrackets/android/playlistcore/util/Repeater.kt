@@ -39,19 +39,11 @@ class Repeater {
     var isRunning = false
         private set
 
+    /**
+     * The amount of time (in milliseconds) between repeater events.
+     * Defaulted to [DEFAULT_REPEAT_DELAY]
+     */
     var repeaterDelay = DEFAULT_REPEAT_DELAY
-        /**
-         * Retrieves the amount of time between method invocation.
-         *
-         * @return The millisecond time between method calls
-         */
-        get
-        /**
-         * Sets the amount of time between method invocation.
-         *
-         * @param milliSeconds The time between method calls [default: {@value #DEFAULT_REPEAT_DELAY}]
-         */
-        set
 
     private var delayedHandler: Handler? = null
     private var handlerThread: HandlerThread? = null

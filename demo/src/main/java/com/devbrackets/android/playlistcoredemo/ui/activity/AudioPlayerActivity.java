@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.MediaRouteButton;
 import android.text.format.DateUtils;
 import android.view.View;
 import android.widget.ImageButton;
@@ -15,15 +16,16 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
 import com.devbrackets.android.playlistcore.data.MediaProgress;
+import com.devbrackets.android.playlistcore.data.PlaybackState;
 import com.devbrackets.android.playlistcore.data.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.data.PlaybackState;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.data.Samples;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
+import com.google.android.gms.cast.framework.CastButtonFactory;
 
 import java.util.Formatter;
 import java.util.LinkedList;
@@ -60,6 +62,8 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private ImageButton previousButton;
     private ImageButton playPauseButton;
     private ImageButton nextButton;
+
+    private MediaRouteButton castButton;
 
     private PlaylistManager playlistManager;
     private int selectedPosition = 0;
@@ -196,6 +200,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         setupListeners();
 
         glide = Glide.with(this);
+        CastButtonFactory.setUpMediaRouteButton(getApplicationContext(), castButton);
 
         boolean generatedPlaylist = setupPlaylistManager();
         startPlayback(generatedPlaylist);
@@ -304,6 +309,8 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         previousButton = findViewById(R.id.audio_player_previous);
         playPauseButton = findViewById(R.id.audio_player_play_pause);
         nextButton = findViewById(R.id.audio_player_next);
+
+        castButton = findViewById(R.id.media_route_button);
     }
 
     /**

@@ -24,15 +24,15 @@ import android.support.annotation.IntRange
 import android.util.Log
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem
+import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
 import com.devbrackets.android.playlistcore.data.MediaProgress
+import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.data.PlaylistItemChange
+import com.devbrackets.android.playlistcore.data.RemoteActions
+import com.devbrackets.android.playlistcore.listener.PlaybackStatusListener
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
 import com.devbrackets.android.playlistcore.listener.ProgressListener
-import com.devbrackets.android.playlistcore.listener.PlaybackStatusListener
 import com.devbrackets.android.playlistcore.service.BasePlaylistService
-import com.devbrackets.android.playlistcore.data.PlaybackState
-import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler
-import com.devbrackets.android.playlistcore.data.RemoteActions
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.locks.ReentrantLock
@@ -135,6 +135,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
     protected var seekStartedPendingIntent: PendingIntent? = null
 
     init {
+        @Suppress("LeakingThis")
         constructControlIntents(mediaServiceClass, application)
     }
 
