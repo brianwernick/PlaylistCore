@@ -132,6 +132,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         mediaProgressPoll.start()
         setPlaybackState(PlaybackState.PLAYING)
 
+        setupForeground()
         audioFocusProvider.requestFocus()
     }
 
@@ -268,7 +269,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
     protected open fun initializeMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
         mediaPlayer.apply {
-            stop()
             reset()
             setMediaStatusListener(this@DefaultPlaylistHandler)
         }
@@ -316,9 +316,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
             this.startPaused = startPaused
 
             updateCurrentMediaPlayer(it)
-            if (play(currentMediaPlayer, it)) {
-                return
-            }
+            play(currentMediaPlayer, it)
         }
     }
 

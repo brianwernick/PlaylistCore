@@ -29,12 +29,14 @@ import java.util.Map;
 
 /**
  * A Simple implementation of the {@link MediaPlayerApi} that handles Chromecast
- * todo; reconnecting has issues...
- * todo: notification play/pause state is wrong with this player
  */
 public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     public interface OnConnectionChangeListener {
         void onCastMediaPlayerConnectionChange(@NonNull CastMediaPlayer player, @NonNull RemoteConnectionState state);
+    }
+
+    public interface OnMediaInfoChangeListener {
+        void onMediaInfoChange(@NonNull CastMediaPlayer player);
     }
 
     private static final String TAG = "CastMediaPlayer";
@@ -53,6 +55,8 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     private final SessionManagerListener<Session> sessionManagerListener = new CastSessionManagerListener();
     @NonNull
     private final OnConnectionChangeListener stateListener;
+    @NonNull
+    private final OnMediaInfoChangeListener infoChangeListener;
 
     @Nullable
     private SessionManager sessionManager;
@@ -62,8 +66,16 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     @NonNull
     private RemoteConnectionState remoteConnectionState = RemoteConnectionState.NOT_CONNECTED;
 
-    public CastMediaPlayer(@NonNull Context context, @NonNull OnConnectionChangeListener listener) {
-        stateListener = listener;
+    @NonNull
+    private CastResultCallback castResultCallback = new CastResultCallback();
+    @NonNull
+    private SeekResultCallback seekResultCallback = new SeekResultCallback();
+    @NonNull
+    private PreparedResultCallback preparedResultCallback = new PreparedResultCallback();
+
+    public CastMediaPlayer(@NonNull Context context, @NonNull OnConnectionChangeListener stateListener, @NonNull OnMediaInfoChangeListener infoChangeListener) {
+        this.stateListener = stateListener;
+        this.infoChangeListener = infoChangeListener;
 
         sessionManager = CastContext.getSharedInstance(context).getSessionManager();
         sessionManager.addSessionManagerListener(sessionManagerListener);
@@ -120,7 +132,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     public void play() {
         RemoteMediaClient remoteMediaClient = getMediaClient();
         if (remoteMediaClient != null) {
-            remoteMediaClient.play();
+            remoteMediaClient.play().setResultCallback(castResultCallback);
         }
     }
 
@@ -128,7 +140,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     public void pause() {
         RemoteMediaClient remoteMediaClient = getMediaClient();
         if (remoteMediaClient != null) {
-            remoteMediaClient.pause();
+            remoteMediaClient.pause().setResultCallback(castResultCallback);
         }
     }
 
@@ -136,7 +148,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     public void stop() {
         RemoteMediaClient remoteMediaClient = getMediaClient();
         if (remoteMediaClient != null) {
-            remoteMediaClient.stop();
+            remoteMediaClient.stop().setResultCallback(castResultCallback);
         }
     }
 
@@ -164,14 +176,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     public void seekTo(long milliseconds) {
         RemoteMediaClient remoteMediaClient = getMediaClient();
         if (remoteMediaClient != null) {
-            remoteMediaClient.seek(milliseconds).setResultCallback(new ResultCallback<RemoteMediaClient.MediaChannelResult>() {
-                @Override
-                public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
-                    if (mediaStatusListener != null) {
-                        mediaStatusListener.onSeekComplete(CastMediaPlayer.this);
-                    }
-                }
-            });
+            remoteMediaClient.seek(milliseconds).setResultCallback(seekResultCallback);
         }
     }
 
@@ -182,7 +187,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
     @Override
     public boolean handlesItem(@NonNull MediaItem item) {
-        return remoteConnectionState == RemoteConnectionState.CONNECTED;// || remoteConnectionState == RemoteConnectionState.CONNECTING;
+        return remoteConnectionState == RemoteConnectionState.CONNECTED;
     }
 
     @Override
@@ -206,14 +211,7 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
         RemoteMediaClient remoteMediaClient = getMediaClient();
         if (remoteMediaClient != null) {
-            remoteMediaClient.load(mediaInfo, false, 0).setResultCallback(new ResultCallback<RemoteMediaClient.MediaChannelResult>() {
-                @Override
-                public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
-                    if (mediaStatusListener != null) {
-                        mediaStatusListener.onPrepared(CastMediaPlayer.this);
-                    }
-                }
-            });
+            remoteMediaClient.load(mediaInfo, false, 0).setResultCallback(preparedResultCallback);
         } else {
             if (mediaStatusListener != null) {
                 mediaStatusListener.onError(this);
@@ -243,6 +241,42 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
     private void updateState(@NonNull RemoteConnectionState state) {
         remoteConnectionState = state;
         stateListener.onCastMediaPlayerConnectionChange(this, state);
+    }
+
+    /**
+     * Watches the result of a request for media change which will allow us to keep the
+     * media state stored in the PlaylistHandler and the actual state this class represents
+     * in sync.
+     */
+    private class CastResultCallback implements ResultCallback<RemoteMediaClient.MediaChannelResult> {
+        @Override
+        public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
+            infoChangeListener.onMediaInfoChange(CastMediaPlayer.this);
+        }
+    }
+
+    /**
+     * Handles listening to the initial load process to inform the listener the media was prepared
+     */
+    private class PreparedResultCallback implements ResultCallback<RemoteMediaClient.MediaChannelResult> {
+        @Override
+        public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
+            if (mediaStatusListener != null) {
+                mediaStatusListener.onPrepared(CastMediaPlayer.this);
+            }
+        }
+    }
+
+    /**
+     * Handles listening to the seek process to inform the listener we have finished
+     */
+    private class SeekResultCallback implements ResultCallback<RemoteMediaClient.MediaChannelResult> {
+        @Override
+        public void onResult(@NonNull RemoteMediaClient.MediaChannelResult mediaChannelResult) {
+            if (mediaStatusListener != null) {
+                mediaStatusListener.onSeekComplete(CastMediaPlayer.this);
+            }
+        }
     }
 
     private class CastSessionManagerListener implements SessionManagerListener<Session> {

@@ -16,13 +16,16 @@ import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
  * A simple service that extends {@link BasePlaylistService} in order to provide
  * the application specific information required.
  */
-public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager> implements CastMediaPlayer.OnConnectionChangeListener {
+public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager> implements
+        CastMediaPlayer.OnConnectionChangeListener,
+        CastMediaPlayer.OnMediaInfoChangeListener {
+
     @Override
     public void onCreate() {
         super.onCreate();
 
         // Adds the audio player implementation, otherwise there's nothing to play media with
-        getPlaylistManager().getMediaPlayers().add(new CastMediaPlayer(getApplicationContext(), this));
+        getPlaylistManager().getMediaPlayers().add(new CastMediaPlayer(getApplicationContext(), this, this));
         getPlaylistManager().getMediaPlayers().add(new AudioApi(getApplicationContext()));
     }
 
@@ -69,5 +72,16 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
     @Override
     public void onCastMediaPlayerConnectionChange(@NonNull CastMediaPlayer player, @NonNull MediaPlayerApi.RemoteConnectionState state) {
         getPlaylistHandler().onRemoteMediaPlayerConnectionChange(player, state);
+    }
+
+    /**
+     * An implementation for the chromecast MediaPlayer {@link CastMediaPlayer} that allow us to inform the
+     * {@link PlaylistHandler} that the information for the current media item has changed. This will normally
+     * be called for state synchronization when we are informed that the media item has actually started, paused,
+     * etc.
+     */
+    @Override
+    public void onMediaInfoChange(@NonNull CastMediaPlayer player) {
+        getPlaylistHandler().updateMediaControls();
     }
 }
