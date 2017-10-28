@@ -109,7 +109,7 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
     }
 
     protected open fun buildMediaStyle(mediaSession: MediaSessionCompat, serviceClass: Class<out Service>) : MediaStyle {
-        return MediaStyle().apply {
+        return with(MediaStyle()) {
             setMediaSession(mediaSession.sessionToken)
             setShowActionsInCompactView(0, 1, 2) // previous, play/pause, next
             setShowCancelButton(true)
