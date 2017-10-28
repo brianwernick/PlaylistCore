@@ -37,8 +37,16 @@ open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : Audio
         handler = playlistHandler
     }
 
+    override fun refreshFocus() {
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus != false) {
+            return
+        }
+
+        handleFocusChange(currentAudioFocus)
+    }
+
     override fun requestFocus(): Boolean {
-        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus ?: true) {
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus != false) {
             return false
         }
 
@@ -51,7 +59,7 @@ open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : Audio
     }
 
     override fun abandonFocus(): Boolean {
-        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus ?: true) {
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus != false) {
             return false
         }
 
@@ -72,12 +80,16 @@ open class DefaultAudioFocusProvider<I : PlaylistItem>(context: Context) : Audio
             return
         }
 
-        currentAudioFocus = focusChange
-        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus ?: true) {
+        handleFocusChange(focusChange)
+    }
+
+    open fun handleFocusChange(newFocus: Int) {
+        currentAudioFocus = newFocus
+        if (handler?.currentMediaPlayer?.handlesOwnAudioFocus != false) {
             return
         }
 
-        when (focusChange) {
+        when (newFocus) {
             AudioManager.AUDIOFOCUS_GAIN -> onFocusGained()
             AudioManager.AUDIOFOCUS_LOSS -> onFocusLoss()
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> onFocusLossTransient()

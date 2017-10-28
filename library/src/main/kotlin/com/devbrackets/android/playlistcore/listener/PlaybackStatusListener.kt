@@ -11,15 +11,14 @@ interface PlaybackStatusListener<in I : PlaylistItem> {
      * @param currentPosition The position the playback has started at
      * @param duration The duration of the PlaylistItem
      */
-    fun onMediaPlaybackStarted(playlistItem: I, currentPosition: Long, duration: Long) {
+    fun onMediaPlaybackStarted(item: I, currentPosition: Long, duration: Long) {
         //Purposefully left blank
     }
 
     /**
      * Called when a playlist item in playback has ended
-     * TODO: have a cause? (e.g. next, stop, error, restart)
      */
-    fun onItemPlaybackEnded(item : I?) {
+    fun onItemPlaybackEnded(item: I?) {
         // Purposefully left blank
     }
 

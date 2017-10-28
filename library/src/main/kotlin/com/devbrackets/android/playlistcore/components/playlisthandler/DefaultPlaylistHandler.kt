@@ -104,6 +104,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     protected var startPaused = false
     protected var seekToPosition: Long = -1
 
+    protected var sequentialErrors: Int = 0
+
     init {
         audioFocusProvider.setPlaylistHandler(this)
     }
@@ -196,6 +198,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
 
     override fun onPrepared(mediaPlayer: MediaPlayerApi<I>) {
         startMediaPlayer(mediaPlayer)
+        sequentialErrors = 0
     }
 
     override fun onBufferingUpdate(mediaPlayer: MediaPlayerApi<I>, percent: Int) {
@@ -223,8 +226,12 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     override fun onError(mediaPlayer: MediaPlayerApi<I>): Boolean {
-        //todo: if this is a remote client should we fall back to a local one?
-        // todo If this is some odd issue with a particular item (e.g. 404) should we just move on to the next item?
+        // Unless we've had 3 or more errors without an item successfully playing we will move to the next item
+        if (++sequentialErrors <= 3) {
+            next()
+            return false
+        }
+
         setPlaybackState(PlaybackState.ERROR)
 
         serviceCallbacks.endForeground(true)
@@ -437,25 +444,6 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
      * current focus settings.
      */
     protected open fun startMediaPlayer(mediaPlayer: MediaPlayerApi<I>) {
-        //TODO the audio focus functionality here can (and should be) handled by the normal path
-//        if (!(currentMediaPlayer?.handlesOwnAudioFocus ?: true)) {
-//            if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_NO_DUCK) {
-//                // If we don't have audio focus and can't duck we have to pause, even if state is playing
-//                // Be we stay in the playing state so we know we have to resume playback once we get the focus back.
-//                if (isPlaying) {
-//                    pausedForFocusLoss = true
-//                    pause()
-//                    playlistManager.playbackStatusListener?.onMediaPlaybackEnded(currentPlaylistItem!!, currentMediaPlayer!!.currentPosition, currentMediaPlayer!!.duration)
-//                }
-//
-//                return
-//            } else if (audioFocusHelper.currentAudioFocus == AudioFocusHelper.Focus.NO_FOCUS_CAN_DUCK) {
-//                currentMediaPlayer?.setVolume(0.1f, 0.1f)
-//            } else {
-//                currentMediaPlayer?.setVolume(1.0f, 1.0f)
-//            }
-//        }
-
         //Seek to the correct position
         val seekRequested = seekToPosition > 0
         if (seekRequested) {
@@ -472,6 +460,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
         } else {
             setPlaybackState(PlaybackState.PAUSED)
         }
+
+        audioFocusProvider.refreshFocus()
     }
 
     /**
@@ -546,7 +536,7 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
                     notificationProvider ?: DefaultPlaylistNotificationProvider(context),
                     mediaSessionProvider ?: DefaultMediaSessionProvider(context, serviceClass),
                     mediaControlsProvider ?: DefaultMediaControlsProvider(context),
-                    audioFocusProvider ?: DefaultAudioFocusProvider<I>(context),
+                    audioFocusProvider ?: DefaultAudioFocusProvider(context),
                     listener)
         }
     }

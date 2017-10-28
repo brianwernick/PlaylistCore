@@ -21,6 +21,8 @@ import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistH
 interface AudioFocusProvider<I : PlaylistItem> {
     fun setPlaylistHandler(playlistHandler: PlaylistHandler<I>)
 
+    fun refreshFocus()
+
     /**
      * Requests to obtain the audio focus
      *

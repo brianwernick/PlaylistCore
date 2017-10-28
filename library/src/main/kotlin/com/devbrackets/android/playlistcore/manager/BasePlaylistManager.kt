@@ -119,7 +119,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
     var id = INVALID_ID
 
     var playlistHandler: PlaylistHandler<I>? = null
-    var playbackStatusListener: PlaybackStatusListener<I>? = null //todo this should probably be a list
+    var playbackStatusListener: PlaybackStatusListener<I>? = null
     val mediaPlayers = mutableListOf<MediaPlayerApi<I>>()
 
     protected var playlistListeners: MutableList<WeakReference<PlaylistListener<I>>> = LinkedList()
