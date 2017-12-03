@@ -49,7 +49,7 @@ public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem
 
     @Override
     public void reset() {
-        videoView.reset();
+        // Purposefully left blank
     }
 
     @Override

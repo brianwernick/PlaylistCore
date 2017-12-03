@@ -16,6 +16,7 @@
 
 package com.devbrackets.android.playlistcore.util
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.media.AudioAttributes
@@ -27,8 +28,10 @@ open class SimplifiedAudioManager(context: Context) {
     protected val audioManager: AudioManager = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     protected var currentAudioFocusRequest: Any? = null
 
+    @SuppressLint("NewApi")
     open fun requestAudioFocus(listener: AudioManager.OnAudioFocusChangeListener, streamType: Int, durationHint: Int): Int {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            @Suppress("DEPRECATION")
             return audioManager.requestAudioFocus(listener, streamType, durationHint)
         }
 
@@ -36,8 +39,10 @@ open class SimplifiedAudioManager(context: Context) {
         return audioManager.requestAudioFocus(currentAudioFocusRequest as AudioFocusRequest)
     }
 
+    @SuppressLint("NewApi")
     open fun abandonAudioFocus(listener: AudioManager.OnAudioFocusChangeListener): Int {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            @Suppress("DEPRECATION")
             return audioManager.abandonAudioFocus(listener)
         }
 

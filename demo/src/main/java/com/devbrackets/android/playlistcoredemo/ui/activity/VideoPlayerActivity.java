@@ -47,7 +47,7 @@ public class VideoPlayerActivity extends Activity {
      */
     protected void retrieveExtras() {
         Bundle extras = getIntent().getExtras();
-        selectedIndex = extras.getInt(EXTRA_INDEX, 0);
+        selectedIndex = extras != null ? extras.getInt(EXTRA_INDEX, 0) : 0;
     }
 
     protected void init() {

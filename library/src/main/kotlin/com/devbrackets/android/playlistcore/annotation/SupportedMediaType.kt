@@ -20,7 +20,7 @@ import android.support.annotation.IntDef
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 
 @IntDef(flag = true,
-        value = *longArrayOf(
+        value = longArrayOf(
                 BasePlaylistManager.AUDIO.toLong(),
                 BasePlaylistManager.VIDEO.toLong()
         )

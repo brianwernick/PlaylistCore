@@ -30,7 +30,6 @@ public abstract class BaseMediaApi implements MediaPlayerApi<MediaItem>,
 
     @Override
     public void onCompletion() {
-        // TODO The ExoMedia VideoView (4.0.3) is calling this when we click next, but not the AudioPlayer
         if (mediaStatusListener != null) {
             mediaStatusListener.onCompletion(this);
         }
