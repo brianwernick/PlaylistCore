@@ -48,7 +48,6 @@ open class DefaultMediaControlsProvider(protected val context: Context) : MediaC
 
     @PlaybackStateCompat.State
     protected open fun getPlaybackState(isPlaying: Boolean): Int {
-        //todo We should be handling all the appropriate states instead of just these 2 (i.e. the mediaInfo has a state instead of booleans)
         return if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_CONNECTING
     }
 
