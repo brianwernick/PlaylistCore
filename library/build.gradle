@@ -40,6 +40,11 @@ android {
     }
 }
 
+// Disables javadoc because it fails on kotlin files
+tasks.withType(Javadoc).all {
+    enabled = false
+}
+
 // ======== MAVEN DEPLOY to local cache or nexus repo (to make accessible to local projects) (command: ./gradlew clean aRel uploadArchives) ========
 uploadArchives {
     repositories {
