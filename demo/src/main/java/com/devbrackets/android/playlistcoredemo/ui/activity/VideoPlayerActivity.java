@@ -3,6 +3,7 @@ package com.devbrackets.android.playlistcoredemo.ui.activity;
 import android.app.Activity;
 import android.os.Bundle;
 
+import com.devbrackets.android.exomedia.listener.VideoControlsSeekListener;
 import com.devbrackets.android.exomedia.ui.widget.VideoView;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
@@ -15,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class VideoPlayerActivity extends Activity {
+public class VideoPlayerActivity extends Activity implements VideoControlsSeekListener {
     public static final String EXTRA_INDEX = "EXTRA_INDEX";
     public static final int PLAYLIST_ID = 6; //Arbitrary, for the example (different from audio)
 
@@ -41,6 +42,18 @@ public class VideoPlayerActivity extends Activity {
         playlistManager.invokeStop();
     }
 
+    @Override
+    public boolean onSeekStarted() {
+        playlistManager.invokeSeekStarted();
+        return true;
+    }
+
+    @Override
+    public boolean onSeekEnded(long seekTime) {
+        playlistManager.invokeSeekEnded(seekTime);
+        return true;
+    }
+
     /**
      * Retrieves the extra associated with the selected playlist index
      * so that we can start playing the correct item.
@@ -55,6 +68,7 @@ public class VideoPlayerActivity extends Activity {
 
         videoView = findViewById(R.id.video_play_activity_video_view);
         videoView.setHandleAudioFocus(false);
+        videoView.getVideoControls().setSeekListener(this);
 
         videoApi = new VideoApi(videoView);
         playlistManager.addVideoApi(videoApi);
