@@ -1,17 +1,25 @@
 buildscript {
+    ext.kotlinVersion = '1.2.0'
+
     repositories {
-        jcenter();
-        mavenLocal()
+        jcenter()
+        google()
     }
+
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.2'
-        classpath 'com.novoda:bintray-release:0.5.0'
+        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'com.novoda:bintray-release:0.8.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
 allprojects {
     repositories {
-        jcenter();
-        mavenLocal()
+        jcenter()
+        google()
     }
+}
+
+ext {
+    supportLibVersion = "27.0.2"
 }

@@ -2,9 +2,9 @@ package com.devbrackets.android.playlistcoredemo.ui.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.VideoView;
 
-import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
+import com.devbrackets.android.exomedia.listener.VideoControlsSeekListener;
+import com.devbrackets.android.exomedia.ui.widget.VideoView;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
@@ -16,11 +16,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class VideoPlayerActivity extends Activity {
+public class VideoPlayerActivity extends Activity implements VideoControlsSeekListener {
     public static final String EXTRA_INDEX = "EXTRA_INDEX";
     public static final int PLAYLIST_ID = 6; //Arbitrary, for the example (different from audio)
 
     protected VideoView videoView;
+    protected VideoApi videoApi;
     protected PlaylistManager playlistManager;
 
     protected int selectedIndex;
@@ -37,7 +38,20 @@ public class VideoPlayerActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        playlistManager.removeVideoApi(videoApi);
         playlistManager.invokeStop();
+    }
+
+    @Override
+    public boolean onSeekStarted() {
+        playlistManager.invokeSeekStarted();
+        return true;
+    }
+
+    @Override
+    public boolean onSeekEnded(long seekTime) {
+        playlistManager.invokeSeekEnded(seekTime);
+        return true;
     }
 
     /**
@@ -46,15 +60,18 @@ public class VideoPlayerActivity extends Activity {
      */
     protected void retrieveExtras() {
         Bundle extras = getIntent().getExtras();
-        selectedIndex = extras.getInt(EXTRA_INDEX, 0);
+        selectedIndex = extras != null ? extras.getInt(EXTRA_INDEX, 0) : 0;
     }
 
     protected void init() {
         setupPlaylistManager();
 
-        videoView = (VideoView) findViewById(R.id.video_play_activity_video_view);
+        videoView = findViewById(R.id.video_play_activity_video_view);
+        videoView.setHandleAudioFocus(false);
+        videoView.getVideoControls().setSeekListener(this);
 
-        playlistManager.setVideoPlayer(new VideoApi(videoView));
+        videoApi = new VideoApi(videoView);
+        playlistManager.addVideoApi(videoApi);
         playlistManager.play(0, false);
     }
 
@@ -71,7 +88,6 @@ public class VideoPlayerActivity extends Activity {
             mediaItems.add(mediaItem);
         }
 
-        playlistManager.setAllowedMediaType(BasePlaylistManager.AUDIO | BasePlaylistManager.VIDEO);
         playlistManager.setParameters(mediaItems, selectedIndex);
         playlistManager.setId(PLAYLIST_ID);
     }

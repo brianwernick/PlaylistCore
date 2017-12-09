@@ -2,20 +2,33 @@ apply plugin: 'com.android.application'
 
 dependencies {
     compile project(':library')
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.squareup.picasso:picasso:2.5.2'
+
+    compile "com.android.support:support-v4:$rootProject.ext.supportLibVersion"
+    compile "com.android.support:appcompat-v7:$rootProject.ext.supportLibVersion"
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+
+    // Chromecast support
+    compile "com.android.support:mediarouter-v7:$rootProject.ext.supportLibVersion"
+    compile 'com.google.android.gms:play-services-cast-framework:11.6.2'
+
+    // Media playback (video and audio) library using ExoPlayer
+    compile 'com.devbrackets.android:exomedia:4.1.0'
+
+    // Image Loading
+    compile 'com.github.bumptech.glide:glide:3.8.0'
 }
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 27
 
     defaultConfig {
         applicationId "com.devbrackets.android.playlistcoredemo"
-        minSdkVersion 14
-        targetSdkVersion 25
+        minSdkVersion 16
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
+
+        vectorDrawables.useSupportLibrary = true
     }
 
     lintOptions {

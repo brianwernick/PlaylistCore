@@ -1,16 +1,21 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.widget.VideoView;
 
-import com.devbrackets.android.playlistcore.api.VideoPlayerApi;
+import com.devbrackets.android.exomedia.ui.widget.VideoControls;
+import com.devbrackets.android.exomedia.ui.widget.VideoView;
+import com.devbrackets.android.playlistcore.data.PlaybackState;
+import com.devbrackets.android.playlistcore.listener.PlaylistListener;
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
+import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
-public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
-    private VideoView videoView;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem> {
+    public VideoView videoView;
 
     public VideoApi(VideoView videoView) {
         this.videoView = videoView;
@@ -18,6 +23,8 @@ public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
         videoView.setOnErrorListener(this);
         videoView.setOnPreparedListener(this);
         videoView.setOnCompletionListener(this);
+        videoView.setOnSeekCompletionListener(this);
+        videoView.setOnBufferUpdateListener(this);
     }
 
     @Override
@@ -42,8 +49,7 @@ public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
 
     @Override
     public void reset() {
-        videoView.stopPlayback();
-        videoView.setVideoURI(null);
+        // Purposefully left blank
     }
 
     @Override
@@ -53,7 +59,7 @@ public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
 
     @Override
     public void setVolume(@FloatRange(from = 0.0, to = 1.0) float left, @FloatRange(from = 0.0, to = 1.0) float right) {
-        //Not supported by the VideoView
+        videoView.setVolume((left + right) / 2);
     }
 
     @Override
@@ -61,11 +67,22 @@ public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
         videoView.seekTo((int)milliseconds);
     }
 
+
     @Override
-    public void setDataSource(@NonNull Uri uri) {
+    public boolean getHandlesOwnAudioFocus() {
+        return false;
+    }
+
+    @Override
+    public boolean handlesItem(@NotNull MediaItem item) {
+        return item.getMediaType() == BasePlaylistManager.VIDEO;
+    }
+
+    @Override
+    public void playItem(@NotNull MediaItem item) {
         prepared = false;
         bufferPercent = 0;
-        videoView.setVideoURI(uri);
+        videoView.setVideoURI(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
     }
 
     @Override
@@ -83,12 +100,29 @@ public class VideoApi extends BaseMediaApi implements VideoPlayerApi {
         return bufferPercent;
     }
 
+    /*
+     * PlaylistListener methods used for keeping the VideoControls provided
+     * by the ExoMedia VideoView up-to-date with the current playback state
+     */
     @Override
-    public void onPrepared(MediaPlayer mp) {
-        super.onPrepared(mp);
+    public boolean onPlaylistItemChanged(@Nullable MediaItem currentItem, boolean hasNext, boolean hasPrevious) {
+        VideoControls videoControls = videoView.getVideoControls();
+        if (videoControls != null && currentItem != null) {
+            // Updates the VideoControls display text
+            videoControls.setTitle(currentItem.getTitle());
+            videoControls.setSubTitle(currentItem.getAlbum());
+            videoControls.setDescription(currentItem.getArtist());
 
-        //Registers the rest of the listeners we need the MediaPlayer for
-        mp.setOnSeekCompleteListener(this);
-        mp.setOnBufferingUpdateListener(this);
+            // Updates the VideoControls button visibilities
+            videoControls.setPreviousButtonEnabled(hasPrevious);
+            videoControls.setNextButtonEnabled(hasNext);
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onPlaybackStateChanged(@NotNull PlaybackState playbackState) {
+        return false;
     }
 }

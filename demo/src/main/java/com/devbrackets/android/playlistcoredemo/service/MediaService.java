@@ -1,72 +1,44 @@
 package com.devbrackets.android.playlistcoredemo.service;
 
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
-import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
-import com.devbrackets.android.playlistcore.helper.AudioFocusHelper;
+import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;
+import com.devbrackets.android.playlistcore.components.playlisthandler.DefaultPlaylistHandler;
+import com.devbrackets.android.playlistcore.components.playlisthandler.PlaylistHandler;
 import com.devbrackets.android.playlistcoredemo.App;
-import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.helper.AudioApi;
+import com.devbrackets.android.playlistcoredemo.helper.cast.CastMediaPlayer;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
-import com.devbrackets.android.playlistcoredemo.ui.activity.StartupActivity;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
 
 /**
  * A simple service that extends {@link BasePlaylistService} in order to provide
  * the application specific information required.
  */
-public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager> implements AudioFocusHelper.AudioFocusCallback {
-    private static final int NOTIFICATION_ID = 468; //Arbitrary
-    private static final int FOREGROUND_REQUEST_CODE = 246; //Arbitrary
-    private static final float AUDIO_DUCK_VOLUME = 0.1f;
-
-    private Bitmap defaultLargeNotificationImage;
-    private Bitmap largeNotificationImage;
-    private Bitmap remoteViewArtwork;
-
-    private NotificationImageTarget notificationImageTarget = new NotificationImageTarget();
-    private RemoteViewImageTarget remoteViewImageTarget = new RemoteViewImageTarget();
-
-    //Picasso is an image loading library (NOTE: google now recommends using glide for image loading)
-    private Picasso picasso;
+public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager> implements
+        CastMediaPlayer.OnConnectionChangeListener,
+        CastMediaPlayer.OnMediaInfoChangeListener {
 
     @Override
     public void onCreate() {
         super.onCreate();
-        picasso = Picasso.with(getApplicationContext());
+
+        // Adds the audio player implementation, otherwise there's nothing to play media with
+        getPlaylistManager().getMediaPlayers().add(new CastMediaPlayer(getApplicationContext(), this, this));
+        getPlaylistManager().getMediaPlayers().add(new AudioApi(getApplicationContext()));
     }
 
     @Override
-    protected void performOnMediaCompletion() {
-        //Handles moving to the next playable item
-        performNext();
-        immediatelyPause = false;
-    }
+    public void onDestroy() {
+        super.onDestroy();
 
-    @Override
-    protected int getNotificationId() {
-        return NOTIFICATION_ID;
-    }
+        // Releases and clears all the MediaPlayers
+        for (MediaPlayerApi<MediaItem> player : getPlaylistManager().getMediaPlayers()) {
+            player.release();
+        }
 
-    @NonNull
-    @Override
-    protected AudioPlayerApi getNewAudioPlayer() {
-        return new AudioApi(new MediaPlayer());
-    }
-
-    @Override
-    protected float getAudioDuckVolume() {
-        return AUDIO_DUCK_VOLUME;
+        getPlaylistManager().getMediaPlayers().clear();
     }
 
     @NonNull
@@ -77,103 +49,39 @@ public class MediaService extends BasePlaylistService<MediaItem, PlaylistManager
 
     @NonNull
     @Override
-    protected PendingIntent getNotificationClickPendingIntent() {
-        Intent intent = new Intent(getApplicationContext(), StartupActivity.class);
-        return PendingIntent.getActivity(getApplicationContext(), FOREGROUND_REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }
+    public PlaylistHandler<MediaItem> newPlaylistHandler() {
+        MediaImageProvider imageProvider = new MediaImageProvider(getApplicationContext(), new MediaImageProvider.OnImageUpdatedListener() {
+            @Override
+            public void onImageUpdated() {
+                getPlaylistHandler().updateMediaControls();
+            }
+        });
 
-    @Override
-    protected Bitmap getDefaultLargeNotificationImage() {
-        if (defaultLargeNotificationImage == null) {
-            defaultLargeNotificationImage  = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
-        }
-
-        return defaultLargeNotificationImage;
-    }
-
-    @Nullable
-    @Override
-    protected Bitmap getDefaultLargeNotificationSecondaryImage() {
-        return null;
-    }
-
-    @Override
-    protected int getNotificationIconRes() {
-        return R.mipmap.ic_launcher;
-    }
-
-    @Override
-    protected int getRemoteViewIconRes() {
-        return R.mipmap.ic_launcher;
-    }
-
-    @Override
-    protected void updateLargeNotificationImage(int size, MediaItem playlistItem) {
-        picasso.load(playlistItem.getThumbnailUrl()).into(notificationImageTarget);
-    }
-
-    @Override
-    protected void updateRemoteViewArtwork(MediaItem playlistItem) {
-        picasso.load(playlistItem.getArtworkUrl()).into(remoteViewImageTarget);
-    }
-
-    @Nullable
-    @Override
-    protected Bitmap getRemoteViewArtwork() {
-        return remoteViewArtwork;
-    }
-
-    @Nullable
-    @Override
-    protected Bitmap getLargeNotificationImage() {
-        return largeNotificationImage;
+        return new DefaultPlaylistHandler.Builder<>(
+                getApplicationContext(),
+                getClass(),
+                getPlaylistManager(),
+                imageProvider
+        ).build();
     }
 
     /**
-     * A class used to listen to the loading of the large notification images and perform
-     * the correct functionality to update the notification once it is loaded.
-     *
-     * <b>NOTE:</b> This is a Picasso Image loader class
+     * An implementation for the chromecast MediaPlayer {@link CastMediaPlayer} that allows us to inform the
+     * {@link PlaylistHandler} that the state changed (which will handle swapping between local and remote playback).
      */
-    private class NotificationImageTarget implements Target {
-        @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            largeNotificationImage = bitmap;
-            onLargeNotificationImageUpdated();
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
-            largeNotificationImage = null;
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-            //Purposefully left blank
-        }
+    @Override
+    public void onCastMediaPlayerConnectionChange(@NonNull CastMediaPlayer player, @NonNull MediaPlayerApi.RemoteConnectionState state) {
+        getPlaylistHandler().onRemoteMediaPlayerConnectionChange(player, state);
     }
 
     /**
-     * A class used to listen to the loading of the large remote view images and perform
-     * the correct functionality to update the artwork once it is loaded.
-     *
-     * <b>NOTE:</b> This is a Picasso Image loader class
+     * An implementation for the chromecast MediaPlayer {@link CastMediaPlayer} that allow us to inform the
+     * {@link PlaylistHandler} that the information for the current media item has changed. This will normally
+     * be called for state synchronization when we are informed that the media item has actually started, paused,
+     * etc.
      */
-    private class RemoteViewImageTarget implements Target {
-        @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            remoteViewArtwork = bitmap;
-            onRemoteViewArtworkUpdated();
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable errorDrawable) {
-            remoteViewArtwork = null;
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-            //Purposefully left blank
-        }
+    @Override
+    public void onMediaInfoChange(@NonNull CastMediaPlayer player) {
+        getPlaylistHandler().updateMediaControls();
     }
 }

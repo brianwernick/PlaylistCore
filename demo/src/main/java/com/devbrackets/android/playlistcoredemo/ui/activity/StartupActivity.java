@@ -1,12 +1,12 @@
 package com.devbrackets.android.playlistcoredemo.ui.activity;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.ui.adapter.StartupListAdapter;
 
@@ -18,7 +18,7 @@ public class StartupActivity extends AppCompatActivity implements AdapterView.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.startup_activity);
 
-        ListView exampleList = (ListView) findViewById(R.id.startup_activity_list);
+        ListView exampleList = findViewById(R.id.startup_activity_list);
         exampleList.setAdapter(new StartupListAdapter(this));
         exampleList.setOnItemClickListener(this);
     }
@@ -27,24 +27,14 @@ public class StartupActivity extends AppCompatActivity implements AdapterView.On
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         switch (position) {
             case StartupListAdapter.INDEX_AUDIO_PLAYBACK:
-                showAudioSelectionActivity();
+                MediaSelectionActivity.show(this, BasePlaylistManager.AUDIO);
                 break;
 
             case StartupListAdapter.INDEX_VIDEO_PLAYBACK:
-                showVideoSelectionActivity();
+                MediaSelectionActivity.show(this, BasePlaylistManager.VIDEO);
                 break;
 
             default:
         }
-    }
-
-    private void showVideoSelectionActivity() {
-        Intent intent = new Intent(this, VideoSelectionActivity.class);
-        startActivity(intent);
-    }
-
-    private void showAudioSelectionActivity() {
-        Intent intent = new Intent(this, AudioSelectionActivity.class);
-        startActivity(intent);
     }
 }

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.MediaRouteButton;
 import android.text.format.DateUtils;
 import android.view.View;
 import android.widget.ImageButton;
@@ -12,18 +13,19 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.devbrackets.android.playlistcore.event.MediaProgress;
-import com.devbrackets.android.playlistcore.event.PlaylistItemChange;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
+import com.devbrackets.android.playlistcore.data.MediaProgress;
+import com.devbrackets.android.playlistcore.data.PlaybackState;
+import com.devbrackets.android.playlistcore.data.PlaylistItemChange;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.listener.ProgressListener;
-import com.devbrackets.android.playlistcore.service.BasePlaylistService;
-import com.devbrackets.android.playlistcore.service.PlaylistServiceCore;
 import com.devbrackets.android.playlistcoredemo.App;
 import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.devbrackets.android.playlistcoredemo.data.Samples;
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
-import com.squareup.picasso.Picasso;
+import com.google.android.gms.cast.framework.CastButtonFactory;
 
 import java.util.Formatter;
 import java.util.LinkedList;
@@ -53,14 +55,20 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private boolean shouldSetDuration;
     private boolean userInteracting;
 
+    private TextView titleTextView;
+    private TextView subtitleTextView;
+    private TextView descriptionTextView;
+
     private ImageButton previousButton;
     private ImageButton playPauseButton;
     private ImageButton nextButton;
 
+    private MediaRouteButton castButton;
+
     private PlaylistManager playlistManager;
     private int selectedPosition = 0;
 
-    private Picasso picasso;
+    private RequestManager glide;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,14 +107,19 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
 
         //Loads the new image
         if (currentItem != null) {
-            picasso.load(currentItem.getArtworkUrl()).into(artworkView);
+            glide.load(currentItem.getArtworkUrl()).into(artworkView);
         }
+
+        // Updates the title, subtitle, and description
+        titleTextView.setText(currentItem != null ? currentItem.getTitle() : "");
+        subtitleTextView.setText(currentItem != null ? currentItem.getAlbum() : "");
+        descriptionTextView.setText(currentItem != null ? currentItem.getArtist() : "");
 
         return true;
     }
 
     @Override
-    public boolean onPlaybackStateChanged(@NonNull BasePlaylistService.PlaybackState playbackState) {
+    public boolean onPlaybackStateChanged(@NonNull PlaybackState playbackState) {
         switch (playbackState) {
             case STOPPED:
                 finish();
@@ -155,11 +168,11 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
     private void updateCurrentPlaybackInformation() {
         PlaylistItemChange<MediaItem> itemChange = playlistManager.getCurrentItemChange();
         if (itemChange != null) {
-            onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.hasNext(), itemChange.hasPrevious());
+            onPlaylistItemChanged(itemChange.getCurrentItem(), itemChange.getHasNext(), itemChange.getHasPrevious());
         }
 
-        PlaylistServiceCore.PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
-        if (currentPlaybackState != PlaylistServiceCore.PlaybackState.STOPPED) {
+        PlaybackState currentPlaybackState = playlistManager.getCurrentPlaybackState();
+        if (currentPlaybackState != PlaybackState.STOPPED) {
             onPlaybackStateChanged(currentPlaybackState);
         }
 
@@ -186,7 +199,8 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
         retrieveViews();
         setupListeners();
 
-        picasso = Picasso.with(getApplicationContext());
+        glide = Glide.with(this);
+        CastButtonFactory.setUpMediaRouteButton(getApplicationContext(), castButton);
 
         boolean generatedPlaylist = setupPlaylistManager();
         startPlayback(generatedPlaylist);
@@ -211,7 +225,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
      * @param isPlaying True if the audio item is currently playing
      */
     private void updatePlayPauseImage(boolean isPlaying) {
-        int resId = isPlaying ? R.drawable.playlistcore_ic_pause_black : R.drawable.playlistcore_ic_play_arrow_black;
+        int resId = isPlaying ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_black_24dp;
         playPauseButton.setImageResource(resId);
     }
 
@@ -280,17 +294,23 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
      * xml layout file.
      */
     private void retrieveViews() {
-        loadingBar = (ProgressBar)findViewById(R.id.audio_player_loading);
-        artworkView = (ImageView)findViewById(R.id.audio_player_image);
+        loadingBar = findViewById(R.id.audio_player_loading);
+        artworkView = findViewById(R.id.audio_player_image);
 
-        currentPositionView = (TextView)findViewById(R.id.audio_player_position);
-        durationView = (TextView)findViewById(R.id.audio_player_duration);
+        currentPositionView = findViewById(R.id.audio_player_position);
+        durationView = findViewById(R.id.audio_player_duration);
 
-        seekBar = (SeekBar)findViewById(R.id.audio_player_seek);
+        seekBar = findViewById(R.id.audio_player_seek);
 
-        previousButton = (ImageButton)findViewById(R.id.audio_player_previous);
-        playPauseButton = (ImageButton)findViewById(R.id.audio_player_play_pause);
-        nextButton = (ImageButton)findViewById(R.id.audio_player_next);
+        titleTextView = findViewById(R.id.title_text_view);
+        subtitleTextView = findViewById(R.id.subtitle_text_view);
+        descriptionTextView = findViewById(R.id.description_text_view);
+
+        previousButton = findViewById(R.id.audio_player_previous);
+        playPauseButton = findViewById(R.id.audio_player_play_pause);
+        nextButton = findViewById(R.id.audio_player_next);
+
+        castButton = findViewById(R.id.media_route_button);
     }
 
     /**

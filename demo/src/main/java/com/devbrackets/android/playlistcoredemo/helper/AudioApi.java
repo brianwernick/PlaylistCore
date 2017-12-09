@@ -1,25 +1,34 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
 import android.content.Context;
-import android.media.MediaPlayer;
+import android.media.AudioManager;
 import android.net.Uri;
+import android.os.PowerManager;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
-import com.devbrackets.android.playlistcore.api.AudioPlayerApi;
+import com.devbrackets.android.exomedia.AudioPlayer;
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
+import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
-public class AudioApi extends BaseMediaApi implements AudioPlayerApi {
-    private MediaPlayer audioPlayer;
+import org.jetbrains.annotations.NotNull;
 
-    public AudioApi(MediaPlayer audioPlayer) {
-        this.audioPlayer = audioPlayer;
+public class AudioApi extends BaseMediaApi {
+    @NonNull
+    private AudioPlayer audioPlayer;
+
+    public AudioApi(@NonNull Context context) {
+        this.audioPlayer = new AudioPlayer(context.getApplicationContext());
 
         audioPlayer.setOnErrorListener(this);
         audioPlayer.setOnPreparedListener(this);
         audioPlayer.setOnCompletionListener(this);
-        audioPlayer.setOnSeekCompleteListener(this);
-        audioPlayer.setOnBufferingUpdateListener(this);
+        audioPlayer.setOnSeekCompletionListener(this);
+        audioPlayer.setOnBufferUpdateListener(this);
+
+        audioPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
+        audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
     }
 
     @Override
@@ -39,7 +48,7 @@ public class AudioApi extends BaseMediaApi implements AudioPlayerApi {
 
     @Override
     public void stop() {
-        audioPlayer.stop();
+        audioPlayer.stopPlayback();
     }
 
     @Override
@@ -63,29 +72,25 @@ public class AudioApi extends BaseMediaApi implements AudioPlayerApi {
     }
 
     @Override
-    public void setStreamType(int streamType) {
-        audioPlayer.setAudioStreamType(streamType);
+    public boolean getHandlesOwnAudioFocus() {
+        return false;
     }
 
     @Override
-    public void setWakeMode(@NonNull Context context, int mode) {
-        audioPlayer.setWakeMode(context, mode);
+    public boolean handlesItem(@NotNull MediaItem item) {
+        return item.getMediaType() == BasePlaylistManager.AUDIO;
     }
 
     @Override
-    public void setDataSource(@NonNull Context context, @NonNull Uri uri) {
+    public void playItem(@NotNull MediaItem item) {
         try {
             prepared = false;
             bufferPercent = 0;
-            audioPlayer.setDataSource(context, uri);
+            audioPlayer.setDataSource(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
+            audioPlayer.prepareAsync();
         } catch (Exception e) {
             //Purposefully left blank
         }
-    }
-
-    @Override
-    public void prepareAsync() {
-        audioPlayer.prepareAsync();
     }
 
     @Override
