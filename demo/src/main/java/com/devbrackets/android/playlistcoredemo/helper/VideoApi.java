@@ -3,6 +3,8 @@ package com.devbrackets.android.playlistcoredemo.helper;
 import android.net.Uri;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.devbrackets.android.exomedia.ui.widget.VideoControls;
 import com.devbrackets.android.exomedia.ui.widget.VideoView;
@@ -10,9 +12,6 @@ import com.devbrackets.android.playlistcore.data.PlaybackState;
 import com.devbrackets.android.playlistcore.listener.PlaylistListener;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem> {
     public VideoView videoView;
@@ -74,12 +73,12 @@ public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem
     }
 
     @Override
-    public boolean handlesItem(@NotNull MediaItem item) {
+    public boolean handlesItem(@NonNull MediaItem item) {
         return item.getMediaType() == BasePlaylistManager.VIDEO;
     }
 
     @Override
-    public void playItem(@NotNull MediaItem item) {
+    public void playItem(@NonNull MediaItem item) {
         prepared = false;
         bufferPercent = 0;
         videoView.setVideoURI(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
@@ -122,7 +121,7 @@ public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem
     }
 
     @Override
-    public boolean onPlaybackStateChanged(@NotNull PlaybackState playbackState) {
+    public boolean onPlaybackStateChanged(@NonNull PlaybackState playbackState) {
         return false;
     }
 }

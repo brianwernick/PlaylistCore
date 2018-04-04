@@ -12,8 +12,6 @@ import com.devbrackets.android.exomedia.AudioPlayer;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 
-import org.jetbrains.annotations.NotNull;
-
 public class AudioApi extends BaseMediaApi {
     @NonNull
     private AudioPlayer audioPlayer;
@@ -77,12 +75,12 @@ public class AudioApi extends BaseMediaApi {
     }
 
     @Override
-    public boolean handlesItem(@NotNull MediaItem item) {
+    public boolean handlesItem(@NonNull MediaItem item) {
         return item.getMediaType() == BasePlaylistManager.AUDIO;
     }
 
     @Override
-    public void playItem(@NotNull MediaItem item) {
+    public void playItem(@NonNull MediaItem item) {
         try {
             prepared = false;
             bufferPercent = 0;

@@ -13,6 +13,7 @@ import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.gms.cast.MediaInfo;
+import com.google.android.gms.cast.MediaLoadOptions;
 import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.cast.framework.CastContext;
 import com.google.android.gms.cast.framework.CastSession;
@@ -211,7 +212,12 @@ public class CastMediaPlayer implements MediaPlayerApi<MediaItem> {
 
         RemoteMediaClient remoteMediaClient = getMediaClient();
         if (remoteMediaClient != null) {
-            remoteMediaClient.load(mediaInfo, false, 0).setResultCallback(preparedResultCallback);
+            MediaLoadOptions loadOptions = new MediaLoadOptions.Builder()
+                    .setAutoplay(false)
+                    .setPlayPosition(0)
+                    .build();
+
+            remoteMediaClient.load(mediaInfo, loadOptions).setResultCallback(preparedResultCallback);
         } else {
             if (mediaStatusListener != null) {
                 mediaStatusListener.onError(this);

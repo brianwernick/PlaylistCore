@@ -13,10 +13,10 @@ def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}" // releas
 
 dependencies {
     // Kotlin
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
     // Android
-    compile "com.android.support:support-media-compat:$rootProject.ext.supportLibVersion"
+    api "com.android.support:support-media-compat:$rootProject.ext.supportLibVersion"
 }
 
 android {
@@ -62,10 +62,12 @@ uploadArchives {
 
 // ======= BINTRAY DEPLOY (command: $ ./gradlew clean build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PdryRun=false) ====
 publish {
+    userOrg = ""
     groupId = libraryGroupId
     artifactId = libraryBaseName
     uploadName = 'PlaylistCore'
-    version = libraryVersion
+    publishVersion = libraryVersion
+    desc = ""
     autoPublish = false
     dryRun = false
 }

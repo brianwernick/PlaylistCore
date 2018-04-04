@@ -35,7 +35,7 @@ Due to the length an example would be, please see the Demo app
 License
 -------
 
-    Copyright 2016-2017 Brian Wernick
+    Copyright 2016-2018 Brian Wernick
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

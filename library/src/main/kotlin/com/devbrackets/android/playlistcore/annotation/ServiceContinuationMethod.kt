@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 - 2017 Brian Wernick
+ * Copyright (C) 2016 - 2018 Brian Wernick
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import android.app.Service
 import android.support.annotation.IntDef
 
 @IntDef(
-        Service.START_STICKY.toLong(),
-        Service.START_NOT_STICKY.toLong(),
-        Service.START_REDELIVER_INTENT.toLong()
+        Service.START_STICKY,
+        Service.START_NOT_STICKY,
+        Service.START_REDELIVER_INTENT
 )
 @Retention(AnnotationRetention.SOURCE)
 annotation class ServiceContinuationMethod

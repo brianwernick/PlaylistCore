@@ -1,5 +1,7 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
+import android.support.annotation.NonNull;
+
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
 import com.devbrackets.android.exomedia.listener.OnCompletionListener;
 import com.devbrackets.android.exomedia.listener.OnErrorListener;
@@ -8,8 +10,6 @@ import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener;
 import com.devbrackets.android.playlistcoredemo.data.MediaItem;
-
-import org.jetbrains.annotations.NotNull;
 
 public abstract class BaseMediaApi implements MediaPlayerApi<MediaItem>,
         OnPreparedListener,
@@ -24,7 +24,7 @@ public abstract class BaseMediaApi implements MediaPlayerApi<MediaItem>,
     protected MediaStatusListener<MediaItem> mediaStatusListener;
 
     @Override
-    public void setMediaStatusListener(@NotNull MediaStatusListener<MediaItem> listener) {
+    public void setMediaStatusListener(@NonNull MediaStatusListener<MediaItem> listener) {
         mediaStatusListener = listener;
     }
 

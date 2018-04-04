@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 - 2017 Brian Wernick
+ * Copyright (C) 2016 - 2018 Brian Wernick
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import android.support.annotation.IntDef
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 
 @IntDef(flag = true,
-        value = longArrayOf(
-                BasePlaylistManager.AUDIO.toLong(),
-                BasePlaylistManager.VIDEO.toLong()
-        )
+        value = [
+            BasePlaylistManager.AUDIO,
+            BasePlaylistManager.VIDEO
+        ]
 )
 @Retention(AnnotationRetention.SOURCE)
 annotation class SupportedMediaType
