@@ -75,7 +75,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * @return True if there is an item after the current one
      */
     open val isNextAvailable: Boolean
-        get() = currentPosition + 1 < itemCount
+        get() = currentPosition != INVALID_POSITION && currentPosition + 1 < itemCount
 
     /**
      * Determines if there is an item in the play list before the current one.
@@ -112,7 +112,11 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
     @IntRange(from = INVALID_POSITION.toLong())
     var currentPosition = INVALID_POSITION
         set(value) {
-            field = Math.min(Math.max(INVALID_POSITION, value), itemCount -1)
+            field = if (value < 0 || value >= itemCount) {
+                INVALID_POSITION
+            } else {
+                value
+            }
         }
 
     @IntRange(from = INVALID_ID)
@@ -346,7 +350,10 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * @return The next Item or null
      */
     open fun next(): I? {
-        currentPosition =  Math.min(currentPosition + 1, itemCount)
+        if (currentPosition != INVALID_POSITION) {
+            currentPosition = Math.min(currentPosition + 1, itemCount)
+        }
+
         return currentItem
     }
 
@@ -358,7 +365,10 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
      * @return The previous Item or null
      */
     open fun previous(): I? {
-        currentPosition = Math.max(0, currentPosition -1)
+        if (currentPosition != INVALID_POSITION) {
+            currentPosition = Math.max(0, currentPosition - 1)
+        }
+
         return currentItem
     }
 
