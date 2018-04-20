@@ -323,7 +323,9 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
             this.startPaused = startPaused
 
             updateCurrentMediaPlayer(it)
-            play(currentMediaPlayer, it)
+            if (!play(currentMediaPlayer, it)) {
+                next()
+            }
         }
     }
 
@@ -400,6 +402,11 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     }
 
     protected open fun updateCurrentMediaPlayer(item: I?) {
+        if (mediaPlayers.isEmpty()) {
+            Log.d(TAG, "No media players available, stopping service")
+            stop()
+        }
+
         val newMediaPlayer = item?.let { getMediaPlayerForItem(it) }
         if (newMediaPlayer != currentMediaPlayer) {
             listener?.onMediaPlayerChanged(currentMediaPlayer, newMediaPlayer)
