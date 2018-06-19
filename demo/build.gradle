@@ -10,10 +10,10 @@ dependencies {
 
     // Chromecast support
     implementation "com.android.support:mediarouter-v7:$rootProject.ext.supportLibVersion"
-    implementation 'com.google.android.gms:play-services-cast-framework:15.0.0'
+    implementation 'com.google.android.gms:play-services-cast-framework:15.0.1'
 
     // Media playback (video and audio) library using ExoPlayer
-    implementation 'com.devbrackets.android:exomedia:4.1.0'
+    implementation 'com.devbrackets.android:exomedia:4.2.1'
 
     // Image Loading
     implementation 'com.github.bumptech.glide:glide:4.6.1'
