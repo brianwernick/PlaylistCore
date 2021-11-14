@@ -509,7 +509,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   protected open fun getIntentFlags(): Int {
     return when {
-      Build.VERSION.SDK_INT < 23 -> PendingIntent.FLAG_UPDATE_CURRENT
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.M -> PendingIntent.FLAG_UPDATE_CURRENT
       else -> PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     }
   }

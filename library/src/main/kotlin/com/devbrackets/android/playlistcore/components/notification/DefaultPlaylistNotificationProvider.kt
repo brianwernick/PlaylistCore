@@ -73,11 +73,8 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
       setAutoCancel(allowSwipe)
       setOngoing(!allowSwipe)
 
-      //Set the notification category on lollipop
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        setCategory(Notification.CATEGORY_TRANSPORT)
-        setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-      }
+      setCategory(Notification.CATEGORY_TRANSPORT)
+      setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
       setActions(this, info, serviceClass)
       setStyle(buildMediaStyle(mediaSession, serviceClass))
@@ -157,7 +154,7 @@ open class DefaultPlaylistNotificationProvider(protected val context: Context) :
 
   protected open fun getIntentFlags(): Int {
     return when {
-      Build.VERSION.SDK_INT < 23 -> PendingIntent.FLAG_UPDATE_CURRENT
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.M -> PendingIntent.FLAG_UPDATE_CURRENT
       else -> PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     }
   }
