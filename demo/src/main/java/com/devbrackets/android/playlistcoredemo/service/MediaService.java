@@ -1,6 +1,6 @@
 package com.devbrackets.android.playlistcoredemo.service;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi;
 import com.devbrackets.android.playlistcore.service.BasePlaylistService;

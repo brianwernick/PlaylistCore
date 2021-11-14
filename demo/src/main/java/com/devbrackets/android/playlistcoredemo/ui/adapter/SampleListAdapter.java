@@ -1,7 +1,6 @@
 package com.devbrackets.android.playlistcoredemo.ui.adapter;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +11,8 @@ import com.devbrackets.android.playlistcoredemo.R;
 import com.devbrackets.android.playlistcoredemo.data.Samples;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
 
 public class SampleListAdapter extends BaseAdapter {
 

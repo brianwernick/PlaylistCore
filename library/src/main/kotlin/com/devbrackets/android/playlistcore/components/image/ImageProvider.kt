@@ -16,7 +16,7 @@
 package com.devbrackets.android.playlistcore.components.image
 
 import android.graphics.Bitmap
-import android.support.annotation.DrawableRes
+import androidx.annotation.DrawableRes
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 interface ImageProvider<in I: PlaylistItem> {

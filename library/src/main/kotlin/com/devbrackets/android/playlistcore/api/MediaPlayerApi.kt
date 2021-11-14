@@ -16,8 +16,8 @@
 
 package com.devbrackets.android.playlistcore.api
 
-import android.support.annotation.FloatRange
-import android.support.annotation.IntRange
+import androidx.annotation.FloatRange
+import androidx.annotation.IntRange
 import com.devbrackets.android.playlistcore.data.MediaProgress
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 

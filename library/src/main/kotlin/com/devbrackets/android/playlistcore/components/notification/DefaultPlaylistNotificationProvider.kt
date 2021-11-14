@@ -21,8 +21,8 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.support.v4.app.NotificationCompat
-import android.support.v4.media.app.NotificationCompat.MediaStyle
+import androidx.core.app.NotificationCompat
+import androidx.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.data.MediaInfo
