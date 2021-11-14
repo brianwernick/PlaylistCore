@@ -20,7 +20,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.support.annotation.IntRange
+import androidx.annotation.IntRange
 import android.util.Log
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.PlaylistItem

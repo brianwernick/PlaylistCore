@@ -18,7 +18,7 @@ package com.devbrackets.android.playlistcore.manager
 
 import android.app.Application
 import android.app.Service
-import android.support.annotation.IntRange
+import androidx.annotation.IntRange
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**

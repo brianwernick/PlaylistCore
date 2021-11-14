@@ -1,73 +1,55 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'maven'
-apply plugin: 'com.novoda.bintray-release'
 
-def versionMajor = 2
-def versionMinor = 0
-def versionPatch = 1
+afterEvaluate {
+  apply from: 'gradle/publish.gradle'
+}
 
-def libraryGroupId = 'com.devbrackets.android'
-def libraryBaseName = 'playlistcore'
-def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}" // release version
+/**
+ * Holds the information associated with the library needed for the
+ * bintray plugin to publish the artifact
+ */
+class LibraryInfo {
+  static Integer versionMajor = 2
+  static Integer versionMinor = 0
+  static Integer versionPatch = 1
+
+  static String artifactId = 'playlistcore'
+  static String groupId = 'com.devbrackets.android'
+  static String versionName = "${versionMajor}.${versionMinor}.${versionPatch}"
+  static Integer versionCode = versionMajor * 10_000 + versionMinor * 1_000 + versionPatch * 100
+}
+
+static def getLibraryInfo() {
+  return new LibraryInfo()
+}
 
 dependencies {
-    // Kotlin
-    api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+  // Kotlin
+  api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-    // Android
-    api "com.android.support:support-media-compat:$rootProject.ext.supportLibVersion"
+  // Android
+  api 'androidx.media:media:1.4.3'
 }
 
 android {
-    compileSdkVersion 27
+  compileSdkVersion 31
 
-    defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 27
+  defaultConfig {
+    minSdkVersion 16
+    targetSdkVersion 31
+  }
 
-        versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100
-        versionName "${versionMajor}.${versionMinor}.${versionPatch}"
-    }
+  lintOptions {
+    abortOnError false
+  }
 
-
-    lintOptions {
-        abortOnError false
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
+  sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
+  }
 }
 
 // Disables javadoc because it fails on kotlin files
 tasks.withType(Javadoc).all {
-    enabled = false
-}
-
-// ======== MAVEN DEPLOY to local cache or nexus repo (to make accessible to local projects) (command: ./gradlew clean aRel uploadArchives) ========
-uploadArchives {
-    repositories {
-        // deploy to local
-        mavenDeployer {
-            repository (url: "file://${System.env.HOME}/.m2/repository/")
-            pom.groupId = libraryGroupId
-            pom.artifactId = libraryBaseName
-            pom.version = libraryVersion //Normally I would append "-SNAPSHOT" but newer gradle/maven can't always find them
-            pom.packaging = 'aar'
-            uniqueVersion = false // don't put in a timestamp on the filename (other project will not be able to depend on it)
-        }
-    }
-}
-
-// ======= BINTRAY DEPLOY (command: $ ./gradlew clean build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PdryRun=false) ====
-publish {
-    userOrg = ""
-    groupId = libraryGroupId
-    artifactId = libraryBaseName
-    uploadName = 'PlaylistCore'
-    publishVersion = libraryVersion
-    desc = ""
-    autoPublish = false
-    dryRun = false
+  enabled = false
 }

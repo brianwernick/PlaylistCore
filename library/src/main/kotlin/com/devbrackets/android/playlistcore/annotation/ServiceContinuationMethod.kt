@@ -17,7 +17,7 @@
 package com.devbrackets.android.playlistcore.annotation
 
 import android.app.Service
-import android.support.annotation.IntDef
+import androidx.annotation.IntDef
 
 @IntDef(
         Service.START_STICKY,

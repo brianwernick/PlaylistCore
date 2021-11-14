@@ -4,9 +4,9 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.PowerManager;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 
 import com.devbrackets.android.exomedia.AudioPlayer;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;

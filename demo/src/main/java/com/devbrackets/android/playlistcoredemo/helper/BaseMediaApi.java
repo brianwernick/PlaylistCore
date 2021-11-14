@@ -1,6 +1,6 @@
 package com.devbrackets.android.playlistcoredemo.helper;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
 import com.devbrackets.android.exomedia.listener.OnCompletionListener;
