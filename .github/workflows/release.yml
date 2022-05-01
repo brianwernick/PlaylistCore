@@ -1,7 +1,10 @@
-name: Publish
+name: "Release"
 
 on:
-  workflow_dispatch:
+  pull_request: # TODO: only for testing purposes, remove before merging
+    types:
+      - opened
+      - synchronize
   release:
     types: [released] # TODO: should this be on a release or should we have a manual action that creates the release?
 
