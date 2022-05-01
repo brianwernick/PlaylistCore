@@ -1,10 +1,7 @@
 import org.gradle.execution.plan.Node
 
-/**
- * Provides the functionality to upload to local maven repositories (for testing
- * purposes) and to push to jcenter for official releases
- */
-apply plugin: 'maven-publish'
+apply plugin: "maven-publish"
+apply plugin: "signing"
 
 task androidJavaDoc(type: Javadoc) {
   source = android.sourceSets.main.java.srcDirs
@@ -27,12 +24,20 @@ task androidSourcesJar(type: Jar) {
 }
 
 /**
- * Bintray Deploy
- * `$ ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForJcenterPublication bintrayUpload`
+ * Deploy to Maven Central (Sonatype)
+ * `$ ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishToSonatype closeSonatypeStagingRepository`
+ *
+ * ** NOTE: **
+ * This expects the following environment variables to be present
+ *  - `SONATYPE_TOKEN_USERNAME` : The username for the user token in Sonatype
+ *  - `SONATYPE_TOKEN_PASSWORD` : The password for the user token in Sonatype
+ *  - `SIGNING_KEY_ID` : The ID for the GPG signing key to sign the library with
+ *  - `SIGNING_KEY` : The GPG key to sign the library with
+ *  - `SIGNING_KEY_PASSWORD` : The password for the `SIGNING_KEY`
  */
 publishing {
   publications {
-    jcenter(MavenPublication) {
+    nexus(MavenPublication) {
       groupId project.getLibraryInfo().groupId
       artifactId project.getLibraryInfo().artifactId
       version project.getLibraryInfo().versionName
@@ -41,66 +46,78 @@ publishing {
       artifact androidJavaDocJar
       artifact androidSourcesJar
 
-      // The generated POM doesn't include dependencies when building Android artifacts, so we manually
-      // add the dependencies to the POM here
-      pom.withXml {
-        def rootNode = asNode().appendNode('dependencies')
+      pom {
+        name = project.getLibraryInfo().groupId
+        url = "https://github.com/brianwernick/PlaylistCore"
+        licenses {
+          license {
+            name = "The Apache License, Version 2.0"
+            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+          }
+        }
+        scm {
+          connection = 'scm:git:github.com/brianwernick/PlaylistCore.git'
+          developerConnection = 'scm:git:ssh://github.com/brianwernick/PlaylistCore.git'
+          url = 'https://github.com/brianwernick/PlaylistCore/tree/main'
+        }
 
-        /**
-         * Helper method to add dependencies to the POM node
-         */
-        ext.addDependency = { Node dependenciesNode, Dependency dependency, String dependencyScope ->
-          // We don't add incomplete dependencies
-          if (dependency.name == null ||
-              dependency.name == 'unspecified' ||
-              dependency.group == null ||
-              dependency.version == null) {
-            return
+        // The generated POM doesn't include dependencies when building Android artifacts, so we manually
+        // add the dependencies to the POM here
+        withXml {
+          def rootNode = asNode().appendNode('dependencies')
+
+          /**
+           * Helper method to add dependencies to the POM node
+           */
+          ext.addDependency = { Node dependenciesNode, Dependency dependency, String dependencyScope ->
+            // We don't add incomplete dependencies
+            if (dependency.name == null ||
+                dependency.name == 'unspecified' ||
+                dependency.group == null ||
+                dependency.version == null) {
+              return
+            }
+
+            def dependencyNode = dependenciesNode.appendNode('dependency')
+            dependencyNode.appendNode('groupId', dependency.group)
+            dependencyNode.appendNode('artifactId', dependency.name)
+            dependencyNode.appendNode('version', dependency.version)
+            dependencyNode.appendNode('scope', dependencyScope)
           }
 
-          def dependencyNode = dependenciesNode.appendNode('dependency')
-          dependencyNode.appendNode('groupId', dependency.group)
-          dependencyNode.appendNode('artifactId', dependency.name)
-          dependencyNode.appendNode('version', dependency.version)
-          dependencyNode.appendNode('scope', dependencyScope)
-        }
+          // Iterate over the implementation dependencies, adding a <dependency> node for each
+          configurations.implementation.dependencies.each {
+            addDependency(rootNode, it, "runtime")
+          }
 
-        // Iterate over the implementation dependencies, adding a <dependency> node for each
-        configurations.implementation.dependencies.each {
-          addDependency(rootNode, it, "runtime")
-        }
-
-        // Iterate over the api dependencies, adding a <dependency> node for each
-        configurations.api.dependencies.each {
-          addDependency(rootNode, it, "compile")
+          // Iterate over the api dependencies, adding a <dependency> node for each
+          configurations.api.dependencies.each {
+            addDependency(rootNode, it, "compile")
+          }
         }
       }
     }
   }
 }
 
-/**
- * Configure the Bintray repository values
- */
-//bintray {
-//    user = System.getenv('BINTRAY_USER')
-//    key = System.getenv('BINTRAY_KEY')
-//    setPublications('jcenter')
-//
-//    pkg {
-//        userOrg = 'brianwernick'
-//        repo = 'maven'
-//        name = 'PlaylistCore'
-//        licenses = ['Apache-2.0']
-//        desc = ''
-//        vcsUrl = 'https://github.com/brianwernick/PlaylistCore'
-//        issueTrackerUrl = 'https://github.com/brianwernick/PlaylistCore/issues'
-//        websiteUrl = 'http://devbrackets.com/dev/libs/playlistcore.html'
-//        githubRepo = 'https://github.com/brianwernick/PlaylistCore'
-//
-//        version {
-//            name = project.getLibraryInfo().versionName
-//            released = new Date()
-//        }
-//    }
-//}
+signing {
+  useInMemoryPgpKeys(
+      System.getenv("SIGNING_KEY_ID"),
+      System.getenv("SIGNING_KEY"),
+      System.getenv("SIGNING_KEY_PASSWORD"),
+  )
+
+  sign publishing.publications
+}
+
+// io.github.gradle-nexus.publish-plugin defined in the root build.gradle
+nexusPublishing {
+  repositories {
+    sonatype {
+      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+      username = System.getenv("SONATYPE_TOKEN_USERNAME")
+      password = System.getenv("SONATYPE_TOKEN_PASSWORD")
+    }
+  }
+}

@@ -11,8 +11,8 @@ afterEvaluate {
  */
 class LibraryInfo {
   static Integer versionMajor = 2
-  static Integer versionMinor = 0
-  static Integer versionPatch = 1
+  static Integer versionMinor = 1
+  static Integer versionPatch = 0
 
   static String artifactId = 'playlistcore'
   static String groupId = 'com.devbrackets.android'
