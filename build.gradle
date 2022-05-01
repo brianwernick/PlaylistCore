@@ -43,3 +43,7 @@ nexusPublishing {
     }
   }
 }
+
+// TODO: This is temporarily hacked to see if that's our issue, this should NOT be in the root project
+group = "com.devbrackets.android"
+version = "2.1.0"
