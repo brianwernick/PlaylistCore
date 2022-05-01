@@ -38,17 +38,17 @@ task androidSourcesJar(type: Jar) {
 publishing {
   publications {
     nexus(MavenPublication) {
-      groupId project.getLibraryInfo().groupId
-      artifactId project.getLibraryInfo().artifactId
-      version project.getLibraryInfo().versionName
+      groupId rootProject.ext.libraryInfo.groupId
+      artifactId rootProject.ext.libraryInfo.artifactId
+      version rootProject.ext.libraryInfo.versionName
 
       artifact bundleReleaseAar
       artifact androidJavaDocJar
       artifact androidSourcesJar
 
       pom {
-        name = project.getLibraryInfo().groupId
-        description = ''
+        name = rootProject.ext.libraryInfo.groupId
+        description = ""
         url = "https://github.com/brianwernick/PlaylistCore"
         licenses {
           license {
