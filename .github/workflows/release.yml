@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish:
-    name: Release build and publish
+    name: "Release"
     runs-on: ubuntu-20.04
     steps:
       - name: "Checkout"
@@ -22,7 +22,7 @@ jobs:
           java-version: '11'
           cache: 'gradle'
       - name: "Build & Release"
-        run: ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishToSonatype # TODO: include closeAndReleaseSonatypeStagingRepository
+        run: ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishNexusPublicationToSonatypeRepository # TODO: include closeAndReleaseSonatypeStagingRepository
         env:
           SONATYPE_TOKEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_USERNAME }}
           SONATYPE_TOKEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASSWORD }}

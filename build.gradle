@@ -29,3 +29,17 @@ allprojects {
     }
   }
 }
+
+// io.github.gradle-nexus.publish-plugin defined in the root build.gradle
+// NOTE: Ideally this would be in the publish.gradle file, however the plugin seems to expect it in the
+// root build.gradle
+nexusPublishing {
+  repositories {
+    sonatype {
+      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+      username = System.getenv("SONATYPE_TOKEN_USERNAME")
+      password = System.getenv("SONATYPE_TOKEN_PASSWORD")
+    }
+  }
+}

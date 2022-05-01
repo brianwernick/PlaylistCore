@@ -25,7 +25,7 @@ task androidSourcesJar(type: Jar) {
 
 /**
  * Deploy to Maven Central (Sonatype)
- * `$ ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishToSonatype closeSonatypeStagingRepository`
+ * `$ ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishNexusPublicationToSonatypeRepository closeSonatypeStagingRepository`
  *
  * ** NOTE: **
  * This expects the following environment variables to be present
@@ -48,6 +48,7 @@ publishing {
 
       pom {
         name = project.getLibraryInfo().groupId
+        description = ''
         url = "https://github.com/brianwernick/PlaylistCore"
         licenses {
           license {
@@ -107,17 +108,5 @@ signing {
       System.getenv("SIGNING_KEY_PASSWORD"),
   )
 
-  sign publishing.publications
-}
-
-// io.github.gradle-nexus.publish-plugin defined in the root build.gradle
-nexusPublishing {
-  repositories {
-    sonatype {
-      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-      username = System.getenv("SONATYPE_TOKEN_USERNAME")
-      password = System.getenv("SONATYPE_TOKEN_PASSWORD")
-    }
-  }
+  sign publishing.publications.nexus
 }
