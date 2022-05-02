@@ -24,6 +24,23 @@ task androidSourcesJar(type: Jar) {
 }
 
 /**
+ * Helper to add dependencies to the POM node. This is needed during manual construction
+ * of the dependencies block
+ */
+static def addPomDependency(Node dependenciesNode, Dependency dependency, String dependencyScope) {
+  // Ignore incomplete dependencies
+  if (dependency.name == null || dependency.name == 'unspecified' || dependency.group == null || dependency.version == null) {
+    return
+  }
+
+  def dependencyNode = dependenciesNode.appendNode('dependency')
+  dependencyNode.appendNode('groupId', dependency.group)
+  dependencyNode.appendNode('artifactId', dependency.name)
+  dependencyNode.appendNode('version', dependency.version)
+  dependencyNode.appendNode('scope', dependencyScope)
+}
+
+/**
  * Deploy to Maven Central (Sonatype)
  * `$ ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishNexusPublicationToSonatypeRepository closeSonatypeStagingRepository`
  *
@@ -47,7 +64,7 @@ publishing {
       artifact androidSourcesJar
 
       pom {
-        name = rootProject.ext.libraryInfo.groupId
+        name = "Playlist Core"
         description = ""
         url = "https://github.com/brianwernick/PlaylistCore"
         licenses {
@@ -67,33 +84,14 @@ publishing {
         withXml {
           def rootNode = asNode().appendNode('dependencies')
 
-          /**
-           * Helper method to add dependencies to the POM node
-           */
-          ext.addDependency = { Node dependenciesNode, Dependency dependency, String dependencyScope ->
-            // We don't add incomplete dependencies
-            if (dependency.name == null ||
-                dependency.name == 'unspecified' ||
-                dependency.group == null ||
-                dependency.version == null) {
-              return
-            }
-
-            def dependencyNode = dependenciesNode.appendNode('dependency')
-            dependencyNode.appendNode('groupId', dependency.group)
-            dependencyNode.appendNode('artifactId', dependency.name)
-            dependencyNode.appendNode('version', dependency.version)
-            dependencyNode.appendNode('scope', dependencyScope)
-          }
-
           // Iterate over the implementation dependencies, adding a <dependency> node for each
           configurations.implementation.dependencies.each {
-            addDependency(rootNode, it, "runtime")
+            addPomDependency(rootNode, it, "runtime")
           }
 
           // Iterate over the api dependencies, adding a <dependency> node for each
           configurations.api.dependencies.each {
-            addDependency(rootNode, it, "compile")
+            addPomDependency(rootNode, it, "compile")
           }
         }
       }
