@@ -2,7 +2,7 @@ name: "Release"
 
 on:
   release:
-    types: [released] # TODO: should this be on a release or should we have a manual action that creates the release?
+    types: [released]
 
 jobs:
   publish:
