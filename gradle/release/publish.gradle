@@ -1,4 +1,3 @@
-import org.gradle.execution.plan.Node
 
 apply plugin: "maven-publish"
 apply plugin: "signing"
@@ -27,7 +26,7 @@ task androidSourcesJar(type: Jar) {
  * Helper to add dependencies to the POM node. This is needed during manual construction
  * of the dependencies block
  */
-static def addPomDependency(Node dependenciesNode, Dependency dependency, String dependencyScope) {
+static def addPomDependency(groovy.util.Node dependenciesNode, Dependency dependency, String dependencyScope) {
   // Ignore incomplete dependencies
   if (dependency.name == null || dependency.name == 'unspecified' || dependency.group == null || dependency.version == null) {
     return
@@ -82,16 +81,16 @@ publishing {
         // The generated POM doesn't include dependencies when building Android artifacts, so we manually
         // add the dependencies to the POM here
         withXml {
-          def rootNode = asNode().appendNode('dependencies')
+          def dependenciesNode = asNode().appendNode('dependencies')
 
           // Iterate over the implementation dependencies, adding a <dependency> node for each
           configurations.implementation.dependencies.each {
-            addPomDependency(rootNode, it, "runtime")
+            addPomDependency(dependenciesNode, it, "runtime")
           }
 
           // Iterate over the api dependencies, adding a <dependency> node for each
           configurations.api.dependencies.each {
-            addPomDependency(rootNode, it, "compile")
+            addPomDependency(dependenciesNode, it, "compile")
           }
         }
       }
