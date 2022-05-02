@@ -1,10 +1,6 @@
 name: "Release"
 
 on:
-  pull_request: # TODO: only for testing purposes, remove before merging
-    types:
-      - opened
-      - synchronize
   release:
     types: [released] # TODO: should this be on a release or should we have a manual action that creates the release?
 
@@ -22,7 +18,7 @@ jobs:
           java-version: '11'
           cache: 'gradle'
       - name: "Build & Release"
-        run: ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishNexusPublicationToSonatypeRepository # TODO: include closeAndReleaseSonatypeStagingRepository
+        run: ./gradlew clean library:assembleRelease androidJavaDocJar androidSourcesJar generatePomFileForNexusPublication publishNexusPublicationToSonatypeRepository closeAndReleaseSonatypeStagingRepository
         env:
           SONATYPE_TOKEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_USERNAME }}
           SONATYPE_TOKEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASSWORD }}
