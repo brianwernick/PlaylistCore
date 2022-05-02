@@ -2,26 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 afterEvaluate {
-  apply from: 'gradle/publish.gradle'
-}
-
-/**
- * Holds the information associated with the library needed for the
- * bintray plugin to publish the artifact
- */
-class LibraryInfo {
-  static Integer versionMajor = 2
-  static Integer versionMinor = 0
-  static Integer versionPatch = 1
-
-  static String artifactId = 'playlistcore'
-  static String groupId = 'com.devbrackets.android'
-  static String versionName = "${versionMajor}.${versionMinor}.${versionPatch}"
-  static Integer versionCode = versionMajor * 10_000 + versionMinor * 1_000 + versionPatch * 100
-}
-
-static def getLibraryInfo() {
-  return new LibraryInfo()
+  apply from: '../gradle/release/publish.gradle'
 }
 
 dependencies {

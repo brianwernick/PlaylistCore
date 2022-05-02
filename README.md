@@ -13,19 +13,20 @@ The PlaylistCore documentation website can be found on the website linked above 
 
 Use
 -------
-The latest AAR (Android Archive) files can be downloaded from [JCenter][JCenter]  
-Or included in your gradle dependencies
+The latest version can be included from [Maven Central][Maven Central].
 
 ```gradle
 repositories {
-    jcenter();
+    mavenCentral()
 }
 
 dependencies {
     //...
-    compile 'com.devbrackets.android:playlistcore:2.0.1'
+    compile 'com.devbrackets.android:playlistcore:2.1.0'
 }
 ```
+
+###### NOTE: for versions before 2.1.0 see [JCenter][JCenter]
 
 Example
 -------
@@ -61,6 +62,7 @@ Attribution
  [Design Icons]: https://github.com/google/material-design-icons
  [CC 4.0]: http://creativecommons.org/licenses/by/4.0/
  [JCenter]: https://bintray.com/brianwernick/maven/PlaylistCore/view#files
+ [Maven Central]: https://s01.oss.sonatype.org/#nexus-search;quick~com.devbrackets.android.playlistcore
  [Website]: http://devbrackets.com/dev/libs/playlistcore.html
  [Java Docs]: http://devbrackets.com/dev/libs/docs/playlistcore/1.1.0/index.html
  [Apache 2.0]: https://opensource.org/licenses/Apache-2.0
