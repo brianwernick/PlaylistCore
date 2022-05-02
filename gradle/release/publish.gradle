@@ -63,8 +63,8 @@ publishing {
       artifact androidSourcesJar
 
       pom {
-        name = "Playlist Core"
-        description = ""
+        name = rootProject.ext.libraryInfo.groupId + ":" + rootProject.ext.libraryInfo.artifactId
+        description = "A media playback management library for Android"
         url = "https://github.com/brianwernick/PlaylistCore"
         licenses {
           license {
@@ -76,6 +76,14 @@ publishing {
           connection = 'scm:git:github.com/brianwernick/PlaylistCore.git'
           developerConnection = 'scm:git:ssh://github.com/brianwernick/PlaylistCore.git'
           url = 'https://github.com/brianwernick/PlaylistCore/tree/main'
+        }
+        developers {
+          developer {
+            name = 'Brian Wernick'
+            email = 'brian@devbrackets.com'
+            organization = 'DevBrackets'
+            organizationUrl = 'https://devbrackets.com'
+          }
         }
 
         // The generated POM doesn't include dependencies when building Android artifacts, so we manually
