@@ -164,6 +164,19 @@
                 android:layout_height="match_parent"/>
 
             <ImageButton
+                android:id="@+id/audio_player_stop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/ic_stop_black_24dp"
+                tools:ignore="ContentDescription"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="44dp"
+                android:layout_height="match_parent"/>
+
+            <ImageButton
                 android:id="@+id/audio_player_next"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

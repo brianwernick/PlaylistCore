@@ -61,6 +61,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
 
     private ImageButton previousButton;
     private ImageButton playPauseButton;
+    private ImageButton stopButton;
     private ImageButton nextButton;
 
     private MediaRouteButton castButton;
@@ -235,6 +236,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
      */
     public void loadCompleted() {
         playPauseButton.setVisibility(View.VISIBLE);
+        stopButton.setVisibility(View.VISIBLE);
         previousButton.setVisibility(View.VISIBLE);
         nextButton.setVisibility(View.VISIBLE );
 
@@ -247,6 +249,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
      */
     public void restartLoading() {
         playPauseButton.setVisibility(View.INVISIBLE);
+        stopButton.setVisibility(View.INVISIBLE);
         previousButton.setVisibility(View.INVISIBLE);
         nextButton.setVisibility(View.INVISIBLE );
 
@@ -308,6 +311,7 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
 
         previousButton = findViewById(R.id.audio_player_previous);
         playPauseButton = findViewById(R.id.audio_player_play_pause);
+        stopButton = findViewById(R.id.audio_player_stop);
         nextButton = findViewById(R.id.audio_player_next);
 
         castButton = findViewById(R.id.media_route_button);
@@ -332,6 +336,13 @@ public class AudioPlayerActivity extends AppCompatActivity implements PlaylistLi
             @Override
             public void onClick(View v) {
                 playlistManager.invokePausePlay();
+            }
+        });
+
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playlistManager.invokeStop();
             }
         });
 
