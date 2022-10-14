@@ -1,86 +1,62 @@
-package com.devbrackets.android.playlistcoredemo.data;
+package com.devbrackets.android.playlistcoredemo.data
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+object Samples {
+  val audio by lazy {
+    listOf(
+      audioSample("Marseilles -- The Arrival", 1),
+      audioSample("Father and Son", 2),
+      audioSample("The Catalans", 3),
+      audioSample("Conspiracy", 4),
+      audioSample("The Marriage Feast", 5),
+      audioSample("The Deputy Procureur Du Roi", 6),
+      audioSample("The Examination", 7),
+      audioSample("The Chateau D'lf", 8),
+      audioSample("The Evening of the Betrothal", 9),
+      audioSample("The Kings Closet at the Tuileries", 10)
+    )
+  }
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+  val video by lazy {
+    listOf(
+      videoSample("Big Buck Bunny (MP4)", "https://www.devbrackets.com/media/samples/video/big_buck_bunny.mp4"),
+      videoSample("Big Buck Bunny - Live (MPEG Dash)", "https://wowzaec2demo.streamlock.net/live/bigbuckbunny/manifest_mpm4sav_mvtime.mpd"),
+      videoSample("Caminandes (FLV)", "https://www.devbrackets.com/media/samples/video/caminandes_01.flv"),
+      videoSample(
+        "Caminandes (Smooth Stream)",
+        "http://amssamples.streaming.mediaservices.windows.net/634cd01c-6822-4630-8444-8dd6279f94c6/CaminandesLlamaDrama4K.ism/manifest"
+      ),
+      videoSample("Caminandes 2 (MP4)", "https://www.devbrackets.com/media/samples/video/caminandes_02.mp4"),
+      videoSample("Caminandes 3 (MP4)", "https://www.devbrackets.com/media/samples/video/caminandes_03.mp4"),
+      videoSample("Coffee Run (MKV)", "https://www.devbrackets.com/media/samples/video/coffee_run.mkv"),
+      videoSample("Coffee Run (WebM)", "https://www.devbrackets.com/media/samples/video/coffee_run.webm"),
+      videoSample("Elephants Dream (MP4)", "https://www.devbrackets.com/media/samples/video/elephants_dream.mp4"),
+      videoSample("Elephants Dream (HLS)", "https://www.devbrackets.com/media/samples/video/elephants_dream/elephants_dream.m3u8"),
+      videoSample("Sintel (WebM)", "https://www.devbrackets.com/media/samples/video/sintel.webm"),
+      videoSample("Sintel (MPEG Dash)", "https://bitdash-a.akamaihd.net/content/sintel/sintel.mpd"),
+      videoSample("Tears of Steel (MP4)", "https://www.devbrackets.com/media/samples/video/tears_of_steel.mp4")
+    )
+  }
 
-public class Samples {
-    @NonNull
-    private static final List<Sample> audioSamples;
-    @NonNull
-    private static final List<Sample> videoSamples;
+  private fun audioSample(title: String, chapter: Int): Sample {
+    val url = "https://www.devbrackets.com/media/samples/audio/count_of_monte_cristo/librivox_%03d.mp3".format(chapter)
+    val image = "https://www.devbrackets.com/media/samples/audio/count_of_monte_cristo/librivox_cover.jpg"
 
-    static {
-        String audioImage = "https://ia902708.us.archive.org/3/items/count_monte_cristo_0711_librivox/Count_Monte_Cristo_1110.jpg?cnt=0";
+    return Sample(title, url, Sample.Category.AUDIO, image)
+  }
 
-        /* AUDIO
-         * These items are licensed under CreativeCommons from LibriVox
-         * Additional files can be found at https://archive.org/details/count_monte_cristo_0711_librivox
-         */
-        audioSamples = new LinkedList<>();
-        audioSamples.add(new Sample("Marseilles -- The Arrival", "https://archive.org/download/count_monte_cristo_0711_librivox/count_of_monte_cristo_001_dumas.mp3", audioImage));
-        audioSamples.add(new Sample("Father and Son", "https://archive.org/download/count_monte_cristo_0711_librivox/count_of_monte_cristo_002_dumas.mp3", audioImage));
-        audioSamples.add(new Sample("The Catalans", "https://archive.org/download/count_monte_cristo_0711_librivox/count_of_monte_cristo_003_dumas.mp3", audioImage));
-        audioSamples.add(new Sample("Conspiracy", "https://archive.org/download/count_monte_cristo_0711_librivox/count_of_monte_cristo_004_dumas.mp3", audioImage));
+  private fun videoSample(title: String, url: String): Sample {
+    return Sample(title, url, Sample.Category.VIDEO)
+  }
 
-
-        /* VIDEO
-         * These items are licensed under multiple Public Domain and Open licenses
-         */
-        videoSamples = new ArrayList<>();
-        videoSamples.add(new Sample("Big Buck Bunny", "https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4"));
-        videoSamples.add(new Sample("Sintel", "https://bitdash-a.akamaihd.net/content/sintel/sintel.mpd"));
-        videoSamples.add(new Sample("Caminandes 3: Llamigos", "http://www.caminandes.com/download/03_caminandes_llamigos_1080p.mp4"));
+  class Sample(
+    val title: String,
+    val mediaUrl: String,
+    val category: Category,
+    val artworkUrl: String? = null
+  ) {
+    enum class Category {
+      AUDIO,
+      VIDEO
     }
-
-    @NonNull
-    public static List<Sample> getAudioSamples() {
-        return audioSamples;
-    }
-
-    @NonNull
-    public static List<Sample> getVideoSamples() {
-        return videoSamples;
-    }
-
-    /**
-     * A container for the information associated with a
-     * sample media item.
-     */
-    public static class Sample {
-        @NonNull
-        private String title;
-        @NonNull
-        private String mediaUrl;
-        @Nullable
-        private String artworkUrl;
-
-        public Sample(@NonNull String title, @NonNull String mediaUrl) {
-            this(title, mediaUrl, null);
-        }
-
-        public Sample(@NonNull String title, @NonNull String mediaUrl, @Nullable String artworkUrl) {
-            this.title = title;
-            this.mediaUrl = mediaUrl;
-            this.artworkUrl = artworkUrl;
-        }
-
-        @NonNull
-        public String getTitle() {
-            return title;
-        }
-
-        @NonNull
-        public String getMediaUrl() {
-            return mediaUrl;
-        }
-
-        @Nullable
-        public String getArtworkUrl() {
-            return artworkUrl;
-        }
-    }
+  }
 }

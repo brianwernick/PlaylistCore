@@ -1,35 +1,25 @@
-package com.devbrackets.android.playlistcoredemo;
+package com.devbrackets.android.playlistcoredemo
 
-import android.app.Application;
+import android.app.Application
+import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager
 
-import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
+class App : Application() {
+  val playlistManager: PlaylistManager by lazy {
+    PlaylistManager(this)
+  }
 
-public class App extends Application {
+  override fun onCreate() {
+    super.onCreate()
+    application = this
+  }
 
-    private static App application;
-    private static PlaylistManager playlistManager;
+  override fun onTerminate() {
+    super.onTerminate()
+    application = null
+  }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
-        application = this;
-        playlistManager = new PlaylistManager(this);
-    }
-
-    @Override
-    public void onTerminate() {
-        super.onTerminate();
-
-        application = null;
-        playlistManager = null;
-    }
-
-    public static PlaylistManager getPlaylistManager() {
-        return playlistManager;
-    }
-
-    public static App getApplication() {
-        return application;
-    }
+  companion object {
+    var application: App? = null
+      private set
+  }
 }

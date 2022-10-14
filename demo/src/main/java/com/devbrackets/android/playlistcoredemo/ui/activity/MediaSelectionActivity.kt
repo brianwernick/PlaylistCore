@@ -1,69 +1,66 @@
-package com.devbrackets.android.playlistcoredemo.ui.activity;
+package com.devbrackets.android.playlistcoredemo.ui.activity
 
-import android.app.Activity;
-import android.content.Intent;
-import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
-
-import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
-import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
-import com.devbrackets.android.playlistcoredemo.R;
-import com.devbrackets.android.playlistcoredemo.data.Samples;
-import com.devbrackets.android.playlistcoredemo.ui.adapter.SampleListAdapter;
-
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
+import android.view.View
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.ListView
+import androidx.appcompat.app.AppCompatActivity
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
+import com.devbrackets.android.playlistcoredemo.R
+import com.devbrackets.android.playlistcoredemo.data.Samples
+import com.devbrackets.android.playlistcoredemo.ui.activity.AudioPlayerActivity
+import com.devbrackets.android.playlistcoredemo.ui.activity.MediaSelectionActivity
+import com.devbrackets.android.playlistcoredemo.ui.activity.VideoPlayerActivity
+import com.devbrackets.android.playlistcoredemo.ui.adapter.SampleListAdapter
 
 /**
  * A simple activity that allows the user to select a chapter form "The Count of Monte Cristo"
  * or a sample video to play.
  */
-public class MediaSelectionActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
-    public static final String EXTRA_MEDIA_TYPE = "EXTRA_MEDIA_TYPE";
-
-    private boolean isAudio;
-
-    public static void show(@NonNull Activity activity, @SupportedMediaType long mediaType) {
-        Intent intent = new Intent(activity, MediaSelectionActivity.class);
-        intent.putExtra(EXTRA_MEDIA_TYPE, mediaType);
-        activity.startActivity(intent);
+class MediaSelectionActivity : AppCompatActivity(), OnItemClickListener {
+  private var isAudio = false
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.list_selection_activity)
+    isAudio = intent.getLongExtra(EXTRA_MEDIA_TYPE, BasePlaylistManager.AUDIO.toLong()) == BasePlaylistManager.AUDIO.toLong()
+    if (supportActionBar != null) {
+      supportActionBar!!.title = resources.getString(if (isAudio) R.string.title_audio_selection_activity else R.string.title_video_selection_activity)
     }
+    val exampleList = findViewById<ListView>(R.id.selection_activity_list)
+    exampleList.adapter = SampleListAdapter(this, if (isAudio) Samples.audio else Samples.video)
+    exampleList.onItemClickListener = this
+  }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.list_selection_activity);
-        isAudio = getIntent().getLongExtra(EXTRA_MEDIA_TYPE, BasePlaylistManager.AUDIO) == BasePlaylistManager.AUDIO;
-
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(getResources().getString(isAudio ? R.string.title_audio_selection_activity : R.string.title_video_selection_activity));
-        }
-
-        ListView exampleList = findViewById(R.id.selection_activity_list);
-        exampleList.setAdapter(new SampleListAdapter(this, isAudio ? Samples.getAudioSamples() : Samples.getVideoSamples()));
-        exampleList.setOnItemClickListener(this);
+  override fun onItemClick(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+    if (isAudio) {
+      startAudioPlayerActivity(position)
+    } else {
+      startVideoPlayerActivity(position)
     }
+  }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (isAudio) {
-            startAudioPlayerActivity(position);
-        } else {
-            startVideoPlayerActivity(position);
-        }
-    }
+  private fun startAudioPlayerActivity(selectedIndex: Int) {
+    val intent = Intent(this, AudioPlayerActivity::class.java)
+    intent.putExtra(AudioPlayerActivity.Companion.EXTRA_INDEX, selectedIndex)
+    startActivity(intent)
+  }
 
-    private void startAudioPlayerActivity(int selectedIndex) {
-        Intent intent = new Intent(this, AudioPlayerActivity.class);
-        intent.putExtra(AudioPlayerActivity.EXTRA_INDEX, selectedIndex);
-        startActivity(intent);
-    }
+  private fun startVideoPlayerActivity(selectedIndex: Int) {
+    val intent = Intent(this, VideoPlayerActivity::class.java)
+    intent.putExtra(VideoPlayerActivity.Companion.EXTRA_INDEX, selectedIndex)
+    startActivity(intent)
+  }
 
-    private void startVideoPlayerActivity(int selectedIndex) {
-        Intent intent = new Intent(this, VideoPlayerActivity.class);
-        intent.putExtra(VideoPlayerActivity.EXTRA_INDEX, selectedIndex);
-        startActivity(intent);
+  companion object {
+    const val EXTRA_MEDIA_TYPE = "EXTRA_MEDIA_TYPE"
+    fun show(activity: Activity, @SupportedMediaType mediaType: Long) {
+      val intent = Intent(activity, MediaSelectionActivity::class.java)
+      intent.putExtra(EXTRA_MEDIA_TYPE, mediaType)
+      activity.startActivity(intent)
     }
+  }
 }

@@ -1,128 +1,94 @@
-package com.devbrackets.android.playlistcoredemo.helper;
+package com.devbrackets.android.playlistcoredemo.helper
 
-import android.net.Uri;
+import android.net.Uri
+import androidx.annotation.FloatRange
+import androidx.annotation.IntRange
+import com.devbrackets.android.exomedia.ui.widget.VideoView
+import com.devbrackets.android.playlistcore.data.PlaybackState
+import com.devbrackets.android.playlistcore.listener.PlaylistListener
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
+import com.devbrackets.android.playlistcoredemo.data.MediaItem
 
-import com.devbrackets.android.exomedia.ui.widget.VideoControls;
-import com.devbrackets.android.exomedia.ui.widget.VideoView;
-import com.devbrackets.android.playlistcore.data.PlaybackState;
-import com.devbrackets.android.playlistcore.listener.PlaylistListener;
-import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
-import com.devbrackets.android.playlistcoredemo.data.MediaItem;
+class VideoApi(var videoView: VideoView?) : BaseMediaApi(), PlaylistListener<MediaItem> {
+  init {
+    videoView!!.setOnErrorListener(this)
+    videoView!!.setOnPreparedListener(this)
+    videoView!!.setOnCompletionListener(this)
+    videoView!!.setOnSeekCompletionListener(this)
+    videoView!!.setOnBufferUpdateListener(this)
+  }
 
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+  override val isPlaying: Boolean
+    get() = videoView!!.isPlaying
 
-public class VideoApi extends BaseMediaApi implements PlaylistListener<MediaItem> {
-    public VideoView videoView;
+  override fun play() {
+    videoView!!.start()
+  }
 
-    public VideoApi(VideoView videoView) {
-        this.videoView = videoView;
+  override fun pause() {
+    videoView!!.pause()
+  }
 
-        videoView.setOnErrorListener(this);
-        videoView.setOnPreparedListener(this);
-        videoView.setOnCompletionListener(this);
-        videoView.setOnSeekCompletionListener(this);
-        videoView.setOnBufferUpdateListener(this);
+  override fun stop() {
+    videoView!!.stopPlayback()
+  }
+
+  override fun reset() {
+    // Purposefully left blank
+  }
+
+  override fun release() {
+    videoView!!.suspend()
+  }
+
+  override fun setVolume(@FloatRange(from = 0.0, to = 1.0) left: Float, @FloatRange(from = 0.0, to = 1.0) right: Float) {
+    videoView!!.volume = (left + right) / 2
+  }
+
+  override fun seekTo(@IntRange(from = 0L) milliseconds: Long) {
+    videoView!!.seekTo(milliseconds.toInt().toLong())
+  }
+
+  override val handlesOwnAudioFocus: Boolean
+    get() = false
+
+  override fun handlesItem(item: MediaItem): Boolean {
+    return item.mediaType == BasePlaylistManager.VIDEO
+  }
+
+  override fun playItem(item: MediaItem) {
+    prepared = false
+    bufferPercent = 0
+    videoView!!.setVideoURI(Uri.parse(if (item.downloaded) item.downloadedMediaUri else item.mediaUrl))
+  }
+
+  override val currentPosition: Long
+    get() = if (prepared) videoView!!.currentPosition else 0
+  override val duration: Long
+    get() = if (prepared) videoView!!.duration else 0
+  override val bufferedPercent: Int
+    get() = bufferPercent
+
+  /*
+   * PlaylistListener methods used for keeping the VideoControls provided
+   * by the ExoMedia VideoView up-to-date with the current playback state
+   */
+  override fun onPlaylistItemChanged(currentItem: MediaItem?, hasNext: Boolean, hasPrevious: Boolean): Boolean {
+    val videoControls = videoView!!.videoControls
+    if (videoControls != null && currentItem != null) {
+      // Updates the VideoControls display text
+      videoControls.setTitle(currentItem.title)
+      videoControls.setSubTitle(currentItem.album)
+      videoControls.setDescription(currentItem.artist)
+
+      // Updates the VideoControls button visibilities
+      videoControls.setPreviousButtonEnabled(hasPrevious)
+      videoControls.setNextButtonEnabled(hasNext)
     }
+    return false
+  }
 
-    @Override
-    public boolean isPlaying() {
-        return videoView.isPlaying();
-    }
-
-    @Override
-    public void play() {
-        videoView.start();
-    }
-
-    @Override
-    public void pause() {
-        videoView.pause();
-    }
-
-    @Override
-    public void stop() {
-        videoView.stopPlayback();
-    }
-
-    @Override
-    public void reset() {
-        // Purposefully left blank
-    }
-
-    @Override
-    public void release() {
-        videoView.suspend();
-    }
-
-    @Override
-    public void setVolume(@FloatRange(from = 0.0, to = 1.0) float left, @FloatRange(from = 0.0, to = 1.0) float right) {
-        videoView.setVolume((left + right) / 2);
-    }
-
-    @Override
-    public void seekTo(@IntRange(from = 0L) long milliseconds) {
-        videoView.seekTo((int)milliseconds);
-    }
-
-
-    @Override
-    public boolean getHandlesOwnAudioFocus() {
-        return false;
-    }
-
-    @Override
-    public boolean handlesItem(@NonNull MediaItem item) {
-        return item.getMediaType() == BasePlaylistManager.VIDEO;
-    }
-
-    @Override
-    public void playItem(@NonNull MediaItem item) {
-        prepared = false;
-        bufferPercent = 0;
-        videoView.setVideoURI(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
-    }
-
-    @Override
-    public long getCurrentPosition() {
-        return prepared ? videoView.getCurrentPosition() : 0;
-    }
-
-    @Override
-    public long getDuration() {
-        return prepared ? videoView.getDuration() : 0;
-    }
-
-    @Override
-    public int getBufferedPercent() {
-        return bufferPercent;
-    }
-
-    /*
-     * PlaylistListener methods used for keeping the VideoControls provided
-     * by the ExoMedia VideoView up-to-date with the current playback state
-     */
-    @Override
-    public boolean onPlaylistItemChanged(@Nullable MediaItem currentItem, boolean hasNext, boolean hasPrevious) {
-        VideoControls videoControls = videoView.getVideoControls();
-        if (videoControls != null && currentItem != null) {
-            // Updates the VideoControls display text
-            videoControls.setTitle(currentItem.getTitle());
-            videoControls.setSubTitle(currentItem.getAlbum());
-            videoControls.setDescription(currentItem.getArtist());
-
-            // Updates the VideoControls button visibilities
-            videoControls.setPreviousButtonEnabled(hasPrevious);
-            videoControls.setNextButtonEnabled(hasNext);
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean onPlaybackStateChanged(@NonNull PlaybackState playbackState) {
-        return false;
-    }
+  override fun onPlaybackStateChanged(playbackState: PlaybackState): Boolean {
+    return false
+  }
 }

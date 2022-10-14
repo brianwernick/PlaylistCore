@@ -1,108 +1,82 @@
-package com.devbrackets.android.playlistcoredemo.helper;
+package com.devbrackets.android.playlistcoredemo.helper
 
-import android.content.Context;
-import android.media.AudioManager;
-import android.net.Uri;
-import android.os.PowerManager;
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
+import android.content.Context
+import android.media.AudioManager
+import android.net.Uri
+import android.os.PowerManager
+import androidx.annotation.FloatRange
+import androidx.annotation.IntRange
+import com.devbrackets.android.exomedia.AudioPlayer
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
+import com.devbrackets.android.playlistcoredemo.data.MediaItem
 
-import com.devbrackets.android.exomedia.AudioPlayer;
-import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
-import com.devbrackets.android.playlistcoredemo.data.MediaItem;
+class AudioApi(context: Context) : BaseMediaApi() {
+  private val audioPlayer: AudioPlayer
 
-public class AudioApi extends BaseMediaApi {
-    @NonNull
-    private AudioPlayer audioPlayer;
+  init {
+    audioPlayer = AudioPlayer(context.applicationContext)
+    audioPlayer.setOnErrorListener(this)
+    audioPlayer.setOnPreparedListener(this)
+    audioPlayer.setOnCompletionListener(this)
+    audioPlayer.setOnSeekCompletionListener(this)
+    audioPlayer.setOnBufferUpdateListener(this)
+    audioPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
+    audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC)
+  }
 
-    public AudioApi(@NonNull Context context) {
-        this.audioPlayer = new AudioPlayer(context.getApplicationContext());
+  override val isPlaying: Boolean
+    get() = audioPlayer.isPlaying
 
-        audioPlayer.setOnErrorListener(this);
-        audioPlayer.setOnPreparedListener(this);
-        audioPlayer.setOnCompletionListener(this);
-        audioPlayer.setOnSeekCompletionListener(this);
-        audioPlayer.setOnBufferUpdateListener(this);
+  override fun play() {
+    audioPlayer.start()
+  }
 
-        audioPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
-        audioPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+  override fun pause() {
+    audioPlayer.pause()
+  }
+
+  override fun stop() {
+    audioPlayer.stopPlayback()
+  }
+
+  override fun reset() {
+    audioPlayer.reset()
+  }
+
+  override fun release() {
+    audioPlayer.release()
+  }
+
+  override fun setVolume(@FloatRange(from = 0.0, to = 1.0) left: Float, @FloatRange(from = 0.0, to = 1.0) right: Float) {
+    audioPlayer.setVolume(left, right)
+  }
+
+  override fun seekTo(@IntRange(from = 0L) milliseconds: Long) {
+    audioPlayer.seekTo(milliseconds.toInt().toLong())
+  }
+
+  override val handlesOwnAudioFocus: Boolean
+    get() = false
+
+  override fun handlesItem(item: MediaItem): Boolean {
+    return item.mediaType == BasePlaylistManager.AUDIO
+  }
+
+  override fun playItem(item: MediaItem) {
+    try {
+      prepared = false
+      bufferPercent = 0
+      audioPlayer.setDataSource(Uri.parse(if (item.downloaded) item.downloadedMediaUri else item.mediaUrl))
+      audioPlayer.prepareAsync()
+    } catch (e: Exception) {
+      //Purposefully left blank
     }
+  }
 
-    @Override
-    public boolean isPlaying() {
-        return audioPlayer.isPlaying();
-    }
-
-    @Override
-    public void play() {
-        audioPlayer.start();
-    }
-
-    @Override
-    public void pause() {
-        audioPlayer.pause();
-    }
-
-    @Override
-    public void stop() {
-        audioPlayer.stopPlayback();
-    }
-
-    @Override
-    public void reset() {
-        audioPlayer.reset();
-    }
-
-    @Override
-    public void release() {
-        audioPlayer.release();
-    }
-
-    @Override
-    public void setVolume(@FloatRange(from = 0.0, to = 1.0) float left, @FloatRange(from = 0.0, to = 1.0) float right) {
-        audioPlayer.setVolume(left, right);
-    }
-
-    @Override
-    public void seekTo(@IntRange(from = 0L) long milliseconds) {
-        audioPlayer.seekTo((int)milliseconds);
-    }
-
-    @Override
-    public boolean getHandlesOwnAudioFocus() {
-        return false;
-    }
-
-    @Override
-    public boolean handlesItem(@NonNull MediaItem item) {
-        return item.getMediaType() == BasePlaylistManager.AUDIO;
-    }
-
-    @Override
-    public void playItem(@NonNull MediaItem item) {
-        try {
-            prepared = false;
-            bufferPercent = 0;
-            audioPlayer.setDataSource(Uri.parse(item.getDownloaded() ? item.getDownloadedMediaUri() : item.getMediaUrl()));
-            audioPlayer.prepareAsync();
-        } catch (Exception e) {
-            //Purposefully left blank
-        }
-    }
-
-    @Override
-    public long getCurrentPosition() {
-        return prepared ? audioPlayer.getCurrentPosition() : 0;
-    }
-
-    @Override
-    public long getDuration() {
-        return prepared ? audioPlayer.getDuration() : 0;
-    }
-
-    @Override
-    public int getBufferedPercent() {
-        return bufferPercent;
-    }
+  override val currentPosition: Long
+    get() = if (prepared) audioPlayer.currentPosition else 0
+  override val duration: Long
+    get() = if (prepared) audioPlayer.duration else 0
+  override val bufferedPercent: Int
+    get() = bufferPercent
 }

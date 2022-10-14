@@ -1,70 +1,47 @@
-package com.devbrackets.android.playlistcoredemo.data;
+package com.devbrackets.android.playlistcoredemo.data
 
-import com.devbrackets.android.playlistcore.annotation.SupportedMediaType;
-import com.devbrackets.android.playlistcore.api.PlaylistItem;
-import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager;
+import com.devbrackets.android.playlistcore.annotation.SupportedMediaType
+import com.devbrackets.android.playlistcore.api.PlaylistItem
+import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
+
 
 /**
- * A custom {@link PlaylistItem}
+ * A custom [PlaylistItem]
  * to hold the information pertaining to the audio and video items
  */
-public class MediaItem implements PlaylistItem {
-    private Samples.Sample sample;
-    boolean isAudio;
+class MediaItem(
+  private val sample: Samples.Sample,
+  internal var isAudio: Boolean
+) : PlaylistItem {
 
-    public MediaItem(Samples.Sample sample, boolean isAudio) {
-        this.sample = sample;
-        this.isAudio = isAudio;
-    }
+  override val id: Long
+    get() = 0
 
-    @Override
-    public long getId() {
-        return 0;
-    }
+  override val downloaded: Boolean
+    get() = false
 
-    @Override
-    public boolean getDownloaded() {
-        return false;
-    }
+  @SupportedMediaType
+  override val mediaType: Int
+    get() = if (isAudio) BasePlaylistManager.AUDIO else BasePlaylistManager.VIDEO
 
-    @Override
-    @SupportedMediaType
-    public int getMediaType() {
-        return isAudio ? PlaylistManager.AUDIO : PlaylistManager.VIDEO;
-    }
+  override val mediaUrl: String
+    get() = sample.mediaUrl
 
-    @Override
-    public String getMediaUrl() {
-        return sample.getMediaUrl();
-    }
+  override val downloadedMediaUri: String?
+    get() = null
 
-    @Override
-    public String getDownloadedMediaUri() {
-        return null;
-    }
+  override val thumbnailUrl: String?
+    get() = sample.artworkUrl
 
-    @Override
-    public String getThumbnailUrl() {
-        return sample.getArtworkUrl();
-    }
+  override val artworkUrl: String?
+    get() = sample.artworkUrl
 
-    @Override
-    public String getArtworkUrl() {
-        return sample.getArtworkUrl();
-    }
+  override val title: String
+    get() = sample.title
 
-    @Override
-    public String getTitle() {
-        return sample.getTitle();
-    }
+  override val album: String
+    get() = "PlaylistCore Demo"
 
-    @Override
-    public String getAlbum() {
-        return "PlaylistCore Demo";
-    }
-
-    @Override
-    public String getArtist() {
-        return "Unknown Artist";
-    }
+  override val artist: String
+    get() = "Unknown Artist"
 }
