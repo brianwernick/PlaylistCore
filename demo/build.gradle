@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 dependencies {
   implementation project(':library')
@@ -30,6 +31,19 @@ android {
     versionName "1.0"
 
     vectorDrawables.useSupportLibrary = true
+  }
+
+  sourceSets {
+    main.java.srcDirs += "src/main/kotlin"
+  }
+
+  kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_1_8
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
   }
 
   lintOptions {
