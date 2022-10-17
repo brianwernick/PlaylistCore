@@ -22,8 +22,11 @@ open class DefaultMediaSessionProvider(
     const val RECEIVER_EXTRA_CLASS = "com.devbrackets.android.playlistcore.RECEIVER_EXTRA_CLASS"
   }
 
+  @Deprecated("These class level intents are no-longer used. If you need to override these values use the onPlay()/onPause()")
   protected var playPausePendingIntent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass)
+  @Deprecated("These class level intents are no-longer used. If you need to override these values use the onSkipToNext()")
   protected var nextPendingIntent = createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass)
+  @Deprecated("These class level intents are no-longer used. If you need to override these values use the onSkipToPrevious()")
   protected var previousPendingIntent = createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass)
 
   protected val mediaSession: MediaSessionCompat by lazy {
@@ -39,38 +42,51 @@ open class DefaultMediaSessionProvider(
     mediaSession.setCallback(this)
 
     // Updates the current media MetaData
-    val metaDataBuilder = MediaMetadataCompat.Builder()
-    metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, mediaInfo.title)
-    metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, mediaInfo.album)
-    metaDataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, mediaInfo.artist)
+    val builder = MediaMetadataCompat.Builder()
+    builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, mediaInfo.title)
+    builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, mediaInfo.album)
+    builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, mediaInfo.artist)
+    builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mediaInfo.playbackDurationMs)
 
     // Updates the icon
     BitmapFactory.decodeResource(context.resources, mediaInfo.appIcon)?.let {
-      metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, it)
+      builder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, it)
     }
 
     // Updates the artwork
     if (mediaInfo.artwork != null) {
-      metaDataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mediaInfo.artwork)
+      builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mediaInfo.artwork)
     }
 
-    mediaSession.setMetadata(metaDataBuilder.build())
+    mediaSession.setMetadata(builder.build())
   }
 
   override fun onPlay() {
-    sendPendingIntent(playPausePendingIntent)
+    val intent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass)
+    sendPendingIntent(intent)
   }
 
   override fun onPause() {
-    sendPendingIntent(playPausePendingIntent)
+    val intent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass)
+    sendPendingIntent(intent)
   }
 
   override fun onSkipToNext() {
-    sendPendingIntent(nextPendingIntent)
+    val intent = createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass)
+    sendPendingIntent(intent)
   }
 
   override fun onSkipToPrevious() {
-    sendPendingIntent(previousPendingIntent)
+    val intent = createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass)
+    sendPendingIntent(intent)  }
+
+  override fun onSeekTo(pos: Long) {
+    val intent = Intent(context, serviceClass)
+    intent.action = RemoteActions.ACTION_SEEK_ENDED
+    intent.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, pos)
+
+    val pi = PendingIntent.getService(context, 0, intent, getIntentFlags())
+    sendPendingIntent(pi)
   }
 
   /**

@@ -5,6 +5,7 @@ import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import android.view.KeyEvent
 import com.devbrackets.android.playlistcore.data.RemoteActions
@@ -26,7 +27,7 @@ open class DefaultMediaSessionControlsReceiver : BroadcastReceiver() {
 
   /**
    * Performs the functionality to handle the [Intent.ACTION_MEDIA_BUTTON] intent
-   * action.  This will pass the appropriate value to the [com.devbrackets.android.playlistcore.service.BasePlaylistService]
+   * action. This will pass the appropriate value to the [com.devbrackets.android.playlistcore.service.BasePlaylistService]
    *
    * @param context The Context the intent was received with
    * @param intent The Intent that was received
@@ -85,7 +86,12 @@ open class DefaultMediaSessionControlsReceiver : BroadcastReceiver() {
     val intent = Intent(context, serviceClass)
     intent.action = action
 
-    return PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    val intentFlags = when {
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.M -> PendingIntent.FLAG_UPDATE_CURRENT
+      else -> PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+    }
+
+    return PendingIntent.getService(context, 0, intent, intentFlags)
   }
 
   /**

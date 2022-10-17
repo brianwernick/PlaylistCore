@@ -3,6 +3,7 @@ package com.devbrackets.android.playlistcore.components.playlisthandler
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import com.devbrackets.android.playlistcore.R
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
@@ -236,7 +237,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
   }
 
   protected open fun setupForeground() {
-    serviceCallbacks.runAsForeground(notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass))
+    val notification = notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass)
+    serviceCallbacks.runAsForeground(notificationId, notification)
   }
 
   /**
@@ -282,6 +284,9 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     mediaInfo.appIcon = imageProvider.notificationIconRes
     mediaInfo.artwork = imageProvider.remoteViewArtwork
     mediaInfo.largeNotificationIcon = imageProvider.largeNotificationImage
+
+    mediaInfo.playbackPositionMs = currentMediaPlayer?.currentPosition ?: PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
+    mediaInfo.playbackDurationMs = currentMediaPlayer?.duration ?: -1
   }
 
   override fun updateMediaControls() {
@@ -294,7 +299,8 @@ open class DefaultPlaylistHandler<I : PlaylistItem, out M : BasePlaylistManager<
     mediaControlsProvider.update(mediaInfo, mediaSessionProvider.get())
 
     // Updates the notification
-    notificationManager.notify(mediaInfo.notificationId, notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass))
+    val notification = notificationProvider.buildNotification(mediaInfo, mediaSessionProvider.get(), serviceClass)
+    notificationManager.notify(mediaInfo.notificationId, notification)
   }
 
   override fun refreshCurrentMediaPlayer() {

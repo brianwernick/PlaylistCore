@@ -1,6 +1,7 @@
 package com.devbrackets.android.playlistcore.data
 
 import android.graphics.Bitmap
+import android.support.v4.media.session.PlaybackStateCompat
 import com.devbrackets.android.playlistcore.api.PlaylistItem
 
 /**
@@ -17,6 +18,9 @@ open class MediaInfo {
   var appIcon: Int = 0
   var notificationId: Int = 0
 
+  var playbackPositionMs: Long = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
+  var playbackDurationMs: Long = -1
+
   var mediaState: MediaState = MediaState()
 
   val title: String get() = playlistItem?.title.orEmpty()
@@ -30,6 +34,9 @@ open class MediaInfo {
 
     largeNotificationIcon = null
     artwork = null
+
+    playbackPositionMs = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
+    playbackDurationMs = -1
   }
 
   open class MediaState {
