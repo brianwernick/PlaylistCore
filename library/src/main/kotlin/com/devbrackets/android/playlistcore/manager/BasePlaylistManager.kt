@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2016 - 2021 Brian Wernick
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.devbrackets.android.playlistcore.manager
 
 import android.app.Application
@@ -37,6 +21,8 @@ import com.devbrackets.android.playlistcore.service.BasePlaylistService
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * A manager to keep track of a playlist of items that a service can use for playback.
@@ -45,8 +31,11 @@ import java.util.concurrent.locks.ReentrantLock
  * used as standalone with a custom service, or in conjunction with
  * [BasePlaylistService]
  */
-abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: Application, protected val mediaServiceClass: Class<out Service>) :
-  PlaylistListener<I>, ProgressListener {
+@Suppress("MemberVisibilityCanBePrivate")
+abstract class BasePlaylistManager<I : PlaylistItem>(
+  protected val application: Application,
+  protected val mediaServiceClass: Class<out Service>
+) : PlaylistListener<I>, ProgressListener {
   companion object {
     private const val TAG = "PlaylistManager"
 
@@ -56,7 +45,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
     /**
      * A flag used to represent either an Audio item or
      * support for Audio items.  This is a flag that is
-     * referenced by [.allowedTypeFlag] and
+     * referenced by [allowedTypeFlag] and
      * [PlaylistItem.mediaType]
      */
     const val AUDIO = 1
@@ -64,7 +53,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
     /**
      * A flag used to represent either a Video item or
      * support for Video items.  This is a flag that is
-     * referenced by [.allowedTypeFlag] and
+     * referenced by [allowedTypeFlag] and
      * [PlaylistItem.mediaType]
      */
     const val VIDEO = 1 shl 1
@@ -154,7 +143,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   /**
    * This is a pass through method that is called from the [BasePlaylistService] to inform
-   * any listeners that are registered through [.registerPlaylistListener]
+   * any listeners that are registered through [registerPlaylistListener]
    *
    * @param currentItem The new playback item
    * @param hasNext True if there exists an item after the `currentItem` in the playlist
@@ -169,7 +158,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   /**
    * This is a pass through method that is called from the [BasePlaylistService] to inform
-   * any listeners that are registered through [.registerPlaylistListener]
+   * any listeners that are registered through [registerPlaylistListener]
    *
    * @param playbackState The new media playback state
    * @return True if the event should be consumed
@@ -182,7 +171,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   /**
    * This is a pass through method that is called from the [BasePlaylistService] to inform
-   * any listeners that are registered through [.registerPlaylistListener]
+   * any listeners that are registered through [registerPlaylistListener]
    *
    * @param mediaProgress The current media progress
    * @return True if the mediaProgress should be consumed
@@ -291,11 +280,13 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
   open fun play(@IntRange(from = 0) seekPosition: Long, startPaused: Boolean) {
     currentItem ?: return
 
-    //Starts the playlist service
-    val intent = Intent(application, mediaServiceClass)
-    intent.action = RemoteActions.ACTION_START_SERVICE
-    intent.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition)
-    intent.putExtra(RemoteActions.ACTION_EXTRA_START_PAUSED, startPaused)
+    // Starts the playlist service
+    val intent = Intent(application, mediaServiceClass).apply {
+      action = RemoteActions.ACTION_START_SERVICE
+      putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition)
+      putExtra(RemoteActions.ACTION_EXTRA_START_PAUSED, startPaused)
+    }
+
     application.startService(intent)
   }
 
@@ -345,14 +336,14 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   /**
    * Updates the currently selected item to the next one and retrieves the
-   * Item representing that item.  If there aren't any items in the play
+   * Item representing that item. If there aren't any items in the play
    * list or there isn't a next item then null will be returned.
    *
    * @return The next Item or null
    */
   open fun next(): I? {
     if (currentPosition != INVALID_POSITION) {
-      currentPosition = Math.min(currentPosition + 1, itemCount)
+      currentPosition = min(currentPosition + 1, itemCount)
     }
 
     return currentItem
@@ -360,14 +351,14 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   /**
    * Updates the currently selected item to the previous one and retrieves the
-   * Item representing that item.  If there aren't any items in the play
+   * Item representing that item. If there aren't any items in the play
    * list or there isn't a previous item then null will be returned.
    *
    * @return The previous Item or null
    */
   open fun previous(): I? {
     if (currentPosition != INVALID_POSITION) {
-      currentPosition = Math.max(0, currentPosition - 1)
+      currentPosition = max(0, currentPosition - 1)
     }
 
     return currentItem
@@ -431,7 +422,7 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
    * key [RemoteActions.ACTION_EXTRA_SEEK_POSITION] (long)
    */
   open fun invokeSeekEnded(@IntRange(from = 0) seekPosition: Long) {
-    //Tries to start the intent
+    // Tries to start the intent
     seekEndedIntent?.let {
       it.putExtra(RemoteActions.ACTION_EXTRA_SEEK_POSITION, seekPosition)
       application.startService(it)
@@ -461,9 +452,8 @@ abstract class BasePlaylistManager<I : PlaylistItem>(protected val application: 
 
   /**
    * Creates the Intents that will be used to interact with the playlist service
-
+   *
    * @param mediaServiceClass The class to inform of any media playback controls
-   * *
    * @param application The application to use when constructing the intents used to inform the playlist service of invocations
    */
   protected open fun constructControlIntents(mediaServiceClass: Class<out Service>, application: Application) {
