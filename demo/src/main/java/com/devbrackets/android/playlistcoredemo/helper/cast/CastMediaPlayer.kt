@@ -3,30 +3,39 @@ package com.devbrackets.android.playlistcoredemo.helper.cast
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.devbrackets.android.exomedia.util.MediaSourceUtil
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi
 import com.devbrackets.android.playlistcore.api.MediaPlayerApi.RemoteConnectionState
 import com.devbrackets.android.playlistcore.listener.MediaStatusListener
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager
 import com.devbrackets.android.playlistcoredemo.data.MediaItem
-import com.google.android.exoplayer2.util.MimeTypes
+import com.devbrackets.android.playlistcoredemo.helper.getContentType
+import com.google.android.gms.cast.CastStatusCodes
 import com.google.android.gms.cast.MediaInfo
-import com.google.android.gms.cast.MediaLoadOptions
+import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
+import com.google.android.gms.cast.MediaSeekOptions
 import com.google.android.gms.cast.framework.*
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
-import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.common.api.ResultCallback
 import com.google.android.gms.common.images.WebImage
+import java.util.concurrent.Executors
 
 /**
- * A Simple implementation of the [MediaPlayerApi] that handles Chromecast
+ * A Simple implementation of the [MediaPlayerApi] that handles Chromecast.
+ *
+ * NOTE:
+ * Attempting to connect to a Chromecast when the mobile device is connected to a
+ * VPN will result in a failed connection because the mobile device will appear to
+ * be on a separate network.
  */
 class CastMediaPlayer(
   context: Context,
   private val stateListener: OnConnectionChangeListener,
   private val infoChangeListener: OnMediaInfoChangeListener
 ) : MediaPlayerApi<MediaItem> {
+  companion object {
+    private const val TAG = "CastMediaPlayer"
+  }
+
   interface OnConnectionChangeListener {
     fun onCastMediaPlayerConnectionChange(player: CastMediaPlayer, state: RemoteConnectionState)
   }
@@ -35,21 +44,38 @@ class CastMediaPlayer(
     fun onMediaInfoChange(player: CastMediaPlayer)
   }
 
-  private val sessionManagerListener: SessionManagerListener<Session> = CastSessionManagerListener()
-  private val sessionManager: SessionManager?
+  private val sessionManager: SessionManager by lazy {
+    CastContext.getSharedInstance(context, Executors.newSingleThreadExecutor()).result.sessionManager
+  }
+  private val sessionManagerListener = CastSessionManagerListener()
+
   private var mediaStatusListener: MediaStatusListener<MediaItem>? = null
   private var remoteConnectionState = RemoteConnectionState.NOT_CONNECTED
-  private val castResultCallback = CastResultCallback()
-  private val seekResultCallback = SeekResultCallback()
-  private val preparedResultCallback = PreparedResultCallback()
+
+  private val mediaClient: RemoteMediaClient?
+    get() = sessionManager.currentCastSession?.remoteMediaClient
+
+  override val isPlaying: Boolean
+    get() = mediaClient?.isPlaying == true
+
+  // Because the audio is playing on a separate device it "handles" the audio focus
+  override val handlesOwnAudioFocus: Boolean
+    get() = true
+
+  override val currentPosition: Long
+    get() = mediaClient?.approximateStreamPosition ?: 0
+
+  override val duration: Long
+    get() = mediaClient?.streamDuration ?: 0
+
+  override val bufferedPercent: Int
+    get() = 0
 
   init {
-    sessionManager = CastContext.getSharedInstance(context).sessionManager
-    sessionManager.addSessionManagerListener(sessionManagerListener)
+    sessionManager.addSessionManagerListener(sessionManagerListener, CastSession::class.java)
 
     // Makes sure the connection state is accurate
-    val session = sessionManager.currentSession
-    if (session != null) {
+    sessionManager.currentSession?.let { session ->
       if (session.isConnecting) {
         updateState(RemoteConnectionState.CONNECTING)
       } else if (session.isConnected) {
@@ -58,42 +84,22 @@ class CastMediaPlayer(
     }
   }
 
-  override val isPlaying: Boolean
-    get() {
-      val remoteMediaClient = mediaClient
-      return remoteMediaClient != null && remoteMediaClient.isPlaying
-    }
-
-  // Because the audio is playing on a separate device it "handles" the audio focus
-  override val handlesOwnAudioFocus: Boolean
-    get() =// Because the audio is playing on a separate device it "handles" the audio focus
-      true
-  override val currentPosition: Long
-    get() {
-      val remoteMediaClient = mediaClient
-      return remoteMediaClient?.approximateStreamPosition ?: 0
-    }
-  override val duration: Long
-    get() {
-      val remoteMediaClient = mediaClient
-      return remoteMediaClient?.streamDuration ?: 0
-    }
-  override val bufferedPercent: Int
-    get() = 0
-
   override fun play() {
-    val remoteMediaClient = mediaClient
-    remoteMediaClient?.play()?.setResultCallback(castResultCallback)
+    mediaClient?.play()?.setResultCallback {
+      infoChangeListener.onMediaInfoChange(this)
+    }
   }
 
   override fun pause() {
-    val remoteMediaClient = mediaClient
-    remoteMediaClient?.pause()?.setResultCallback(castResultCallback)
+    mediaClient?.pause()?.setResultCallback {
+      infoChangeListener.onMediaInfoChange(this)
+    }
   }
 
   override fun stop() {
-    val remoteMediaClient = mediaClient
-    remoteMediaClient?.stop()?.setResultCallback(castResultCallback)
+    mediaClient?.stop()?.setResultCallback {
+      infoChangeListener.onMediaInfoChange(this)
+    }
   }
 
   override fun reset() {
@@ -101,17 +107,21 @@ class CastMediaPlayer(
   }
 
   override fun release() {
-    sessionManager?.removeSessionManagerListener(sessionManagerListener)
+    sessionManager.removeSessionManagerListener(sessionManagerListener, CastSession::class.java)
   }
 
   override fun setVolume(left: Float, right: Float) {
-    val remoteMediaClient = mediaClient
-    remoteMediaClient?.setStreamVolume(((left + right) / 2).toDouble())
+    mediaClient?.setStreamVolume(((left + right) / 2).toDouble())
   }
 
   override fun seekTo(milliseconds: Long) {
-    val remoteMediaClient = mediaClient
-    remoteMediaClient?.seek(milliseconds)?.setResultCallback(seekResultCallback)
+    val options = MediaSeekOptions.Builder().apply {
+      setPosition(milliseconds)
+    }.build()
+
+    mediaClient?.seek(options)?.setResultCallback {
+      mediaStatusListener?.onSeekComplete(this)
+    }
   }
 
   override fun setMediaStatusListener(listener: MediaStatusListener<MediaItem>) {
@@ -119,24 +129,31 @@ class CastMediaPlayer(
   }
 
   override fun handlesItem(item: MediaItem): Boolean {
-    return remoteConnectionState === RemoteConnectionState.CONNECTED
+    return remoteConnectionState == RemoteConnectionState.CONNECTED ||
+        remoteConnectionState == RemoteConnectionState.CONNECTING
   }
 
   override fun playItem(item: MediaItem) {
-    mediaClient?.let {
-      val loadOptions = MediaLoadOptions.Builder()
-        .setAutoplay(false)
-        .setPlayPosition(0)
-        .build()
+    val client = mediaClient
+    if (client == null) {
+      mediaStatusListener?.onError(this)
+      return
+    }
 
-      val mediaInfo = getMediaInfo(item)
-      it.load(mediaInfo, loadOptions).setResultCallback(preparedResultCallback)
-    } ?: mediaStatusListener?.onError(this)
+    val requestData = MediaLoadRequestData.Builder().apply {
+      setMediaInfo(getMediaInfo(item))
+      setAutoplay(false)
+      setCurrentTime(0)
+    }.build()
+
+    client.load(requestData).setResultCallback {
+      mediaStatusListener?.onPrepared(this)
+    }
   }
 
   private fun getMediaInfo(item: MediaItem): MediaInfo {
-    val mediaExtension = MediaSourceUtil.getExtension(Uri.parse(item.mediaUrl))
-    val mimeType = getMimeFromExtension(mediaExtension)
+    val contentType = Uri.parse(item.mediaUrl).getContentType()
+
     val mediaType = when (item.mediaType) {
       BasePlaylistManager.VIDEO -> MediaMetadata.MEDIA_TYPE_MOVIE
       else -> MediaMetadata.MEDIA_TYPE_MUSIC_TRACK
@@ -150,125 +167,105 @@ class CastMediaPlayer(
       addImage(WebImage(Uri.parse(item.artworkUrl)))
     }
 
-    return MediaInfo.Builder(item.mediaUrl)
-      .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
-      .setContentType(mimeType)
-      .setMetadata(mediaMetadata)
-      .build()
+    return MediaInfo.Builder(item.mediaUrl).apply {
+      setContentUrl(item.mediaUrl)
+      setContentType(contentType)
+      setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
+      setMetadata(mediaMetadata)
+    }.build()
   }
-
-
-  private fun getMimeFromExtension(extension: String?): String? {
-    return if (extension == null || extension.trim { it <= ' ' }.isEmpty()) {
-      null
-    } else extensionToMimeMap[extension]
-  }
-
-  private val mediaClient: RemoteMediaClient?
-    get() {
-      return sessionManager?.currentCastSession?.remoteMediaClient
-    }
 
   private fun updateState(state: RemoteConnectionState) {
     remoteConnectionState = state
     stateListener.onCastMediaPlayerConnectionChange(this, state)
   }
 
-  /**
-   * Watches the result of a request for media change which will allow us to keep the
-   * media state stored in the PlaylistHandler and the actual state this class represents
-   * in sync.
-   */
-  private inner class CastResultCallback : ResultCallback<RemoteMediaClient.MediaChannelResult> {
-    override fun onResult(mediaChannelResult: RemoteMediaClient.MediaChannelResult) {
-      infoChangeListener.onMediaInfoChange(this@CastMediaPlayer)
-    }
-  }
-
-  /**
-   * Handles listening to the initial load process to inform the listener the media was prepared
-   */
-  private inner class PreparedResultCallback : ResultCallback<RemoteMediaClient.MediaChannelResult> {
-    override fun onResult(mediaChannelResult: RemoteMediaClient.MediaChannelResult) {
-      if (mediaStatusListener != null) {
-        mediaStatusListener!!.onPrepared(this@CastMediaPlayer)
-      }
-    }
-  }
-
-  /**
-   * Handles listening to the seek process to inform the listener we have finished
-   */
-  private inner class SeekResultCallback : ResultCallback<RemoteMediaClient.MediaChannelResult> {
-    override fun onResult(mediaChannelResult: RemoteMediaClient.MediaChannelResult) {
-      mediaStatusListener?.onSeekComplete(this@CastMediaPlayer)
-    }
-  }
-
-  private inner class CastSessionManagerListener : SessionManagerListener<Session> {
-    override fun onSessionStarting(session: Session) {
+  private inner class CastSessionManagerListener : SessionManagerListener<CastSession> {
+    override fun onSessionStarting(session: CastSession) {
       updateState(RemoteConnectionState.CONNECTING)
-      Log.d(TAG, "Cast session starting for session " + session.sessionId)
+      logSession("Cast session starting", session)
     }
 
-    override fun onSessionStarted(session: Session, sessionId: String) {
+    override fun onSessionStarted(session: CastSession, sessionId: String) {
       updateState(RemoteConnectionState.CONNECTED)
-      Log.d(TAG, "Cast session started for session " + session.sessionId)
+      logSession("Cast session started", session)
     }
 
-    override fun onSessionStartFailed(session: Session, error: Int) {
+    override fun onSessionStartFailed(session: CastSession, error: Int) {
       updateState(RemoteConnectionState.NOT_CONNECTED)
       mediaStatusListener?.onError(this@CastMediaPlayer)
-      Log.d(TAG, "Cast session failed to start for session " + session.sessionId + " with the error " + error)
+
+      val errorString = "\"${CastStatusCodes.getStatusCodeString(error)}\" ($error)"
+      logSession("Cast session failed to start with error $errorString", session)
     }
 
-    override fun onSessionEnding(session: Session) {
-      Log.d(TAG, "Cast session ending for session " + session.sessionId)
+    override fun onSessionEnding(session: CastSession) {
+      logSession("Cast session ending", session)
     }
 
-    override fun onSessionEnded(session: Session, error: Int) {
+    override fun onSessionEnded(session: CastSession, error: Int) {
       updateState(RemoteConnectionState.NOT_CONNECTED)
-      Log.d(TAG, "Cast session ended for session " + session.sessionId + " with the error " + error)
+
+      val errorString = "\"${CastStatusCodes.getStatusCodeString(error)}\" ($error)"
+      logSession("Cast session ended with error $errorString", session)
     }
 
-    override fun onSessionResuming(session: Session, sessionId: String) {
+    override fun onSessionResuming(session: CastSession, sessionId: String) {
       updateState(RemoteConnectionState.CONNECTING)
-      Log.d(TAG, "Cast session resuming for session $sessionId")
+      logSession("Cast session resuming", session)
     }
 
-    override fun onSessionResumed(session: Session, wasSuspended: Boolean) {
+    override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
       updateState(RemoteConnectionState.CONNECTED)
-      Log.d(TAG, "Cast session resumed for session " + session.sessionId + "; wasSuspended=" + wasSuspended)
+      logSession("Cast session resumed; wasSuspended=$wasSuspended", session)
     }
 
-    override fun onSessionResumeFailed(session: Session, error: Int) {
+    override fun onSessionResumeFailed(session: CastSession, error: Int) {
       updateState(RemoteConnectionState.NOT_CONNECTED)
       mediaStatusListener?.onPrepared(this@CastMediaPlayer)
-      Log.d(TAG, "Cast session failed to resume for session " + session.sessionId + " with the error " + error)
+
+      val errorString = "\"${CastStatusCodes.getStatusCodeString(error)}\" ($error)"
+      logSession("Cast session failed to resume with error $errorString", session)
     }
 
-    override fun onSessionSuspended(session: Session, reason: Int) {
+    override fun onSessionSuspended(session: CastSession, reason: Int) {
       updateState(RemoteConnectionState.NOT_CONNECTED)
-      val causeText: String
-      causeText = when (reason) {
-        GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST -> "Network Loss"
-        GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED -> "Disconnected"
+      val causeText: String = when (reason) {
+        CastStatusCodes.NETWORK_ERROR -> "Network Loss"
+        CastStatusCodes.ERROR_SERVICE_DISCONNECTED -> "Disconnected"
         else -> "Unknown"
       }
-      Log.d(TAG, "Cast session suspended due to $causeText")
+
+      logSession("Cast session suspended due to $causeText", session)
     }
-  }
 
-  companion object {
-    private const val TAG = "CastMediaPlayer"
-    private val extensionToMimeMap: MutableMap<String, String> = HashMap()
+    private fun logSession(message: String, session: CastSession) {
+      val status = when {
+        session.isConnecting -> "connecting"
+        session.isConnected -> "connected"
+        session.isDisconnecting -> "disconnecting"
+        session.isDisconnected -> "disconnected"
+        session.isResuming -> "resuming"
+        session.isSuspended -> "suspended"
+        else -> "unknown"
+      }
 
-    init {
-      extensionToMimeMap[".mp3"] = MimeTypes.AUDIO_MPEG
-      extensionToMimeMap[".mp4"] = MimeTypes.VIDEO_MP4
-      extensionToMimeMap[".m3u8"] = MimeTypes.APPLICATION_M3U8
-      extensionToMimeMap[".mpd"] = "application/dash+xml"
-      extensionToMimeMap[".ism"] = "application/vnd.ms-sstr+xml"
+      val fields = listOf(
+        "sessionId" to session.sessionId,
+        "category" to session.category,
+        "status" to status
+      )
+
+      val sessionText = fields.joinToString(
+        separator = ", ",
+        prefix = "[",
+        postfix = "]",
+        transform = {
+          "${it.first}=${it.second.toString()}"
+        }
+      )
+
+      Log.d(TAG, "$message (session: $sessionText)")
     }
   }
 }

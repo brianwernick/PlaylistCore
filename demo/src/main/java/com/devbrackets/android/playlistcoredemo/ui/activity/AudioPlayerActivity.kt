@@ -1,7 +1,10 @@
 package com.devbrackets.android.playlistcoredemo.ui.activity
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.text.format.DateUtils
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
 import android.widget.SeekBar.OnSeekBarChangeListener
@@ -9,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.mediarouter.app.MediaRouteButton
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
+import com.devbrackets.android.exomedia.util.millisToFormattedDuration
 import com.devbrackets.android.playlistcore.data.MediaProgress
 import com.devbrackets.android.playlistcore.data.PlaybackState
 import com.devbrackets.android.playlistcore.listener.PlaylistListener
@@ -17,7 +21,10 @@ import com.devbrackets.android.playlistcoredemo.App
 import com.devbrackets.android.playlistcoredemo.R
 import com.devbrackets.android.playlistcoredemo.data.MediaItem
 import com.devbrackets.android.playlistcoredemo.data.Samples
+import com.devbrackets.android.playlistcoredemo.databinding.AudioPlayerActivityBinding
+import com.devbrackets.android.playlistcoredemo.databinding.VideoPlayerActivityBinding
 import com.devbrackets.android.playlistcoredemo.manager.PlaylistManager
+import com.devbrackets.android.playlistcoredemo.ui.support.BindingActivity
 import com.google.android.gms.cast.framework.CastButtonFactory
 import java.util.*
 
@@ -27,32 +34,37 @@ import java.util.*
  * and [com.devbrackets.android.playlistcore.manager.ListPlaylistManager]
  * classes.
  */
-class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, ProgressListener {
-  private var loadingBar: ProgressBar? = null
-  private var artworkView: ImageView? = null
-  private var currentPositionView: TextView? = null
-  private var durationView: TextView? = null
-  private var seekBar: SeekBar? = null
-  private var shouldSetDuration = false
-  private var userInteracting = false
-  private var titleTextView: TextView? = null
-  private var subtitleTextView: TextView? = null
-  private var descriptionTextView: TextView? = null
-  private var previousButton: ImageButton? = null
-  private var playPauseButton: ImageButton? = null
-  private var nextButton: ImageButton? = null
-  private var castButton: MediaRouteButton? = null
-  protected val playlistManager: PlaylistManager by lazy {
+class AudioPlayerActivity : BindingActivity<AudioPlayerActivityBinding>(), PlaylistListener<MediaItem>, ProgressListener {
+  companion object {
+    const val EXTRA_INDEX = "EXTRA_INDEX"
+    const val PLAYLIST_ID = 4 // Arbitrary for the example
+
+    fun intent(context: Context, sampleIndex: Int): Intent {
+      return Intent(context, AudioPlayerActivity::class.java).apply {
+        putExtra(EXTRA_INDEX, sampleIndex)
+      }
+    }
+  }
+
+  private var shouldSetDuration: Boolean = false
+  private var userInteracting: Boolean = false
+
+  private val playlistManager by lazy {
     (applicationContext as App).playlistManager
   }
-  private var selectedPosition = 0
-  private var glide: RequestManager? = null
+  private val selectedPosition by lazy {
+    intent.extras?.getInt(EXTRA_INDEX, 0) ?: 0
+  }
 
+  private val glide: RequestManager by lazy { Glide.with(this) }
+
+  override fun inflateBinding(layoutInflater: LayoutInflater): AudioPlayerActivityBinding {
+    return AudioPlayerActivityBinding.inflate(layoutInflater)
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContentView(R.layout.audio_player_activity)
-    retrieveExtras()
+
     init()
   }
 
@@ -67,28 +79,27 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
     playlistManager.registerPlaylistListener(this)
     playlistManager.registerProgressListener(this)
 
-    //Makes sure to retrieve the current playback information
+    // Makes sure to retrieve the current playback information
     updateCurrentPlaybackInformation()
   }
 
   override fun onPlaylistItemChanged(currentItem: MediaItem?, hasNext: Boolean, hasPrevious: Boolean): Boolean {
     shouldSetDuration = true
 
-    //Updates the button states
-    nextButton!!.isEnabled = hasNext
-    previousButton!!.isEnabled = hasPrevious
+    // Update button states
+    binding.nextButton.isEnabled = hasNext
+    binding.previousButton.isEnabled = hasPrevious
 
-    //Loads the new image
-    if (currentItem != null) {
-      artworkView?.let { view ->
-        glide?.load(currentItem.artworkUrl)?.into(view)
-      }
+    // Loads the image
+    currentItem?.let {
+      glide.load(it.artworkUrl).into(binding.artworkView)
     }
 
-    // Updates the title, subtitle, and description
-    titleTextView!!.text = currentItem?.title.orEmpty()
-    subtitleTextView!!.text = currentItem?.album.orEmpty()
-    descriptionTextView!!.text = currentItem?.artist.orEmpty()
+    // Updates the text
+    binding.titleTextView.text = currentItem?.title
+    binding.subtitleTextView.text = currentItem?.album
+    binding.descriptionTextView.text = currentItem?.artist
+
     return true
   }
 
@@ -100,19 +111,22 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
       PlaybackState.PAUSED -> doneLoading(false)
       else -> {}
     }
+
     return true
   }
 
-  override fun onProgressUpdated(progress: MediaProgress): Boolean {
-    if (shouldSetDuration && progress.duration > 0) {
+  override fun onProgressUpdated(mediaProgress: MediaProgress): Boolean {
+    if (shouldSetDuration && mediaProgress.duration > 0) {
       shouldSetDuration = false
-      setDuration(progress.duration)
+      setDuration(mediaProgress.duration)
     }
+
     if (!userInteracting) {
-      seekBar!!.secondaryProgress = (progress.duration * progress.bufferPercentFloat).toInt()
-      seekBar!!.progress = progress.position.toInt()
-      currentPositionView!!.text = formatMs(progress.position)
+      binding.seekBar.secondaryProgress = (mediaProgress.duration * mediaProgress.bufferPercentFloat).toInt()
+      binding.seekBar.progress = mediaProgress.position.toInt()
+      binding.currentPositionView.text = mediaProgress.position.millisToFormattedDuration()
     }
+
     return true
   }
 
@@ -120,25 +134,17 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
    * Makes sure to update the UI to the current playback item.
    */
   private fun updateCurrentPlaybackInformation() {
-    val itemChange = playlistManager.currentItemChange
-    if (itemChange != null) {
-      onPlaylistItemChanged(itemChange.currentItem, itemChange.hasNext, itemChange.hasPrevious)
+    playlistManager.currentItemChange?.let {
+      onPlaylistItemChanged(it.currentItem, it.hasNext, it.hasPrevious)
     }
-    val currentPlaybackState = playlistManager.currentPlaybackState
-    if (currentPlaybackState !== PlaybackState.STOPPED) {
-      onPlaybackStateChanged(currentPlaybackState)
-    }
-    val mediaProgress = playlistManager.currentProgress
-    mediaProgress?.let { onProgressUpdated(it) }
-  }
 
-  /**
-   * Retrieves the extra associated with the selected playlist index
-   * so that we can start playing the correct item.
-   */
-  private fun retrieveExtras() {
-    val extras = intent.extras
-    selectedPosition = extras!!.getInt(EXTRA_INDEX, 0)
+    if (playlistManager.currentPlaybackState != PlaybackState.STOPPED) {
+      onPlaybackStateChanged(playlistManager.currentPlaybackState)
+    }
+
+    playlistManager.currentProgress?.let {
+      onProgressUpdated(it)
+    }
   }
 
   /**
@@ -146,13 +152,12 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
    * general setup
    */
   private fun init() {
-    retrieveViews()
+    CastButtonFactory.setUpMediaRouteButton(applicationContext, binding.mediaRouteButton)
+
     setupListeners()
-    glide = Glide.with(this)
-    CastButtonFactory.setUpMediaRouteButton(applicationContext, castButton!!)
-    val generatedPlaylist = setupPlaylistManager()
-    startPlayback(generatedPlaylist)
+    startPlayback(setupPlaylistManager())
   }
+
 
   /**
    * Called when we receive a notification that the current item is
@@ -172,30 +177,32 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
    * @param isPlaying True if the audio item is currently playing
    */
   private fun updatePlayPauseImage(isPlaying: Boolean) {
-    val resId = if (isPlaying) R.drawable.ic_pause_black_24dp else R.drawable.ic_play_black_24dp
-    playPauseButton!!.setImageResource(resId)
+    val resId = if (isPlaying) R.drawable.playlistcore_ic_pause_black else R.drawable.playlistcore_ic_play_arrow_black
+    binding.playPauseButton.setImageResource(resId)
   }
 
   /**
    * Used to inform the controls to finalize their setup.  This
    * means replacing the loading animation with the PlayPause button
    */
-  fun loadCompleted() {
-    playPauseButton!!.visibility = View.VISIBLE
-    previousButton!!.visibility = View.VISIBLE
-    nextButton!!.visibility = View.VISIBLE
-    loadingBar!!.visibility = View.INVISIBLE
+  private fun loadCompleted() {
+    binding.playPauseButton.visibility = View.VISIBLE
+    binding.previousButton.visibility = View.VISIBLE
+    binding.nextButton.visibility = View.VISIBLE
+
+    binding.loadingBar.visibility = View.INVISIBLE
   }
 
   /**
    * Used to inform the controls to return to the loading stage.
    * This is the opposite of [.loadCompleted]
    */
-  fun restartLoading() {
-    playPauseButton!!.visibility = View.INVISIBLE
-    previousButton!!.visibility = View.INVISIBLE
-    nextButton!!.visibility = View.INVISIBLE
-    loadingBar!!.visibility = View.VISIBLE
+  private fun restartLoading() {
+    binding.playPauseButton.visibility = View.INVISIBLE
+    binding.previousButton.visibility = View.INVISIBLE
+    binding.nextButton.visibility = View.INVISIBLE
+
+    binding.loadingBar.visibility = View.VISIBLE
   }
 
   /**
@@ -204,8 +211,8 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
    * @param duration The duration of the media item in milliseconds
    */
   private fun setDuration(duration: Long) {
-    seekBar!!.max = duration.toInt()
-    durationView!!.text = formatMs(duration)
+    binding.seekBar.max = duration.toInt()
+    binding.durationView.text = duration.millisToFormattedDuration()
   }
 
   /**
@@ -220,34 +227,14 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
       return false
     }
 
-    val mediaItems: MutableList<MediaItem> = LinkedList()
-    for (sample in Samples.audio) {
-      val mediaItem = MediaItem(sample, true)
-      mediaItems.add(mediaItem)
+    val mediaItems = Samples.audio.map {
+      MediaItem(it, true)
     }
 
     playlistManager.setParameters(mediaItems, selectedPosition)
     playlistManager.id = PLAYLIST_ID.toLong()
-    return true
-  }
 
-  /**
-   * Populates the class variables with the views created from the
-   * xml layout file.
-   */
-  private fun retrieveViews() {
-    loadingBar = findViewById(R.id.audio_player_loading)
-    artworkView = findViewById(R.id.audio_player_image)
-    currentPositionView = findViewById(R.id.audio_player_position)
-    durationView = findViewById(R.id.audio_player_duration)
-    seekBar = findViewById(R.id.audio_player_seek)
-    titleTextView = findViewById(R.id.title_text_view)
-    subtitleTextView = findViewById(R.id.subtitle_text_view)
-    descriptionTextView = findViewById(R.id.description_text_view)
-    previousButton = findViewById(R.id.audio_player_previous)
-    playPauseButton = findViewById(R.id.audio_player_play_pause)
-    nextButton = findViewById(R.id.audio_player_next)
-    castButton = findViewById(R.id.media_route_button)
+    return true
   }
 
   /**
@@ -256,10 +243,10 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
    * invoke methods in the [.playlistManager]
    */
   private fun setupListeners() {
-    seekBar!!.setOnSeekBarChangeListener(SeekBarChanged())
-    previousButton!!.setOnClickListener { playlistManager.invokePrevious() }
-    playPauseButton!!.setOnClickListener { playlistManager.invokePausePlay() }
-    nextButton!!.setOnClickListener { playlistManager.invokeNext() }
+    binding.seekBar.setOnSeekBarChangeListener(SeekBarChanged())
+    binding.previousButton.setOnClickListener { playlistManager.invokePrevious() }
+    binding.playPauseButton.setOnClickListener { playlistManager.invokePausePlay() }
+    binding.nextButton.setOnClickListener { playlistManager.invokeNext() }
   }
 
   /**
@@ -278,55 +265,30 @@ class AudioPlayerActivity : AppCompatActivity(), PlaylistListener<MediaItem>, Pr
   /**
    * Listens to the seek bar change events and correctly handles the changes
    */
-  private inner class SeekBarChanged : OnSeekBarChangeListener {
+  private inner class SeekBarChanged : SeekBar.OnSeekBarChangeListener {
     private var seekPosition = -1
+
     override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
       if (!fromUser) {
         return
       }
+
       seekPosition = progress
-      currentPositionView!!.text = formatMs(progress.toLong())
+      binding.currentPositionView.text = progress.toLong().millisToFormattedDuration()
     }
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {
       userInteracting = true
+
       seekPosition = seekBar.progress
       playlistManager.invokeSeekStarted()
     }
 
     override fun onStopTrackingTouch(seekBar: SeekBar) {
       userInteracting = false
+
       playlistManager.invokeSeekEnded(seekPosition.toLong())
       seekPosition = -1
-    }
-  }
-
-  companion object {
-    const val EXTRA_INDEX = "EXTRA_INDEX"
-    const val PLAYLIST_ID = 4 //Arbitrary, for the example
-    private val formatBuilder = StringBuilder()
-    private val formatter = Formatter(formatBuilder, Locale.getDefault())
-
-    /**
-     * Formats the specified milliseconds to a human readable format
-     * in the form of (Hours : Minutes : Seconds).  If the specified
-     * milliseconds is less than 0 the resulting format will be
-     * "--:--" to represent an unknown time
-     *
-     * @param milliseconds The time in milliseconds to format
-     * @return The human readable time
-     */
-    fun formatMs(milliseconds: Long): String {
-      if (milliseconds < 0) {
-        return "--:--"
-      }
-      val seconds = milliseconds % DateUtils.MINUTE_IN_MILLIS / DateUtils.SECOND_IN_MILLIS
-      val minutes = milliseconds % DateUtils.HOUR_IN_MILLIS / DateUtils.MINUTE_IN_MILLIS
-      val hours = milliseconds % DateUtils.DAY_IN_MILLIS / DateUtils.HOUR_IN_MILLIS
-      formatBuilder.setLength(0)
-      return if (hours > 0) {
-        formatter.format("%d:%02d:%02d", hours, minutes, seconds).toString()
-      } else formatter.format("%02d:%02d", minutes, seconds).toString()
     }
   }
 }

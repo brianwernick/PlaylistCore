@@ -22,14 +22,20 @@ import com.devbrackets.android.playlistcoredemo.ui.adapter.SampleListAdapter
  * or a sample video to play.
  */
 class MediaSelectionActivity : AppCompatActivity(), OnItemClickListener {
-  private var isAudio = false
+  private val isAudio by lazy {
+    intent.getLongExtra(EXTRA_MEDIA_TYPE, BasePlaylistManager.AUDIO.toLong()) == BasePlaylistManager.AUDIO.toLong()
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.list_selection_activity)
-    isAudio = intent.getLongExtra(EXTRA_MEDIA_TYPE, BasePlaylistManager.AUDIO.toLong()) == BasePlaylistManager.AUDIO.toLong()
-    if (supportActionBar != null) {
-      supportActionBar!!.title = resources.getString(if (isAudio) R.string.title_audio_selection_activity else R.string.title_video_selection_activity)
-    }
+
+    supportActionBar?.title = resources.getString(if (isAudio) R.string.title_audio_selection_activity else R.string.title_video_selection_activity)
+
+    setupList()
+  }
+
+  private fun setupList() {
     val exampleList = findViewById<ListView>(R.id.selection_activity_list)
     exampleList.adapter = SampleListAdapter(this, if (isAudio) Samples.audio else Samples.video)
     exampleList.onItemClickListener = this
@@ -37,22 +43,10 @@ class MediaSelectionActivity : AppCompatActivity(), OnItemClickListener {
 
   override fun onItemClick(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
     if (isAudio) {
-      startAudioPlayerActivity(position)
+      startActivity(AudioPlayerActivity.intent(this, position))
     } else {
-      startVideoPlayerActivity(position)
+      startActivity(VideoPlayerActivity.intent(this, position))
     }
-  }
-
-  private fun startAudioPlayerActivity(selectedIndex: Int) {
-    val intent = Intent(this, AudioPlayerActivity::class.java)
-    intent.putExtra(AudioPlayerActivity.Companion.EXTRA_INDEX, selectedIndex)
-    startActivity(intent)
-  }
-
-  private fun startVideoPlayerActivity(selectedIndex: Int) {
-    val intent = Intent(this, VideoPlayerActivity::class.java)
-    intent.putExtra(VideoPlayerActivity.Companion.EXTRA_INDEX, selectedIndex)
-    startActivity(intent)
   }
 
   companion object {
