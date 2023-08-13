@@ -1,7 +1,8 @@
 package com.devbrackets.android.playlistcoredemo.manager
 
 import android.app.Application
-import com.devbrackets.android.exomedia.listener.VideoControlsButtonListener
+import com.devbrackets.android.exomedia.ui.listener.VideoControlsButtonListener
+import com.devbrackets.android.exomedia.ui.widget.controls.DefaultVideoControls
 import com.devbrackets.android.playlistcore.manager.ListPlaylistManager
 import com.devbrackets.android.playlistcoredemo.data.MediaItem
 import com.devbrackets.android.playlistcoredemo.helper.VideoApi
@@ -12,10 +13,11 @@ import com.devbrackets.android.playlistcoredemo.service.MediaService
  * [MediaService] which extends [com.devbrackets.android.playlistcore.service.BasePlaylistService].
  */
 class PlaylistManager(application: Application) : ListPlaylistManager<MediaItem>(application, MediaService::class.java) {
+
   /**
    * Note: You can call [.getMediaPlayers] and add it manually in the activity,
    * however we have this helper method to allow registration of the media controls
-   * listener provided by ExoMedia's [com.devbrackets.android.exomedia.ui.widget.VideoControls]
+   * listener provided by ExoMedia's [com.devbrackets.android.exomedia.ui.widget.DefaultVideoControls]
    */
   fun addVideoApi(videoApi: VideoApi) {
     mediaPlayers.add(videoApi)
@@ -28,8 +30,8 @@ class PlaylistManager(application: Application) : ListPlaylistManager<MediaItem>
    * however we have this helper method to remove the registered listener from [.addVideoApi]
    */
   fun removeVideoApi(videoApi: VideoApi) {
-    val controls = videoApi.videoView!!.videoControls
-    controls?.setButtonListener(null)
+    (videoApi.videoView.videoControls as? DefaultVideoControls)?.setButtonListener(null)
+
     unRegisterPlaylistListener(videoApi)
     mediaPlayers.remove(videoApi)
   }
@@ -41,7 +43,7 @@ class PlaylistManager(application: Application) : ListPlaylistManager<MediaItem>
    * @param videoApi The VideoApi to link
    */
   private fun updateVideoControls(videoApi: VideoApi) {
-    videoApi.videoView?.videoControls?.let {
+    (videoApi.videoView.videoControls as? DefaultVideoControls)?.let {
       it.setPreviousButtonRemoved(false)
       it.setNextButtonRemoved(false)
       it.setButtonListener(ControlsListener())
@@ -54,6 +56,16 @@ class PlaylistManager(application: Application) : ListPlaylistManager<MediaItem>
    */
   private inner class ControlsListener : VideoControlsButtonListener {
     override fun onPlayPauseClicked(): Boolean {
+      invokePausePlay()
+      return true
+    }
+
+    override fun onPlayClicked(): Boolean {
+      invokePausePlay()
+      return true
+    }
+
+    override fun onPauseClicked(): Boolean {
       invokePausePlay()
       return true
     }

@@ -14,11 +14,12 @@ dependencies {
 }
 
 android {
-  compileSdkVersion 33
+  namespace 'com.devbrackets.android.playlistcore'
+  compileSdk 34
 
   defaultConfig {
     minSdkVersion 21
-    targetSdkVersion 33
+    targetSdkVersion 34
   }
 
   lintOptions {
@@ -27,6 +28,15 @@ android {
 
   sourceSets {
     main.java.srcDirs += 'src/main/kotlin'
+  }
+
+  kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_1_8
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
   }
 }
 
