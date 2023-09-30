@@ -5,18 +5,18 @@ dependencies {
   implementation project(':library')
 
   implementation 'androidx.appcompat:appcompat:1.6.1'
-  implementation 'androidx.annotation:annotation:1.6.0'
+  implementation 'androidx.annotation:annotation:1.7.0'
   implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
   // Chromecast support
-  implementation 'androidx.mediarouter:mediarouter:1.4.0'
+  implementation 'androidx.mediarouter:mediarouter:1.6.0'
   implementation 'com.google.android.gms:play-services-cast-framework:21.3.0'
 
   // Media playback (video and audio) library using ExoPlayer
   implementation 'com.devbrackets.android:exomedia:5.0.0'
 
   // Image Loading
-  implementation 'com.github.bumptech.glide:glide:4.14.2'
+  implementation 'com.github.bumptech.glide:glide:4.16.0'
 }
 
 android {

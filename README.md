@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     //...
-    compile 'com.devbrackets.android:playlistcore:2.1.0'
+    compile 'com.devbrackets.android:playlistcore:2.2.0'
 }
 ```
 
@@ -30,13 +30,13 @@ dependencies {
 
 Example
 -------
-Due to the length an example would be, please see the Demo app
+Please see the demo app for a comprehensive example of how to implement Playlist services
 
 
 License
 -------
 
-    Copyright 2016-2022 Brian Wernick
+    Copyright 2016-2023 Brian Wernick
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
