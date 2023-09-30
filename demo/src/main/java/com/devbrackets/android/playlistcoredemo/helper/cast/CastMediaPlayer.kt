@@ -44,16 +44,14 @@ class CastMediaPlayer(
     fun onMediaInfoChange(player: CastMediaPlayer)
   }
 
-  private val sessionManager: SessionManager by lazy {
-    CastContext.getSharedInstance(context, Executors.newSingleThreadExecutor()).result.sessionManager
-  }
+  private var sessionManager: SessionManager? = null
   private val sessionManagerListener = CastSessionManagerListener()
 
   private var mediaStatusListener: MediaStatusListener<MediaItem>? = null
   private var remoteConnectionState = RemoteConnectionState.NOT_CONNECTED
 
   private val mediaClient: RemoteMediaClient?
-    get() = sessionManager.currentCastSession?.remoteMediaClient
+    get() = sessionManager?.currentCastSession?.remoteMediaClient
 
   override val isPlaying: Boolean
     get() = mediaClient?.isPlaying == true
@@ -72,15 +70,8 @@ class CastMediaPlayer(
     get() = 0
 
   init {
-    sessionManager.addSessionManagerListener(sessionManagerListener, CastSession::class.java)
-
-    // Makes sure the connection state is accurate
-    sessionManager.currentSession?.let { session ->
-      if (session.isConnecting) {
-        updateState(RemoteConnectionState.CONNECTING)
-      } else if (session.isConnected) {
-        updateState(RemoteConnectionState.CONNECTED)
-      }
+    CastContext.getSharedInstance(context, Executors.newSingleThreadExecutor()).addOnSuccessListener {
+      initializeWithSessionManager(it.sessionManager)
     }
   }
 
@@ -107,7 +98,7 @@ class CastMediaPlayer(
   }
 
   override fun release() {
-    sessionManager.removeSessionManagerListener(sessionManagerListener, CastSession::class.java)
+    sessionManager?.removeSessionManagerListener(sessionManagerListener, CastSession::class.java)
   }
 
   override fun setVolume(left: Float, right: Float) {
@@ -148,6 +139,22 @@ class CastMediaPlayer(
 
     client.load(requestData).setResultCallback {
       mediaStatusListener?.onPrepared(this)
+    }
+  }
+
+  private fun initializeWithSessionManager(manager: SessionManager) {
+    sessionManager?.removeSessionManagerListener(sessionManagerListener, CastSession::class.java)
+    sessionManager = manager
+
+    manager.addSessionManagerListener(sessionManagerListener, CastSession::class.java)
+
+    // Makes sure the connection state is accurate
+    manager.currentSession?.let { session ->
+      if (session.isConnecting) {
+        updateState(RemoteConnectionState.CONNECTING)
+      } else if (session.isConnected) {
+        updateState(RemoteConnectionState.CONNECTED)
+      }
     }
   }
 
