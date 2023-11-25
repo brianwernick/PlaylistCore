@@ -1,3 +1,5 @@
+![Maven Central](https://img.shields.io/maven-central/v/com.devbrackets.android/playlistcore)
+
 Playlist Core
 ============
 Playlist Core is a media playback management library for Android that simplifies playing lists of
@@ -62,7 +64,7 @@ Attribution
  [Design Icons]: https://github.com/google/material-design-icons
  [CC 4.0]: http://creativecommons.org/licenses/by/4.0/
  [JCenter]: https://bintray.com/brianwernick/maven/PlaylistCore/view#files
- [Maven Central]: https://s01.oss.sonatype.org/#nexus-search;quick~com.devbrackets.android.playlistcore
+ [Maven Central]: https://search.maven.org/artifact/com.devbrackets.android/playlistcore
  [Website]: http://devbrackets.com/dev/libs/playlistcore.html
  [Java Docs]: http://devbrackets.com/dev/libs/docs/playlistcore/1.1.0/index.html
  [Apache 2.0]: https://opensource.org/licenses/Apache-2.0
