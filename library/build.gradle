@@ -1,5 +1,7 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+plugins {
+  alias libs.plugins.android.library
+  alias libs.plugins.kotlin.android
+}
 
 afterEvaluate {
   apply from: '../gradle/release/publish.gradle'
@@ -7,36 +9,36 @@ afterEvaluate {
 
 dependencies {
   // Kotlin
-  api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+  api libs.kotlin.stdlib.jdk7
 
   // Android
-  api 'androidx.media:media:1.6.0'
+  api libs.media
 }
 
 android {
   namespace 'com.devbrackets.android.playlistcore'
-  compileSdk 34
+  compileSdk 35
 
   defaultConfig {
     minSdkVersion 21
-    targetSdkVersion 34
-  }
-
-  lintOptions {
-    abortOnError false
+    targetSdkVersion 35
   }
 
   sourceSets {
     main.java.srcDirs += 'src/main/kotlin'
   }
 
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_1_8
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_11
+    targetCompatibility JavaVersion.VERSION_11
   }
 
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+  kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_11
+  }
+
+  lintOptions {
+    abortOnError false
   }
 }
 

@@ -1,0 +1,32 @@
+[versions]
+androidGradlePlugin = "8.7.3"
+annotation = "1.9.1"
+appcompat = "1.7.0"
+constraintlayout = "2.2.0"
+exomedia = "5.2.0"
+glide = "4.16.0"
+kotlin = "2.0.20"
+media = "1.7.0"
+nexusPublish = "1.1.0"
+playServicesCastFramework = "22.0.0"
+
+[libraries]
+android-gradle = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
+annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
+exomedia = { module = "com.devbrackets.android:exomedia", version.ref = "exomedia" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-stdlib-jdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", version.ref = "kotlin" }
+media = { module = "androidx.media:media", version.ref = "media" }
+mediarouter = { module = "androidx.mediarouter:mediarouter", version.ref = "media" }
+play-services-cast-framework = { module = "com.google.android.gms:play-services-cast-framework", version.ref = "playServicesCastFramework" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
+
