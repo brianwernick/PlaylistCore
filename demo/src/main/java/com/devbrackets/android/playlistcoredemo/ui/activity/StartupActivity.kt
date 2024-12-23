@@ -14,6 +14,11 @@ class StartupActivity : AppCompatActivity(), OnItemClickListener {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.startup_activity)
+
+    setupList()
+  }
+
+  private fun setupList() {
     val exampleList = findViewById<ListView>(R.id.startup_activity_list)
     exampleList.adapter = StartupListAdapter(this)
     exampleList.onItemClickListener = this

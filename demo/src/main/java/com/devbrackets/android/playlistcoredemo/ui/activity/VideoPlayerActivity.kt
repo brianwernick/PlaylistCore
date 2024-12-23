@@ -86,6 +86,7 @@ class VideoPlayerActivity : BindingActivity<VideoPlayerActivityBinding>(), Video
   private fun init() {
     setupVideoView()
     setupPlaylistManager()
+    supportActionBar?.hide()
 
     playlistManager.play(0, false)
   }
